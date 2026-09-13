@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
+         version="6.0">
+
+    <display-name>Computer Store Management System</display-name>
+
+    <!-- Filter order matters: encoding -> authentication -> admin authorization -->
+    <filter>
+        <filter-name>EncodingFilter</filter-name>
+        <filter-class>com.example.computer_store.filter.EncodingFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>EncodingFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <filter>
+        <filter-name>AuthenticationFilter</filter-name>
+        <filter-class>com.example.computer_store.filter.AuthenticationFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>AuthenticationFilter</filter-name>
+        <url-pattern>/admin/*</url-pattern>
+        <url-pattern>/cart</url-pattern>
+        <url-pattern>/cart/*</url-pattern>
+        <url-pattern>/checkout</url-pattern>
+        <url-pattern>/account/*</url-pattern>
+        <url-pattern>/mail</url-pattern>
+        <url-pattern>/mail/*</url-pattern>
+    </filter-mapping>
+
+    <filter>
+        <filter-name>CartCountFilter</filter-name>
+        <filter-class>com.example.computer_store.filter.CartCountFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>CartCountFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <filter>
+        <filter-name>MailCountFilter</filter-name>
+        <filter-class>com.example.computer_store.filter.MailCountFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>MailCountFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <filter>
+        <filter-name>AdminAuthorizationFilter</filter-name>
+        <filter-class>com.example.computer_store.filter.AdminAuthorizationFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>AdminAuthorizationFilter</filter-name>
+        <url-pattern>/admin/*</url-pattern>
+    </filter-mapping>
+
+    <welcome-file-list>
+        <welcome-file>index.jsp</welcome-file>
+    </welcome-file-list>
+
+    <session-config>
+        <session-timeout>30</session-timeout>
+    </session-config>
+
+    <!-- Multipart configuration for file uploads -->
+    <multipart-config>
+        <max-file-size>5242880</max-file-size>
+        <max-request-size>10485760</max-request-size>
+        <file-size-threshold>1048576</file-size-threshold>
+    </multipart-config>
+
+    <error-page>
+        <error-code>403</error-code>
+        <location>/WEB-INF/views/errors/403.jsp</location>
+    </error-page>
+    <error-page>
+        <error-code>404</error-code>
+        <location>/WEB-INF/views/errors/404.jsp</location>
+    </error-page>
+    <error-page>
+        <error-code>500</error-code>
+        <location>/WEB-INF/views/errors/500.jsp</location>
+    </error-page>
+</web-app>
