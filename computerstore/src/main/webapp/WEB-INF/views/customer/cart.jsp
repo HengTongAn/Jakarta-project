@@ -4,13 +4,23 @@
 <c:set var="pageTitle" value="Shopping Cart - TechStore"/>
 <%@ include file="../common/header.jspf" %>
 <div class="container py-4">
-    <h4 class="fw-bold mb-3">Shopping Cart</h4>
+    <h4 class="fw-bold mb-1">Shopping Cart</h4>
+    <c:if test="${not empty items}">
+        <div class="checkout-steps mb-4" aria-label="Checkout progress">
+            <span class="step done"><i class="bi bi-cart-check-fill"></i><span class="d-none d-sm-inline"> Cart</span></span>
+            <span class="step-bar done"></span>
+            <span class="step"><i class="bi bi-credit-card-2-front"></i><span class="d-none d-sm-inline"> Checkout</span></span>
+            <span class="step-bar"></span>
+            <span class="step"><i class="bi bi-check-circle"></i><span class="d-none d-sm-inline"> Confirmed</span></span>
+        </div>
+    </c:if>
 
     <c:choose>
         <c:when test="${empty items}">
-            <div class="card text-center p-5">
+            <div class="card text-center p-5 empty-state">
+                <span class="empty-icon"><i class="bi bi-cart3"></i></span>
                 <h5 class="fw-bold">Your cart is empty</h5>
-                <p class="text-muted">Browse the catalogue and add some products.</p>
+                <p class="text-muted mb-3">Browse the catalogue and add some products to get started.</p>
                 <div>
                     <a href="${pageContext.request.contextPath}/products" class="btn btn-brand">Start shopping</a>
                 </div>
@@ -21,7 +31,7 @@
                 <div class="col-lg-8">
                     <div class="card card-hover">
                         <div class="table-responsive">
-                            <table class="table align-middle mb-0">
+                            <table class="table align-middle mb-0 cart-table">
                                 <thead class="table-light">
                                 <tr>
                                     <th style="width: 80px;">Image</th>
@@ -61,21 +71,33 @@
                                         </td>
                                         <td class="text-center money">$<fmt:formatNumber value="${item.product.price}" pattern="#,##0.00"/></td>
                                         <td>
-                                            <form method="post" action="${pageContext.request.contextPath}/cart/update" class="d-flex justify-content-center gap-1">
+                                            <form method="post" action="${pageContext.request.contextPath}/cart/update" class="d-flex flex-column align-items-center gap-1" data-no-spinner>
+                                                <input type="hidden" name="csrfToken" value="${csrfToken}">
                                                 <input type="hidden" name="cartItemId" value="${item.cartItemId}">
-                                                <input type="number" name="quantity" value="${item.quantity}" min="1"
-                                                       max="${item.product.stockQuantity}" class="form-control form-control-sm text-center" style="width:80px">
-                                                <button type="submit" class="btn btn-outline-secondary btn-sm">Update</button>
+                                                <div class="input-group input-group-sm cart-qty">
+                                                    <button type="button" class="btn btn-outline-secondary" data-step="-1" data-target="qty-${item.cartItemId}" data-submit="true" aria-label="Decrease quantity">
+                                                        <i class="bi bi-dash-lg" aria-hidden="true"></i>
+                                                    </button>
+                                                    <input type="number" id="qty-${item.cartItemId}" name="quantity" value="${item.quantity}" min="1"
+                                                           max="${item.product.stockQuantity}" class="form-control text-center" aria-label="Quantity for ${item.product.name}">
+                                                    <button type="button" class="btn btn-outline-secondary" data-step="1" data-target="qty-${item.cartItemId}" data-submit="true" aria-label="Increase quantity">
+                                                        <i class="bi bi-plus-lg" aria-hidden="true"></i>
+                                                    </button>
+                                                </div>
+                                                <button type="submit" class="btn btn-link btn-sm p-0 d-none">Update</button>
+                                                <c:if test="${item.quantity < item.product.stockQuantity}">
+                                                    <div class="small text-muted">${item.product.stockQuantity} available</div>
+                                                </c:if>
                                             </form>
                                         </td>
                                         <td class="text-end money fw-semibold">
                                             $<fmt:formatNumber value="${item.product.price * item.quantity}" pattern="#,##0.00"/>
                                         </td>
                                         <td class="text-end">
-                                            <form method="post" action="${pageContext.request.contextPath}/cart/remove"
-                                                  onsubmit="return confirm('Remove this item from your cart?');">
+                                            <form method="post" action="${pageContext.request.contextPath}/cart/remove" class="cart-remove-form">
+                                                <input type="hidden" name="csrfToken" value="${csrfToken}">
                                                 <input type="hidden" name="cartItemId" value="${item.cartItemId}">
-                                                <button type="submit" class="btn btn-outline-danger btn-sm">Remove</button>
+                                                <button type="submit" class="btn btn-outline-danger btn-sm" data-confirm>Remove</button>
                                             </form>
                                         </td>
                                     </tr>
@@ -86,7 +108,7 @@
                     </div>
                 </div>
                 <div class="col-lg-4">
-                    <div class="card card-hover order-summary-box">
+                    <div class="card card-hover order-summary-box sticky-top" style="top: 5.5rem;">
                         <div class="card-body">
                             <h6 class="fw-bold">Order summary</h6>
                             <div class="d-flex justify-content-between mb-2">

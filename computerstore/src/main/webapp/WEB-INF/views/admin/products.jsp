@@ -6,25 +6,29 @@
 <%@ include file="../common/admin-nav.jspf" %>
 
 <div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="fw-bold mb-0">Manage Products</h4>
-        <a href="${pageContext.request.contextPath}/admin/products?action=new" class="btn btn-brand">Add product</a>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h4 class="fw-bold mb-0">Manage Products <span class="badge bg-secondary rounded-pill align-middle" id="productsCount">${products.size()}</span></h4>
+        <div class="d-flex gap-2">
+            <label for="productsFilter" class="visually-hidden">Filter products</label>
+            <input type="search" id="productsFilter" class="form-control form-control-sm table-filter" placeholder="Filter products…">
+            <a href="${pageContext.request.contextPath}/admin/products?action=new" class="btn btn-brand">Add product</a>
+        </div>
     </div>
 
     <div class="card card-hover">
         <div class="table-responsive">
-            <table class="table align-middle mb-0">
+            <table class="table align-middle mb-0" data-sortable data-filter-target="productsFilter" data-count="productsCount">
                 <thead class="table-light">
                 <tr>
-                    <th>Image</th>
+                    <th data-nosort>Image</th>
                     <th>Product</th>
                     <th>Category</th>
                     <th>Brand</th>
                     <th>SKU</th>
-                    <th class="text-end">Price</th>
-                    <th class="text-center">Stock</th>
+                    <th class="text-end" data-sort="price">Price</th>
+                    <th class="text-center" data-sort="number">Stock</th>
                     <th class="text-center">Status</th>
-                    <th class="text-end">Actions</th>
+                    <th class="text-end" data-nosort>Actions</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -58,10 +62,14 @@
                                 <c:otherwise><span class="badge bg-success badge-status">In stock</span></c:otherwise>
                             </c:choose>
                         </td>
-                        <td class="text-end">
-                            <a href="${pageContext.request.contextPath}/admin/products?edit=${p.productId}" class="btn btn-outline-primary btn-sm">Edit</a>
-                            <a href="${pageContext.request.contextPath}/admin/products?delete=${p.productId}" class="btn btn-outline-danger btn-sm"
-                               onclick="return confirm('Delete this product? Products with order history are disabled instead.');">Delete</a>
+                        <td class="text-end text-nowrap">
+                            <a href="${pageContext.request.contextPath}/admin/products?action=edit&id=${p.productId}" class="btn btn-outline-primary btn-sm">Edit</a>
+                            <form method="post" action="${pageContext.request.contextPath}/admin/products" class="d-inline">
+                                <input type="hidden" name="csrfToken" value="${csrfToken}">
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="id" value="${p.productId}">
+                                <button type="submit" class="btn btn-outline-danger btn-sm" data-confirm>Delete</button>
+                            </form>
                         </td>
                     </tr>
                 </c:forEach>

@@ -6,18 +6,22 @@
 <%@ include file="../common/admin-nav.jspf" %>
 
 <div class="container py-4">
-    <h4 class="fw-bold mb-3">Orders</h4>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h4 class="fw-bold mb-0">Orders <span class="badge bg-secondary rounded-pill align-middle" id="ordersCount">${orders.size()}</span></h4>
+        <label for="ordersFilter" class="visually-hidden">Filter orders</label>
+        <input type="search" id="ordersFilter" class="form-control form-control-sm table-filter" placeholder="Filter orders…">
+    </div>
 
     <div class="card card-hover">
         <div class="table-responsive">
-            <table class="table align-middle mb-0">
+            <table class="table align-middle mb-0" data-sortable data-filter-target="ordersFilter" data-count="ordersCount">
                 <thead class="table-light">
                 <tr>
-                    <th>Order #</th><th>Customer</th><th>Date</th>
-                    <th class="text-center">Items</th>
-                    <th class="text-end">Total</th>
+                    <th data-sort="number">Order #</th><th>Customer</th><th>Date</th>
+                    <th class="text-center" data-sort="number">Items</th>
+                    <th class="text-end" data-sort="price">Total</th>
                     <th class="text-center">Status</th>
-                    <th class="text-end">Actions</th>
+                    <th class="text-end" data-nosort>Actions</th>
                 </tr>
                 </thead>
                 <tbody>

@@ -14,6 +14,7 @@
                         <a class="list-group-item list-group-item-action" href="${pageContext.request.contextPath}/account">Dashboard</a>
                         <a class="list-group-item list-group-item-action active" href="${pageContext.request.contextPath}/account/orders">My Orders</a>
                         <a class="list-group-item list-group-item-action" href="${pageContext.request.contextPath}/account/profile">Profile</a>
+                        <a class="list-group-item list-group-item-action" href="${pageContext.request.contextPath}/account/settings"><i class="bi bi-shield-lock me-2"></i>Security</a>
                     </div>
                 </div>
             </div>
@@ -27,28 +28,41 @@
                         <tr><th>Order #</th><th>Date</th><th>Items</th><th class="text-end">Total</th><th class="text-center">Status</th><th></th></tr>
                         </thead>
                         <tbody>
-                        <c:forEach var="order" items="${orders}">
-                            <tr>
-                                <td>#${order.orderId}</td>
-                                <td><fmt:formatDate value="${order.orderDate}" pattern="dd MMM yyyy HH:mm"/></td>
-                                <td>${order.itemCount}</td>
-                                <td class="text-end money">$<fmt:formatNumber value="${order.totalAmount}" pattern="#,##0.00"/></td>
-                                <td class="text-center">
-                                    <c:choose>
-                                        <c:when test="${order.status.name() == 'COMPLETED'}"><span class="badge bg-success badge-status">${order.status}</span></c:when>
-                                        <c:when test="${order.status.name() == 'CANCELLED'}"><span class="badge bg-secondary badge-status">${order.status}</span></c:when>
-                                        <c:when test="${order.status.name() == 'PROCESSING'}"><span class="badge bg-info badge-status">${order.status}</span></c:when>
-                                        <c:otherwise><span class="badge bg-warning text-dark badge-status">${order.status}</span></c:otherwise>
-                                    </c:choose>
-                                </td>
-                                <td class="text-end">
-                                    <a href="${pageContext.request.contextPath}/account/orders?id=${order.orderId}" class="btn btn-outline-primary btn-sm">Details</a>
-                                </td>
-                            </tr>
-                        </c:forEach>
-                        <c:if test="${empty orders}">
-                            <tr><td colspan="6" class="text-center text-muted py-4">You have not placed any orders yet.</td></tr>
-                        </c:if>
+                        <c:choose>
+                            <c:when test="${empty orders}">
+                                <tr>
+                                    <td colspan="6">
+                                        <div class="text-center py-4 empty-state">
+                                            <span class="empty-icon"><i class="bi bi-receipt-cutoff"></i></span>
+                                            <h6 class="fw-bold mb-1">No orders yet</h6>
+                                            <p class="text-muted mb-3">When you place an order it will appear here.</p>
+                                            <a href="${pageContext.request.contextPath}/products" class="btn btn-brand btn-sm">Browse products</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </c:when>
+                            <c:otherwise>
+                                <c:forEach var="order" items="${orders}">
+                                    <tr>
+                                        <td>#${order.orderId}</td>
+                                        <td><fmt:formatDate value="${order.orderDate}" pattern="dd MMM yyyy HH:mm"/></td>
+                                        <td>${order.itemCount}</td>
+                                        <td class="text-end money">$<fmt:formatNumber value="${order.totalAmount}" pattern="#,##0.00"/></td>
+                                        <td class="text-center">
+                                            <c:choose>
+                                                <c:when test="${order.status.name() == 'COMPLETED'}"><span class="badge bg-success badge-status">${order.status}</span></c:when>
+                                                <c:when test="${order.status.name() == 'CANCELLED'}"><span class="badge bg-secondary badge-status">${order.status}</span></c:when>
+                                                <c:when test="${order.status.name() == 'PROCESSING'}"><span class="badge bg-info badge-status">${order.status}</span></c:when>
+                                                <c:otherwise><span class="badge bg-warning text-dark badge-status">${order.status}</span></c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                        <td class="text-end">
+                                            <a href="${pageContext.request.contextPath}/account/orders?id=${order.orderId}" class="btn btn-outline-primary btn-sm">Details</a>
+                                        </td>
+                                    </tr>
+                                </c:forEach>
+                            </c:otherwise>
+                        </c:choose>
                         </tbody>
                     </table>
                 </div>

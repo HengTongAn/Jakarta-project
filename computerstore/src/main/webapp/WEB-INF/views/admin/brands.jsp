@@ -22,6 +22,7 @@
                 <div class="card-body">
                     <h6 class="fw-bold mb-3">${empty editing ? 'New brand' : 'Update brand'}</h6>
                     <form method="post" action="${pageContext.request.contextPath}/admin/brands">
+                        <input type="hidden" name="csrfToken" value="${csrfToken}">
                         <c:if test="${not empty editing}">
                             <input type="hidden" name="brandId" value="${editing.brandId}">
                         </c:if>
@@ -41,10 +42,15 @@
         </div>
         <div class="col-lg-8">
             <div class="card card-hover">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center gap-2">
+                    <span class="fw-semibold">Brands</span>
+                    <label for="brandsFilter" class="visually-hidden">Filter brands</label>
+                    <input type="search" id="brandsFilter" class="form-control form-control-sm table-filter" style="max-width:200px" placeholder="Filter…">
+                </div>
                 <div class="table-responsive">
-                    <table class="table align-middle mb-0">
+                    <table class="table align-middle mb-0" data-sortable data-filter-target="brandsFilter">
                         <thead class="table-light">
-                        <tr><th>Name</th><th>Description</th><th class="text-center">Products</th><th class="text-end">Actions</th></tr>
+                        <tr><th>Name</th><th>Description</th><th class="text-center" data-sort="number">Products</th><th class="text-end" data-nosort>Actions</th></tr>
                         </thead>
                         <tbody>
                         <c:forEach var="brand" items="${brands}">
@@ -52,10 +58,14 @@
                                 <td class="fw-semibold"><c:out value="${brand.name}"/></td>
                                 <td class="small text-muted"><c:out value="${brand.description}"/></td>
                                 <td class="text-center">${brand.productCount}</td>
-                                <td class="text-end">
+                                <td class="text-end text-nowrap">
                                     <a href="${pageContext.request.contextPath}/admin/brands?edit=${brand.brandId}" class="btn btn-outline-primary btn-sm">Edit</a>
-                                    <a href="${pageContext.request.contextPath}/admin/brands?delete=${brand.brandId}" class="btn btn-outline-danger btn-sm"
-                                       onclick="return confirm('Delete this brand?');">Delete</a>
+                                    <form method="post" action="${pageContext.request.contextPath}/admin/brands" class="d-inline">
+                                        <input type="hidden" name="csrfToken" value="${csrfToken}">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="brandId" value="${brand.brandId}">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm" data-confirm>Delete</button>
+                                    </form>
                                 </td>
                             </tr>
                         </c:forEach>

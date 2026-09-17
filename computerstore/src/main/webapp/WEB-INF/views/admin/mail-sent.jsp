@@ -19,8 +19,20 @@
         <div class="mail-main">
             <div class="mail-list">
                 <c:forEach var="m" items="${messages}">
-                    <a class="mail-row" href="${pageContext.request.contextPath}/admin/mail/view?id=${m.messageId}">
-                        <span class="mail-avatar-sm">${fn:substring(m.recipientName, 0, 1)}</span>
+                    <a class="mail-row" href="${pageContext.request.contextPath}/admin/mail/view?id=${m.messageId}"
+                       data-msg-row
+                       data-peer="${fn:escapeXml(m.recipientName)}"
+                       data-id="${m.messageId}"
+                       data-time="${m.createdAt.time}"
+                       data-body="${fn:escapeXml(m.body)}">
+                        <span class="mail-avatar-sm">
+                            <c:choose>
+                                <c:when test="${not empty m.recipientAvatarUrl}">
+                                    <img src="${pageContext.request.contextPath}/${m.recipientAvatarUrl}" alt="">
+                                </c:when>
+                                <c:otherwise>${fn:substring(m.recipientName, 0, 1)}</c:otherwise>
+                            </c:choose>
+                        </span>
                         <div class="mail-mid">
                             <div class="mail-top">
                                 <span class="fw-semibold text-truncate"><c:out value="${m.recipientName}"/></span>

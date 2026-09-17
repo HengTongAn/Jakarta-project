@@ -11,12 +11,13 @@
     </div>
 
     <c:if test="${not empty error}">
-        <div class="alert alert-danger">${error}</div>
+        <div class="alert alert-danger"><c:out value="${error}"/></div>
     </c:if>
 
     <div class="card card-hover">
         <div class="card-body p-4">
             <form method="post" action="${pageContext.request.contextPath}/admin/products" enctype="multipart/form-data">
+                <input type="hidden" name="csrfToken" value="${csrfToken}">
                 <c:if test="${not empty product}">
                     <input type="hidden" name="productId" value="${product.productId}">
                 </c:if>
@@ -63,15 +64,16 @@
                     </div>
                     <div class="col-12">
                         <label class="form-label">Product image</label>
-                        <div class="mb-2">
+                        <div class="mb-2 image-upload-field">
+                            <div id="productImagePreview" class="product-image-preview mb-2">
                             <c:if test="${not empty currentImageUrl}">
-                                <div class="mb-2">
-                                    <img src="${currentImageUrl}" alt="Current product image" class="img-thumbnail" style="max-height: 150px;">
-                                    <div class="form-text">Current image</div>
-                                </div>
+                                <img src="${currentImageUrl}" alt="Current product image">
+                                <span class="image-preview-label">Current image</span>
                             </c:if>
-                            <input type="file" name="productImage" class="form-control" accept="image/jpeg,image/png,image/gif,image/webp">
-                            <div class="form-text">Leave empty to keep existing image. Max file size: 5MB. Allowed formats: JPG, PNG, GIF, WEBP.</div>
+                            <c:if test="${empty currentImageUrl}"><span class="image-preview-empty"><i class="bi bi-image"></i> Image preview</span></c:if>
+                            </div>
+                            <input type="file" name="productImage" class="form-control" accept="image/jpeg,image/png,image/gif,image/webp" data-image-input data-preview-target="#productImagePreview" data-image-status="#productImageStatus">
+                            <div id="productImageStatus" class="form-text" aria-live="polite">Leave empty to keep existing image. Max file size: 5MB. Allowed formats: JPG, PNG, GIF, WEBP.</div>
                         </div>
                     </div>
                     <div class="col-md-6">

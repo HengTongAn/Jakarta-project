@@ -24,6 +24,7 @@
             </c:if>
 
             <form action="${pageContext.request.contextPath}/admin/mail/compose" method="post">
+                <input type="hidden" name="csrfToken" value="${csrfToken}">
                 <c:if test="${not empty replyTo}">
                     <input type="hidden" name="replyTo" value="${replyTo}"/>
                 </c:if>

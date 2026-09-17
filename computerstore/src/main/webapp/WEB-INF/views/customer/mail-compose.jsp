@@ -1,7 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
-<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="pageTitle" value="Compose - TechStore"/>
 <%@ include file="../common/header.jspf" %>
 <div class="container py-4">
@@ -25,6 +23,7 @@
             </c:if>
 
             <form action="${pageContext.request.contextPath}/mail/compose" method="post">
+                <input type="hidden" name="csrfToken" value="${csrfToken}">
                 <c:if test="${not empty replyTo}">
                     <input type="hidden" name="replyTo" value="${replyTo}"/>
                 </c:if>
@@ -36,7 +35,7 @@
                         </c:when>
                         <c:otherwise>
                             <select class="form-select" name="recipientId" required>
-                                <option value="">Choose an admin…</option>
+                                <option value="">Choose a recipient…</option>
                                 <c:forEach var="r" items="${recipients}">
                                     <option value="${r.userId}"><c:out value="${r.fullName}"/> (<c:out value="${r.username}"/>)</option>
                                 </c:forEach>

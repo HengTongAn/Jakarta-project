@@ -4,6 +4,13 @@
 <c:set var="pageTitle" value="${product.name} - TechStore"/>
 <%@ include file="../common/header.jspf" %>
 <div class="container py-4">
+    <nav aria-label="Breadcrumb" class="mb-3">
+        <ol class="breadcrumb small mb-0">
+            <li class="breadcrumb-item"><a href="${pageContext.request.contextPath}/products" class="text-decoration-none">Home</a></li>
+            <li class="breadcrumb-item"><a href="${pageContext.request.contextPath}/products?category=${product.categoryId}" class="text-decoration-none"><c:out value="${product.categoryName}"/></a></li>
+            <li class="breadcrumb-item active" aria-current="page"><c:out value="${product.name}"/></li>
+        </ol>
+    </nav>
     <div class="card card-hover">
         <div class="row g-0">
             <div class="col-md-5 d-flex align-items-center justify-content-center p-4"
@@ -61,12 +68,27 @@
                         <c:when test="${product.stockQuantity > 0}">
                             <c:choose>
                                 <c:when test="${not empty sessionScope.user}">
-                                    <form method="post" action="${pageContext.request.contextPath}/cart/add" class="d-flex gap-2">
+                                    <form method="post" action="${pageContext.request.contextPath}/cart/add" data-quickadd class="d-flex gap-2 flex-wrap">
+                                        <input type="hidden" name="csrfToken" value="${csrfToken}">
                                         <input type="hidden" name="productId" value="${product.productId}">
-                                        <input type="number" name="quantity" value="1" min="1" max="${product.stockQuantity}"
-                                               class="form-control" style="width:100px">
-                                        <button type="submit" class="btn btn-brand btn-lg flex-grow-1">Add to cart</button>
+                                        <div class="input-group input-group-lg qty-stepper" style="width:140px">
+                                            <button type="button" class="btn btn-outline-secondary" data-step="-1" data-target="qtyInput" aria-label="Decrease quantity">
+                                                <i class="bi bi-dash-lg" aria-hidden="true"></i>
+                                            </button>
+                                            <input type="number" id="qtyInput" name="quantity" value="1" min="1" max="${product.stockQuantity}"
+                                                   class="form-control text-center" aria-label="Quantity">
+                                            <button type="button" class="btn btn-outline-secondary" data-step="1" data-target="qtyInput" aria-label="Increase quantity">
+                                                <i class="bi bi-plus-lg" aria-hidden="true"></i>
+                                            </button>
+                                        </div>
+                                        <button type="submit" class="btn btn-brand btn-lg flex-grow-1" data-loading="Adding…">Add to cart</button>
                                     </form>
+                                    <c:if test="${product.stockQuantity <= 10}">
+                                        <p class="small text-danger fw-semibold mt-2 mb-0">
+                                            <i class="bi bi-hourglass-split" aria-hidden="true"></i>
+                                            Only ${product.stockQuantity} left in stock
+                                        </p>
+                                    </c:if>
                                 </c:when>
                                 <c:otherwise>
                                     <a class="btn btn-brand btn-lg" href="${pageContext.request.contextPath}/login">Login to buy</a>

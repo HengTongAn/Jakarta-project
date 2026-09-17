@@ -5,6 +5,10 @@
 <div class="container my-5">
     <div class="row justify-content-center">
         <div class="col-md-6 col-lg-5">
+            <div class="text-center mb-4">
+                <img class="auth-logo" src="${pageContext.request.contextPath}/assets/images/techstore-mark.svg" alt="TechStore" style="height:44px;width:auto">
+                <h4 class="fw-bold mb-0 mt-3">TechStore</h4>
+            </div>
             <div class="card card-hover">
                 <div class="card-body p-4">
                     <h4 class="card-title mb-1 fw-bold">Create your account</h4>
@@ -34,11 +38,24 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Password</label>
-                                <input type="password" name="password" class="form-control" required>
+                                <div class="password-field">
+                                    <input type="password" name="password" id="regPassword" class="form-control" required
+                                           autocomplete="new-password">
+                                    <button type="button" class="password-toggle" data-target="regPassword" aria-label="Show password" tabindex="-1">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">Minimum 8 characters with uppercase, lowercase, digit, and special character.</div>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Confirm password</label>
-                                <input type="password" name="confirmPassword" class="form-control" required>
+                                <div class="password-field">
+                                    <input type="password" name="confirmPassword" id="regConfirmPassword" class="form-control" required
+                                           autocomplete="new-password">
+                                    <button type="button" class="password-toggle" data-target="regConfirmPassword" aria-label="Show password" tabindex="-1">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <button type="submit" class="btn btn-brand w-100">Create account</button>

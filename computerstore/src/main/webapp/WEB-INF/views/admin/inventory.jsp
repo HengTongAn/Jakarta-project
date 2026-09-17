@@ -46,7 +46,7 @@
                             <tr>
                                 <td class="small"><c:out value="${p.name}"/></td>
                                 <td class="text-end text-danger fw-semibold">0</td>
-                                <td class="text-end"><a href="${pageContext.request.contextPath}/admin/products?edit=${p.productId}" class="btn btn-outline-primary btn-sm">Restock via edit</a></td>
+                                <td class="text-end"><a href="${pageContext.request.contextPath}/admin/products?action=edit&id=${p.productId}" class="btn btn-outline-primary btn-sm">Restock via edit</a></td>
                             </tr>
                         </c:forEach>
                         <c:if test="${empty outOfStock}">
@@ -60,15 +60,19 @@
     </div>
 
     <div class="card card-hover mb-3">
-        <div class="card-header bg-white fw-semibold">Adjust stock (all products)</div>
+        <div class="card-header bg-white d-flex justify-content-between align-items-center gap-2">
+            <span class="fw-semibold">Adjust stock (all products)</span>
+            <label for="stockFilter" class="visually-hidden">Filter products</label>
+            <input type="search" id="stockFilter" class="form-control form-control-sm table-filter" style="max-width:220px" placeholder="Filter products…">
+        </div>
         <div class="table-responsive">
-            <table class="table align-middle mb-0">
+            <table class="table align-middle mb-0" data-sortable data-filter-target="stockFilter">
                 <thead class="table-light">
                 <tr>
                     <th>Product</th>
-                    <th class="text-center">Current stock</th>
+                    <th class="text-center" data-sort="number">Current stock</th>
                     <th class="text-center">Status</th>
-                    <th class="text-end" style="width:260px">New stock</th>
+                    <th class="text-end" data-nosort style="width:260px">New stock</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -86,6 +90,7 @@
                         </td>
                         <td>
                             <form method="post" action="${pageContext.request.contextPath}/admin/inventory" class="d-flex justify-content-end gap-1">
+                                <input type="hidden" name="csrfToken" value="${csrfToken}">
                                 <input type="hidden" name="productId" value="${p.productId}">
                                 <input type="number" name="newQuantity" min="0" class="form-control form-control-sm" style="width:110px"
                                        value="${p.stockQuantity}">

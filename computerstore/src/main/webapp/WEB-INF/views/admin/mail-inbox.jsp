@@ -2,52 +2,73 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
-<c:set var="pageTitle" value="Mail Inbox - Admin"/>
+<%
+    java.util.List<com.example.computer_store.model.MailMessage> msgs =
+            (java.util.List<com.example.computer_store.model.MailMessage>) request.getAttribute("messages");
+    java.util.LinkedHashMap<Integer, com.example.computer_store.model.MailMessage> convs = new java.util.LinkedHashMap<>();
+    java.util.LinkedHashMap<Integer, Integer> unreadBy = new java.util.LinkedHashMap<>();
+    if (msgs != null) {
+        java.util.Collections.sort(msgs, (a, b) -> Long.compare(b.getCreatedAt().getTime(), a.getCreatedAt().getTime()));
+        for (com.example.computer_store.model.MailMessage msg : msgs) {
+            Integer key = Integer.valueOf(msg.getSenderId());
+            if (!convs.containsKey(key)) {
+                convs.put(key, msg);
+            }
+            unreadBy.merge(key, msg.isReadFlag() ? 0 : 1, Integer::sum);
+        }
+    }
+    request.setAttribute("_convs", convs);
+    request.setAttribute("_unreadBy", unreadBy);
+%>
+<c:set var="pageTitle" value="Chats - Admin"/>
 <%@ include file="../common/header.jspf" %>
 <%@ include file="../common/admin-nav.jspf" %>
 <div class="container py-4">
-    <div class="mail-layout">
-        <div class="mail-rail">
-            <a class="btn btn-brand w-100 mb-3" href="${pageContext.request.contextPath}/admin/mail/compose">Compose</a>
-            <span class="mail-nav-sm-text">Mailbox</span>
-            <a class="mail-nav-link active" href="${pageContext.request.contextPath}/admin/mail">
-                Inbox
-                <span class="mail-nav-count<c:if test="${empty mailCount || mailCount == 0}"> d-none</c:if>">${mailCount}</span>
-            </a>
-            <a class="mail-nav-link" href="${pageContext.request.contextPath}/admin/mail/sent">Sent</a>
-        </div>
-        <div class="mail-main">
-            <div class="mail-toolbar">
-                <div class="btn-group btn-group-sm" role="group" aria-label="Filter inbox">
-                    <a class="btn mail-filter${filter == 'all' ? ' active' : ''}" href="${pageContext.request.contextPath}/admin/mail">All</a>
-                    <a class="btn mail-filter${filter == 'unread' ? ' active' : ''}" href="${pageContext.request.contextPath}/admin/mail?filter=unread">Unread (${unreadCount})</a>
-                    <a class="btn mail-filter${filter == 'read' ? ' active' : ''}" href="${pageContext.request.contextPath}/admin/mail?filter=read">Read (${readCount})</a>
-                </div>
+    <div class="chat-shell">
+        <div class="chat-shell-head">
+            <div>
+                <h5 class="mb-0 fw-bold">Chats</h5>
+                <span class="small text-muted">${unreadCount} unread messages</span>
+            </div>
+            <div class="d-flex gap-2 align-items-center">
                 <form method="post" action="${pageContext.request.contextPath}/admin/mail/read-all">
-                    <button type="submit" class="btn mail-filter<c:if test="${empty unreadCount || unreadCount == 0}"> disabled</c:if>">Mark all as read</button>
+                    <input type="hidden" name="csrfToken" value="${csrfToken}">
+                    <button type="submit" class="btn btn-light btn-sm">Mark all read</button>
                 </form>
+                <a class="btn btn-brand btn-sm" href="${pageContext.request.contextPath}/admin/mail/compose">New message</a>
             </div>
-            <div class="mail-list" data-mail-inbox="${pageContext.request.contextPath}/admin/mail/view?id=" data-mail-filter="${filter}">
-                <c:forEach var="m" items="${messages}">
-                    <a class="mail-row ${not m.readFlag ? 'unread' : ''}" href="${pageContext.request.contextPath}/admin/mail/view?id=${m.messageId}">
-                        <span class="mail-avatar-sm">${fn:substring(m.senderName, 0, 1)}</span>
-                        <div class="mail-mid">
-                            <div class="mail-top">
-                                <span class="text-truncate"><c:out value="${m.senderName}"/></span>
-                                <span class="mail-time"><fmt:formatDate value="${m.createdAt}" pattern="dd MMM, HH:mm"/></span>
-                            </div>
-                            <div class="text-truncate">
-                                <span class="fw-semibold"><c:out value="${m.subject}"/></span>
-                                <span class="mail-snippet">- <c:out value="${fn:substring(m.body, 0, 90)}"/></span>
-                            </div>
+        </div>
+        <div class="chat-conv-list"
+             data-conv-list
+             data-json="${pageContext.request.contextPath}/admin/mail/json"
+             data-view="${pageContext.request.contextPath}/admin/mail/view?id=">
+            <c:forEach var="entry" items="${_convs}">
+                <a class="chat-conv" href="${pageContext.request.contextPath}/admin/mail/view?id=${entry.value.messageId}">
+                    <span class="chat-avatar">
+                        <c:choose>
+                            <c:when test="${not empty entry.value.senderAvatarUrl}">
+                                <img src="${pageContext.request.contextPath}/${entry.value.senderAvatarUrl}" alt="">
+                            </c:when>
+                            <c:otherwise>${fn:substring(entry.value.senderName, 0, 1)}</c:otherwise>
+                        </c:choose>
+                    </span>
+                    <div class="chat-conv-mid">
+                        <div class="chat-conv-top">
+                            <span class="chat-conv-name"><c:out value="${entry.value.senderName}"/></span>
+                            <span class="chat-time"><fmt:formatDate value="${entry.value.createdAt}" pattern="dd MMM, HH:mm"/></span>
                         </div>
-                        <c:if test="${not m.readFlag}"><span class="mail-dot"></span></c:if>
-                    </a>
-                </c:forEach>
-                <c:if test="${empty messages}">
-                    <div class="mail-empty">No ${filter == 'unread' ? 'unread' : filter == 'read' ? 'read' : ''} messages here.</div>
-                </c:if>
-            </div>
+                        <span class="chat-conv-preview"><c:out value="${entry.value.subject}"/> - <c:out value="${fn:substring(entry.value.body, 0, 60)}"/></span>
+                    </div>
+                    <span class="chat-conv-end">
+                        <c:if test="${_unreadBy[entry.key] > 0}">
+                            <span class="chat-badge">${_unreadBy[entry.key]}</span>
+                        </c:if>
+                    </span>
+                </a>
+            </c:forEach>
+            <c:if test="${empty _convs}">
+                <div class="chat-empty">No clients have contacted you yet.</div>
+            </c:if>
         </div>
     </div>
 </div>

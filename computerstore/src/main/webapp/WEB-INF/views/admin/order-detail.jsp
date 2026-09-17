@@ -68,19 +68,32 @@
                     This order is cancelled. Products have been returned to stock.
                 </div>
             </c:if>
-            <form method="post" action="${pageContext.request.contextPath}/admin/orders" class="row g-2 align-items-center">
-                <input type="hidden" name="orderId" value="${order.orderId}">
-                <div class="col-md-3">
-                    <select name="status" class="form-select">
-                        <c:forEach var="s" items="${['PENDING','PROCESSING','COMPLETED','CANCELLED']}">
-                            <option value="${s}" <c:if test="${order.status.name() == s}">selected</c:if>>${s}</option>
-                        </c:forEach>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <button type="submit" class="btn btn-brand">Update status</button>
-                </div>
-            </form>
+            <c:choose>
+                <c:when test="${order.status.name() == 'PENDING' || order.status.name() == 'PROCESSING'}">
+                    <form method="post" action="${pageContext.request.contextPath}/admin/orders" class="row g-2 align-items-center">
+                        <input type="hidden" name="csrfToken" value="${csrfToken}">
+                        <input type="hidden" name="orderId" value="${order.orderId}">
+                        <div class="col-md-3">
+                            <select name="status" class="form-select" aria-label="New order status">
+                                <c:if test="${order.status.name() == 'PENDING'}">
+                                    <option value="PROCESSING">PROCESSING</option>
+                                    <option value="CANCELLED">CANCELLED</option>
+                                </c:if>
+                                <c:if test="${order.status.name() == 'PROCESSING'}">
+                                    <option value="COMPLETED">COMPLETED</option>
+                                    <option value="CANCELLED">CANCELLED</option>
+                                </c:if>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-brand">Update status</button>
+                        </div>
+                    </form>
+                </c:when>
+                <c:otherwise>
+                    <p class="text-muted mb-0">This order is final and its status can no longer be changed.</p>
+                </c:otherwise>
+            </c:choose>
         </div>
     </div>
 </div>

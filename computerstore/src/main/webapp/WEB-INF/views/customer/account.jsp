@@ -8,24 +8,34 @@
         <div class="col-lg-3">
             <div class="card card-hover mb-3">
                 <div class="card-body text-center">
-                    <div class="avatar-circle mx-auto mb-2">${empty sessionScope.user.fullName ? '?' : sessionScope.user.fullName.substring(0,1)}</div>
+                    <c:choose>
+                        <c:when test="${not empty sessionScope.user.avatarUrl}">
+                            <img class="avatar-circle avatar-circle-image mx-auto mb-2"
+                                 src="${pageContext.request.contextPath}/${sessionScope.user.avatarUrl}"
+                                 alt="Profile picture">
+                        </c:when>
+                        <c:otherwise>
+                            <div class="avatar-circle mx-auto mb-2">${empty sessionScope.user.fullName ? '?' : sessionScope.user.fullName.substring(0,1)}</div>
+                        </c:otherwise>
+                    </c:choose>
                     <h6 class="fw-bold mb-0"><c:out value="${sessionScope.user.fullName}"/></h6>
                     <p class="text-muted small mb-0"><c:out value="${sessionScope.user.email}"/></p>
                 </div>
             </div>
-            <div class="card card-hover">
+            <div class="card card-hover customer-sidebar">
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush">
                         <a class="list-group-item list-group-item-action active" href="${pageContext.request.contextPath}/account">Dashboard</a>
                         <a class="list-group-item list-group-item-action" href="${pageContext.request.contextPath}/account/orders">My Orders</a>
                         <a class="list-group-item list-group-item-action" href="${pageContext.request.contextPath}/account/profile">Profile</a>
+                        <a class="list-group-item list-group-item-action" href="${pageContext.request.contextPath}/account/settings"><i class="bi bi-shield-lock me-2"></i>Security</a>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="col-lg-9">
-            <div class="row g-3 mb-3">
+            <div class="row g-3 mb-3 account-stats">
                 <div class="col-md-4">
                     <div class="card stats-card">
                         <div class="card-body d-flex align-items-center gap-3">
