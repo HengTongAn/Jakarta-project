@@ -3,6 +3,7 @@ package com.example.computer_store.dao;
 import com.example.computer_store.model.Order;
 import com.example.computer_store.model.OrderItem;
 import com.example.computer_store.util.DBConnection;
+import com.example.computer_store.util.ErrorHandler;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -103,7 +104,7 @@ public class OrderDAO {
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Error listing orders", e);
+            throw ErrorHandler.handleDatabaseError("listing orders", e);
         }
         return list;
     }
@@ -120,7 +121,7 @@ public class OrderDAO {
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Error finding order", e);
+            throw ErrorHandler.handleDatabaseError("finding order", e);
         }
         return null;
     }
@@ -141,7 +142,7 @@ public class OrderDAO {
             ps.setInt(2, orderId);
             ps.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException("Error updating order status", e);
+            throw ErrorHandler.handleDatabaseError("updating order status", e);
         }
     }
 
@@ -152,7 +153,7 @@ public class OrderDAO {
             ps.setInt(2, orderId);
             ps.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException("Error updating order status", e);
+            throw ErrorHandler.handleDatabaseError("updating order status", e);
         }
     }
 
@@ -178,7 +179,7 @@ public class OrderDAO {
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Error listing order items", e);
+            throw ErrorHandler.handleDatabaseError("listing order items", e);
         }
         return items;
     }
@@ -191,7 +192,7 @@ public class OrderDAO {
                 return rs.getLong(1);
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Error counting orders", e);
+            throw ErrorHandler.handleDatabaseError("counting orders", e);
         }
         return 0;
     }
@@ -206,7 +207,7 @@ public class OrderDAO {
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Error counting orders by status", e);
+            throw ErrorHandler.handleDatabaseError("counting orders by status", e);
         }
         return 0;
     }
@@ -220,7 +221,7 @@ public class OrderDAO {
                 return rs.getBigDecimal(1);
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Error summing revenue", e);
+            throw ErrorHandler.handleDatabaseError("summing revenue", e);
         }
         return java.math.BigDecimal.ZERO;
     }
@@ -235,7 +236,7 @@ public class OrderDAO {
                 return rs.getLong(1);
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Error summing items sold", e);
+            throw ErrorHandler.handleDatabaseError("summing items sold", e);
         }
         return 0;
     }
@@ -251,7 +252,7 @@ public class OrderDAO {
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Error listing recent orders", e);
+            throw ErrorHandler.handleDatabaseError("listing recent orders", e);
         }
         return list;
     }
@@ -264,7 +265,7 @@ public class OrderDAO {
                 list.add(mapRow(rs));
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Error executing order query", e);
+            throw ErrorHandler.handleDatabaseError("executing order query", e);
         }
         return list;
     }
