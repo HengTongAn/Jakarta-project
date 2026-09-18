@@ -149,8 +149,8 @@ public class ProductDAO {
                               List<Integer> categoryIds, List<Integer> brandIds,
                               BigDecimal minPrice, BigDecimal maxPrice) {
         if (search != null && !search.trim().isEmpty()) {
-            sql.append("AND (p.name LIKE ? OR p.sku LIKE ? OR b.name LIKE ? OR p.description LIKE ?) ");
-            String like = "%" + search.trim() + "%";
+            sql.append("AND (p.name LIKE ? ESCAPE '\\\\' OR p.sku LIKE ? ESCAPE '\\\\' OR b.name LIKE ? ESCAPE '\\\\' OR p.description LIKE ? ESCAPE '\\\\') ");
+            String like = "%" + escapeLike(search.trim()) + "%";
             params.add(like);
             params.add(like);
             params.add(like);
@@ -190,6 +190,13 @@ public class ProductDAO {
             throw ErrorHandler.handleDatabaseError("loading product counts", e);
         }
         return counts;
+    }
+
+    // escapes % and _ so user input is matched literally, not as wildcards
+    private static String escapeLike(String value) {
+        return value.replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_");
     }
 
     // makes "?,?,?..." so we can put a whole list into an IN (...)
