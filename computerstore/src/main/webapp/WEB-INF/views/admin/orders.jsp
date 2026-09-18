@@ -8,8 +8,19 @@
 <div class="container py-4">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <h4 class="fw-bold mb-0">Orders <span class="badge bg-secondary rounded-pill align-middle" id="ordersCount">${orders.size()}</span></h4>
-        <label for="ordersFilter" class="visually-hidden">Filter orders</label>
-        <input type="search" id="ordersFilter" class="form-control form-control-sm table-filter" placeholder="Filter orders…">
+        <div class="d-flex gap-2 align-items-center">
+            <label for="ordersFilter" class="visually-hidden">Filter orders</label>
+            <input type="search" id="ordersFilter" class="form-control form-control-sm table-filter" placeholder="Filter orders…">
+            <form method="get" action="${pageContext.request.contextPath}/admin/orders" class="d-flex gap-2">
+                <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">All statuses</option>
+                    <option value="PENDING" ${selectedStatus.name() == 'PENDING' ? 'selected' : ''}>Pending</option>
+                    <option value="PROCESSING" ${selectedStatus.name() == 'PROCESSING' ? 'selected' : ''}>Processing</option>
+                    <option value="COMPLETED" ${selectedStatus.name() == 'COMPLETED' ? 'selected' : ''}>Completed</option>
+                    <option value="CANCELLED" ${selectedStatus.name() == 'CANCELLED' ? 'selected' : ''}>Cancelled</option>
+                </select>
+            </form>
+        </div>
     </div>
 
     <div class="card card-hover">
