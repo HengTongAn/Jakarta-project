@@ -32,7 +32,7 @@
                         </c:forEach>
                     </select>
                     <input type="search" name="search" class="search-input"
-                           placeholder="Search parts, brands and more"
+                           placeholder="Search parts, brands, descriptions and more"
                            value="<c:out value='${param.search}'/>" autocomplete="off">
                     <input type="number" name="minPrice" class="search-price" placeholder="Min $"
                            value="<c:out value='${param.minPrice}'/>" min="0" step="0.01" aria-label="Minimum price">

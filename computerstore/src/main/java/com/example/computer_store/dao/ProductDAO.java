@@ -149,8 +149,9 @@ public class ProductDAO {
                               List<Integer> categoryIds, List<Integer> brandIds,
                               BigDecimal minPrice, BigDecimal maxPrice) {
         if (search != null && !search.trim().isEmpty()) {
-            sql.append("AND (p.name LIKE ? OR p.sku LIKE ? OR b.name LIKE ?) ");
+            sql.append("AND (p.name LIKE ? OR p.sku LIKE ? OR b.name LIKE ? OR p.description LIKE ?) ");
             String like = "%" + search.trim() + "%";
+            params.add(like);
             params.add(like);
             params.add(like);
             params.add(like);
