@@ -158,6 +158,11 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    public List<Order> getOrdersByStatus(Order.Status status) {
+        return orderDAO.findByStatus(status);
+    }
+
+    @Override
     public Order getOrder(int orderId) {
         Order order = orderDAO.findById(orderId);
         if (order == null) {
