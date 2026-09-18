@@ -15,6 +15,8 @@ public interface OrderService {
 
     List<Order> getAllOrders();
 
+    List<Order> getOrdersByStatus(Order.Status status);
+
     Order getOrder(int orderId);
 
     void updateStatus(int orderId, Order.Status newStatus);

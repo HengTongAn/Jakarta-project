@@ -75,6 +75,23 @@ public class OrderDAO {
         return queryList(sql);
     }
 
+    public List<Order> findByStatus(Order.Status status) {
+        String sql = "SELECT " + COLUMNS + " " + FROM_JOINS
+                + " WHERE o.status = ? ORDER BY o.order_date DESC";
+        List<Order> list = new ArrayList<>();
+        try (Connection c = conn(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, status.name());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapRow(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error listing orders by status", e);
+        }
+        return list;
+    }
+
     public List<Order> findByUserId(int userId) {
         String sql = "SELECT " + COLUMNS + " " + FROM_JOINS + " WHERE o.user_id = ? ORDER BY o.order_date DESC";
         List<Order> list = new ArrayList<>();

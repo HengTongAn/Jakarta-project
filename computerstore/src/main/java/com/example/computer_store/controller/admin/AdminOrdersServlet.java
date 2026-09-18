@@ -39,6 +39,22 @@ public class AdminOrdersServlet extends BaseServlet {
             }
             return;
         }
+        String statusParam = request.getParameter("status");
+        if (statusParam != null && !statusParam.isEmpty()) {
+            Order.Status status;
+            try {
+                status = Order.Status.valueOf(statusParam);
+            } catch (IllegalArgumentException e) {
+                status = null;
+            }
+            if (status != null) {
+                request.setAttribute("orders", app().orderService().getOrdersByStatus(status));
+                request.setAttribute("selectedStatus", status);
+                request.getRequestDispatcher("/WEB-INF/views/admin/orders.jsp")
+                        .forward(request, response);
+                return;
+            }
+        }
         request.setAttribute("orders", app().orderService().getAllOrders());
         request.getRequestDispatcher("/WEB-INF/views/admin/orders.jsp").forward(request, response);
     }
