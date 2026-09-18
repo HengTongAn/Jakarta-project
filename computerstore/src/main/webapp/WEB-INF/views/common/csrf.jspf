@@ -1,7 +1,0 @@
-<%@ page import="com.example.computer_store.util.CSRFUtil" %>
-<%
-    // Generate CSRF token for this session
-    String csrfToken = CSRFUtil.generateToken(session);
-    request.setAttribute("csrfToken", csrfToken);
-%>
-<input type="hidden" name="csrfToken" value="${csrfToken}"/>
