@@ -1,0 +1,58 @@
+<%-- Reusable product card. Expects ${p} (a ProductCardVM) in scope. --%>
+<div class="card product-card h-100">
+    <a href="${pageContext.request.contextPath}/products?id=${p.productId}" class="product-media text-decoration-none">
+        <c:choose>
+            <c:when test="${p.hasImage()}">
+                <img src="${pageContext.request.contextPath}/${p.imageUrl}" alt="${p.name}">
+            </c:when>
+            <c:otherwise>
+                <svg class="icon-ph" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M13 1a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9v2h2a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1h2v-2H3a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h10z"/>
+                </svg>
+            </c:otherwise>
+        </c:choose>
+    </a>
+    <div class="card-body">
+        <h6 class="p-title">
+            <a href="${pageContext.request.contextPath}/products?id=${p.productId}">
+                <c:out value="${p.name}"/>
+            </a>
+        </h6>
+        <p class="p-meta mb-0">
+            <c:out value="${p.brandName}"/>
+            &middot;
+            <c:out value="${p.categoryName}"/>
+        </p>
+        <div class="d-flex justify-content-between align-items-center mt-2">
+            <span class="product-price money">$<fmt:formatNumber value="${p.price}" pattern="#,##0.00"/></span>
+            <span class="p-stock p-stock-${p.status.name() == 'OUT_OF_STOCK' ? 'out' : p.status.name() == 'LOW_STOCK' ? 'low' : 'in'}">
+                <span class="dot"></span>
+                <c:choose>
+                    <c:when test="${p.status.name() == 'OUT_OF_STOCK'}">Out of stock</c:when>
+                    <c:when test="${p.status.name() == 'LOW_STOCK'}">Only ${p.stockQuantity} left</c:when>
+                    <c:otherwise>In stock</c:otherwise>
+                </c:choose>
+            </span>
+        </div>
+    </div>
+    <div class="card-footer">
+        <c:choose>
+            <c:when test="${p.stockQuantity > 0}">
+                <form method="post" action="${pageContext.request.contextPath}/cart/add" data-quickadd>
+                    <input type="hidden" name="csrfToken" value="${csrfToken}">
+                    <input type="hidden" name="productId" value="${p.productId}">
+                    <input type="hidden" name="quantity" value="1">
+                    <button type="submit" class="btn-add" data-loading="Adding…">
+                        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                            <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                        </svg>
+                        Add to cart
+                    </button>
+                </form>
+            </c:when>
+            <c:otherwise>
+                <button class="btn-add" disabled>Unavailable</button>
+            </c:otherwise>
+        </c:choose>
+    </div>
+</div>
