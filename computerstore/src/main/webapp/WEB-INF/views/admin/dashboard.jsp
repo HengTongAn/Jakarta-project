@@ -16,42 +16,62 @@
 
     <div class="row g-3 mb-3 row-cols-2 row-cols-md-3 row-cols-xl-5">
         <div class="col">
-            <a class="card stats-card stats-card-link text-decoration-none h-100" href="${pageContext.request.contextPath}/admin/reports">
+            <a class="card stats-card stats-card-link text-decoration-none h-100" href="${pageContext.request.contextPath}/admin/reports"
+               data-help="Money from paid orders - cancelled and refunded orders are left out."
+               data-help-title="Revenue"
+               data-help-why="The store's main number. Revenue down while orders grow? Prices or discounts need a look.">
                 <div class="card-body d-flex align-items-center gap-3">
                     <div class="icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-currency-dollar" aria-hidden="true"></i></div>
                     <div><div class="fs-4 fw-bold money" data-live-stat="revenue">$<fmt:formatNumber value="${stats.totalRevenue}" pattern="#,##0.00"/></div><div class="small text-muted">Revenue</div></div>
+                    <span class="admin-help-toggle ms-auto" role="button" tabindex="0" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></span>
                 </div>
             </a>
         </div>
         <div class="col">
-            <a class="card stats-card stats-card-link text-decoration-none h-100" href="${pageContext.request.contextPath}/admin/orders">
+            <a class="card stats-card stats-card-link text-decoration-none h-100" href="${pageContext.request.contextPath}/admin/orders"
+               data-help="Orders waiting for you to process them."
+               data-help-title="Pending orders"
+               data-help-why="Customers are waiting on these - handle them fast to keep reviews happy and refunds rare.">
                 <div class="card-body d-flex align-items-center gap-3">
                     <div class="icon bg-secondary bg-opacity-10 text-secondary"><i class="bi bi-clock-history" aria-hidden="true"></i></div>
                     <div><div class="fs-4 fw-bold" data-live-stat="pendingOrders">${stats.pendingOrders}</div><div class="small text-muted">Pending orders</div></div>
+                    <span class="admin-help-toggle ms-auto" role="button" tabindex="0" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></span>
                 </div>
             </a>
         </div>
         <div class="col">
-            <a class="card stats-card stats-card-link text-decoration-none h-100" href="${pageContext.request.contextPath}/admin/inventory">
+            <a class="card stats-card stats-card-link text-decoration-none h-100" href="${pageContext.request.contextPath}/admin/inventory"
+               data-help="Products with only a few units left."
+               data-help-title="Low stock"
+               data-help-why="Restock before they hit zero - an empty shelf is a lost sale.">
                 <div class="card-body d-flex align-items-center gap-3">
                     <div class="icon bg-danger bg-opacity-10 text-danger"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i></div>
                     <div><div class="fs-4 fw-bold" data-live-stat="lowStockCount">${stats.lowStockCount}</div><div class="small text-muted">Low stock</div></div>
+                    <span class="admin-help-toggle ms-auto" role="button" tabindex="0" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></span>
                 </div>
             </a>
         </div>
         <div class="col">
-            <a class="card stats-card stats-card-link text-decoration-none h-100" href="${pageContext.request.contextPath}/admin/reviews">
+            <a class="card stats-card stats-card-link text-decoration-none h-100" href="${pageContext.request.contextPath}/admin/reviews"
+               data-help="Customer reviews waiting for approval before they go public."
+               data-help-title="Pending reviews"
+               data-help-why="Approve the good ones fast and act on problem reviews early - both protect the store's reputation.">
                 <div class="card-body d-flex align-items-center gap-3">
                     <div class="icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-star-half" aria-hidden="true"></i></div>
                     <div><div class="fs-4 fw-bold" data-live-stat="pendingReviews">${stats.pendingReviews}</div><div class="small text-muted">Pending reviews</div></div>
+                    <span class="admin-help-toggle ms-auto" role="button" tabindex="0" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></span>
                 </div>
             </a>
         </div>
         <div class="col">
-            <a class="card stats-card stats-card-link text-decoration-none h-100" href="${pageContext.request.contextPath}/admin/products">
+            <a class="card stats-card stats-card-link text-decoration-none h-100" href="${pageContext.request.contextPath}/admin/products"
+               data-help="How many products are in the catalogue."
+               data-help-title="Products"
+               data-help-why="A quick health check - a surprise drop means something was deleted or discontinued.">
                 <div class="card-body d-flex align-items-center gap-3">
                     <div class="icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-box-seam" aria-hidden="true"></i></div>
                     <div><div class="fs-4 fw-bold" data-live-stat="totalProducts">${stats.totalProducts}</div><div class="small text-muted">Products</div></div>
+                    <span class="admin-help-toggle ms-auto" role="button" tabindex="0" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></span>
                 </div>
             </a>
         </div>
@@ -59,24 +79,41 @@
 
     <div class="row g-3 mb-3">
         <div class="col-lg-7">
-            <section class="card card-hover dashboard-chart-card h-100" aria-labelledby="salesChartTitle">
+            <section class="card card-hover dashboard-chart-card h-100" aria-labelledby="salesChartTitle"
+             data-help="The latest sales, colored by status. Cancelled and refunded ones are hidden so the chart matches real revenue."
+             data-help-title="Recent sales"
+             data-help-why="Spot a promotion spike or an evening rush at a glance - and this chart updates itself, so there is no refresh to remember.">
 <div class="card-header bg-body d-flex justify-content-between align-items-center">                    <div><h5 id="salesChartTitle" class="mb-0 fw-semibold">Recent sales</h5><span class="small text-muted">Latest completed store activity</span></div>
-                    <span class="badge text-bg-primary" data-live-indicator><i class="bi bi-broadcast me-1" aria-hidden="true"></i><span data-live-indicator-label>Live</span></span>
+                    <span class="d-inline-flex align-items-center gap-2">
+                        <span class="badge text-bg-primary" data-live-indicator><i class="bi bi-broadcast me-1" aria-hidden="true"></i><span data-live-indicator-label>Live</span></span>
+                        <button type="button" class="admin-help-toggle" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></button>
+                    </span>
                 </div>
                 <div class="card-body"><div class="chart-wrap"><canvas id="salesChart" aria-label="Bar chart of recent order revenue" role="img"></canvas><div class="chart-empty d-none" data-sales-empty>No recent sales to display yet.</div></div></div>
             </section>
         </div>
         <div class="col-lg-5">
-            <section class="card card-hover dashboard-chart-card h-100" aria-labelledby="stockChartTitle">
-<div class="card-header bg-body"><h5 id="stockChartTitle" class="mb-0 fw-semibold">Inventory health</h5><span class="small text-muted">Products by current stock status</span></div>                <div class="card-body"><div class="chart-wrap"><canvas id="stockChart" aria-label="Column chart of inventory health" role="img"></canvas></div></div>
+            <section class="card card-hover dashboard-chart-card h-100" aria-labelledby="stockChartTitle"
+             data-help="The whole catalogue split into in stock, low stock and out of stock."
+             data-help-title="Inventory health"
+             data-help-why="One glance tells you if the store can keep selling - lots of red means restocking is urgent.">
+<div class="card-header bg-body d-flex justify-content-between align-items-center"><div><h5 id="stockChartTitle" class="mb-0 fw-semibold">Inventory health</h5><span class="small text-muted">Products by current stock status</span></div>
+                    <button type="button" class="admin-help-toggle" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></button>
+                </div>                <div class="card-body"><div class="chart-wrap"><canvas id="stockChart" aria-label="Column chart of inventory health" role="img"></canvas></div></div>
             </section>
         </div>
     </div>
 
     <div class="row g-3">
         <div class="col-lg-7">
-            <div class="card card-hover">
-<div class="card-header bg-body fw-semibold">Recent orders</div>                <div class="table-responsive">
+            <div class="card card-hover"
+             data-help="The newest orders with their current status."
+             data-help-title="Recent orders"
+             data-help-why="See orders the moment they land and act on them without leaving this page.">
+<div class="card-header bg-body fw-semibold d-flex justify-content-between align-items-center">
+                    <span>Recent orders</span>
+                    <button type="button" class="admin-help-toggle" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></button>
+                </div>                <div class="table-responsive">
                     <table class="table align-middle mb-0">
                         <thead class="table-light">
                         <tr><th>Order #</th><th>Customer</th><th>Date</th><th class="text-end">Total</th><th class="text-center">Status</th></tr>
@@ -103,8 +140,14 @@
             </div>
         </div>
         <div class="col-lg-5">
-            <div class="card card-hover">
-<div class="card-header bg-body fw-semibold">Recent inventory activity</div>                <div class="table-responsive">
+            <div class="card card-hover"
+             data-help="The latest stock changes: new orders, cancellations and manual adjustments."
+             data-help-title="Recent inventory activity"
+             data-help-why="Know why stock moved - it catches problems like a double-deducted product or an unexpected cancellation.">
+<div class="card-header bg-body fw-semibold d-flex justify-content-between align-items-center">
+                    <span>Recent inventory activity</span>
+                    <button type="button" class="admin-help-toggle" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></button>
+                </div>                <div class="table-responsive">
                     <table class="table align-middle mb-0">
                         <thead class="table-light">
                         <tr><th>Product</th><th class="text-end">Qty change</th><th class="text-center">Action</th></tr>
@@ -147,7 +190,7 @@
     const STATUS_COLORS = { PENDING:'#f59e0b', PROCESSING:'#0ea5e9', SHIPPED:'#2563eb', COMPLETED:'#16a34a' };
     const visibleOrders = orders.filter(o => o.status !== 'CANCELLED' && o.status !== 'REFUNDED');
     const salesCanvas = document.getElementById('salesChart');
-    const salesEmpty = document.getElementById('salesEmpty');
+    const salesEmpty = document.querySelector('[data-sales-empty]');
     salesCanvas.classList.toggle('d-none', visibleOrders.length === 0);
     if (salesEmpty) {
         salesEmpty.classList.toggle('d-none', visibleOrders.length > 0);

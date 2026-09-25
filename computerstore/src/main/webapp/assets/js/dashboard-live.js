@@ -155,7 +155,7 @@
                 return o.status !== 'CANCELLED' && o.status !== 'REFUNDED';
             });
             var canvas = document.getElementById('salesChart');
-            var empty = document.getElementById('salesEmpty');
+            var empty = document.querySelector('[data-sales-empty]');
             if (canvas) {
                 canvas.classList.toggle('d-none', visible.length === 0);
             }

@@ -866,3 +866,106 @@ th.sortable[aria-sort="descending"] {
     overflow: auto;
 }
 
+
+/* ---- Admin inline help popup (dashboard / reports / performance) ---- */
+.admin-help-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.4rem;
+    height: 1.4rem;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--muted);
+    font-size: .78rem;
+    line-height: 1;
+    vertical-align: middle;
+    cursor: pointer;
+    transition: color .15s ease, border-color .15s ease, background .15s ease;
+}
+.admin-help-toggle:hover,
+.admin-help-toggle:focus-visible {
+    color: var(--brand);
+    border-color: var(--brand);
+    background: var(--soft-accent);
+}
+.admin-help-toggle:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+}
+
+.admin-help-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(15, 23, 42, .45);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .18s ease, visibility .18s ease;
+}
+.admin-help-backdrop.is-open {
+    opacity: 1;
+    visibility: visible;
+}
+.admin-help-popup {
+    width: min(430px, 100%);
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, .28);
+    transform: translateY(10px) scale(.98);
+    transition: transform .18s ease;
+}
+.admin-help-backdrop.is-open .admin-help-popup {
+    transform: none;
+}
+.admin-help-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .95rem 1.15rem .6rem;
+    border-bottom: 1px solid var(--line);
+}
+.admin-help-title {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    margin: 0;
+}
+.admin-help-body {
+    padding: .85rem 1.15rem .5rem;
+}
+.admin-help-label {
+    margin: 0 0 .25rem;
+    font-size: .66rem;
+    font-weight: 800;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--brand);
+}
+.admin-help-body p:last-of-type {
+    margin-bottom: 0;
+}
+.admin-help-why {
+    margin-top: .3rem;
+    padding-top: .75rem;
+    border-top: 1px dashed var(--line);
+}
+.admin-help-why .admin-help-label {
+    color: var(--accent);
+}
+.admin-help-foot {
+    display: flex;
+    justify-content: flex-end;
+    padding: .4rem 1.15rem 1rem;
+}

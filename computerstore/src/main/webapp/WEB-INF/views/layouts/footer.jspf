@@ -18,6 +18,7 @@
 <script src="${pageContext.request.contextPath}/assets/js/password-toggle.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/realtime.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/app.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/admin-help.js"></script>
 <button id="scrollTop" class="scroll-top" type="button" aria-label="Back to top">
     <i class="bi bi-arrow-up" aria-hidden="true"></i>
 </button>

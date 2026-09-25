@@ -6,55 +6,76 @@
 <%@ include file="../layouts/admin-nav.jspf" %>
 
 <div class="container py-4" data-perf>
-    <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-4"
+         data-help="Shows how fast the app is right now: caches, database connections, memory, and slow queries."
+         data-help-title="Why this page exists"
+         data-help-why="Fast pages keep customers happy. Like a car dashboard, you can't fix what you can't see - this page catches problems early.">
         <div>
-            <h4 class="fw-bold mb-1">Performance Monitor</h4>
+            <h4 class="fw-bold mb-1 d-flex align-items-center gap-2">Performance Monitor
+                <button type="button" class="admin-help-toggle" data-help-toggle aria-label="Why does this page exist?"><i class="bi bi-question-lg" aria-hidden="true"></i></button>
+            </h4>
             <p class="text-muted mb-0">Live cache, connection pool and JVM statistics. Updates in place every 15s &middot; last updated <span data-live-updated>&mdash;</span></p>
         </div>
     </div>
 
     <div class="row g-3 mb-3">
         <div class="col-md-3 col-sm-6">
-            <div class="card stats-card">
+            <div class="card stats-card"
+                 data-help="Database connections currently in use."
+                 data-help-title="Pool active connections"
+                 data-help-why="High and steady means heavy traffic. If it keeps hitting the max, pages can start to stall.">
                 <div class="card-body d-flex align-items-center gap-3">
                     <div class="icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-database" aria-hidden="true"></i></div>
                     <div>
                         <div class="fs-4 fw-bold"><span data-live-perf="poolActive">${poolStats.active}</span><span class="fs-6 text-muted">/ <span data-live-perf="poolMax">${poolStats.max}</span></span></div>
                         <div class="small text-muted">Pool active connections</div>
                     </div>
+                    <button type="button" class="admin-help-toggle ms-auto" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></button>
                 </div>
             </div>
         </div>
         <div class="col-md-3 col-sm-6">
-            <div class="card stats-card">
+            <div class="card stats-card"
+                 data-help="Requests that had to wait for a free connection."
+                 data-help-title="Threads waiting"
+                 data-help-why="Zero is ideal. When it climbs, traffic is outrunning the pool - a sign to raise the limit.">
                 <div class="card-body d-flex align-items-center gap-3">
                     <div class="icon bg-success bg-opacity-10 text-success"><i class="bi bi-hourglass-split" aria-hidden="true"></i></div>
                     <div>
                         <div class="fs-4 fw-bold"><span data-live-perf="poolWaiting">${poolStats.waiting}</span></div>
                         <div class="small text-muted">Threads waiting (pool)</div>
                     </div>
+                    <button type="button" class="admin-help-toggle ms-auto" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></button>
                 </div>
             </div>
         </div>
         <div class="col-md-3 col-sm-6">
-            <div class="card stats-card">
+            <div class="card stats-card"
+                 data-help="App memory in use, compared with the max available."
+                 data-help-title="Heap used"
+                 data-help-why="Creeping up slowly is normal. Jumping close to the max means a restart or a tuning pass is due.">
                 <div class="card-body d-flex align-items-center gap-3">
                     <div class="icon bg-info bg-opacity-10 text-info"><i class="bi bi-memory" aria-hidden="true"></i></div>
                     <div>
                         <div class="fs-4 fw-bold"><span data-live-perf="heapUsed">${jvm.heapUsedMb}</span> MB</div>
                         <div class="small text-muted">Heap used (max <span data-live-perf="heapMax">${jvm.heapMaxMb}</span> MB)</div>
                     </div>
+                    <button type="button" class="admin-help-toggle ms-auto" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></button>
                 </div>
             </div>
         </div>
         <div class="col-md-3 col-sm-6">
-            <div class="card stats-card">
+            <div class="card stats-card"
+                 data-help="How long since the app last restarted."
+                 data-help-title="Uptime"
+                 data-help-why="Long uptime is usually healthy - and it gives context for the other numbers.">
                 <div class="card-body d-flex align-items-center gap-3">
                     <div class="icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-activity" aria-hidden="true"></i></div>
                     <div>
                         <div class="fs-4 fw-bold"><span data-live-perf="uptimeH"><fmt:formatNumber value="${jvm.uptimeSeconds / 3600}" pattern="#.#"/></span>h</div>
                         <div class="small text-muted">Uptime</div>
                     </div>
+                    <button type="button" class="admin-help-toggle ms-auto" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></button>
                 </div>
             </div>
         </div>
@@ -62,8 +83,11 @@
 
     <div class="row g-3 mb-3">
         <div class="col-lg-7">
-            <div class="card">
-                <div class="card-header bg-body fw-semibold"><i class="bi bi-box-seam me-1" aria-hidden="true"></i> Cache statistics <span class="badge ${cacheEnabled ? 'bg-success' : 'bg-secondary'} align-middle" data-live-cache-badge>${cacheEnabled ? 'enabled' : 'disabled'}</span></div>
+            <div class="card"
+                 data-help="How often the app answers from fast memory instead of asking the database."
+                 data-help-title="Cache statistics"
+                 data-help-why="A high hit rate means snappy pages and a relaxed database. A sudden dip right after a cache clear is normal - it climbs back.">
+                <div class="card-header bg-body fw-semibold d-flex justify-content-between align-items-center"><span><i class="bi bi-box-seam me-1" aria-hidden="true"></i> Cache statistics <span class="badge ${cacheEnabled ? 'bg-success' : 'bg-secondary'} align-middle" data-live-cache-badge>${cacheEnabled ? 'enabled' : 'disabled'}</span></span><button type="button" class="admin-help-toggle" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></button></div>
                 <div class="card-body table-responsive p-0">
                     <table class="table table-sm align-middle mb-0">
                         <thead class="table-light">
@@ -86,8 +110,11 @@
             </div>
         </div>
         <div class="col-lg-5">
-            <div class="card mb-3">
-                <div class="card-header bg-body fw-semibold"><i class="bi bi-database-gear me-1" aria-hidden="true"></i> Connection pool (HikariCP)</div>
+            <div class="card mb-3"
+                 data-help="Ready-made database connections the app keeps open and reuses."
+                 data-help-title="Connection pool"
+                 data-help-why="Opening a connection is slow; the pool removes that wait. Watch 'waiting' for overload signs.">
+                <div class="card-header bg-body fw-semibold d-flex justify-content-between align-items-center"><span><i class="bi bi-database-gear me-1" aria-hidden="true"></i> Connection pool (HikariCP)</span><button type="button" class="admin-help-toggle" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></button></div>
                 <div class="card-body">
                     <c:choose>
                         <c:when test="${empty poolStats.total}">
@@ -106,8 +133,11 @@
                     </c:choose>
                 </div>
             </div>
-            <div class="card mb-3">
-                <div class="card-header bg-body fw-semibold"><i class="bi bi-cpu me-1" aria-hidden="true"></i> JVM</div>
+            <div class="card mb-3"
+                 data-help="The app's memory, CPU and whether HTTP compression is on."
+                 data-help-title="JVM"
+                 data-help-why="Steady memory is healthy. Compression shrinks pages so they load faster on slow connections.">
+                <div class="card-header bg-body fw-semibold d-flex justify-content-between align-items-center"><span><i class="bi bi-cpu me-1" aria-hidden="true"></i> JVM</span><button type="button" class="admin-help-toggle" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></button></div>
                 <div class="card-body small">
                     <div class="d-flex justify-content-between"><span class="text-muted">Heap used / committed</span><span><span data-live-jvm="heapUsed"><fmt:formatNumber value="${jvm.heapUsedMb}" pattern="#,##0"/></span> / <span data-live-jvm="heapCommitted"><fmt:formatNumber value="${jvm.heapCommittedMb}" pattern="#,##0"/></span> MB</span></div>
                     <div class="d-flex justify-content-between mt-1"><span class="text-muted">Heap max</span><span><span data-live-jvm="heapMax"><fmt:formatNumber value="${jvm.heapMaxMb}" pattern="#,##0"/></span> MB</span></div>
@@ -119,8 +149,11 @@
         </div>
     </div>
 
-    <div class="card mb-3">
-        <div class="card-header bg-body fw-semibold"><i class="bi bi-activity me-1" aria-hidden="true"></i> Database queries <span class="badge bg-secondary align-middle">storefront hot path</span></div>
+    <div class="card mb-3"
+         data-help="The slowest queries first, with how often each one runs."
+         data-help-title="Database queries"
+         data-help-why="Anything marked 'slow' is worth caching or optimizing - the same query asked again is a hit, not a new trip to the database.">
+        <div class="card-header bg-body fw-semibold d-flex justify-content-between align-items-center"><span><i class="bi bi-activity me-1" aria-hidden="true"></i> Database queries <span class="badge bg-secondary align-middle">storefront hot path</span></span><button type="button" class="admin-help-toggle" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></button></div>
         <div class="card-body table-responsive p-0">
             <table class="table table-sm align-middle mb-0">
                 <thead class="table-light">
@@ -148,8 +181,11 @@
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-header bg-body fw-semibold"><i class="bi bi-lightbulb me-1" aria-hidden="true"></i> Recommendations</div>
+    <div class="card"
+         data-help="Plain-language tips generated automatically from the numbers above."
+         data-help-title="Recommendations"
+         data-help-why="Start here when something looks off - it tells you the likely cause and the fix.">
+        <div class="card-header bg-body fw-semibold d-flex justify-content-between align-items-center"><span><i class="bi bi-lightbulb me-1" aria-hidden="true"></i> Recommendations</span><button type="button" class="admin-help-toggle" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></button></div>
         <ul class="list-group list-group-flush" data-live-recommendations>
             <c:forEach items="${recommendations}" var="tip">
                 <li class="list-group-item"><i class="bi bi-arrow-right-circle me-2 text-primary" aria-hidden="true"></i><c:out value="${tip}"/></li>
