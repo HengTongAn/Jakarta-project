@@ -1,9 +1,11 @@
 /* Real-time cross-user updates. Opens one Server-Sent Events stream to
    /realtime and patches the current page the moment data changes anywhere:
    stock on product cards/detail, order status badges, the navbar cart
-   counter, and the admin dashboard (which reloads once per change burst).
-   The stream is kept alive by the server heartbeat; the browser reconnects
-   automatically (retry: 3000) if the connection drops. */
+   counter, and the admin dashboard (which refreshes its stats in place via
+   assets/js/dashboard-live.js — or reloads once per change burst if that
+   script has not loaded yet). The stream is kept alive by the server
+   heartbeat; the browser reconnects automatically (retry: 3000) if the
+   connection drops. */
 (function () {
     'use strict';
 
@@ -109,9 +111,8 @@
         if (detailPage && detailPage.getAttribute('data-current-status') !== d.status) {
             reloadSoon(200);
         }
-        if (document.querySelector('[data-dashboard]')) {
-            reloadSoon(150);
-        }
+        notifyDashboard();
+        notifyReports();
     }
 
     function applyCart(d) {
@@ -134,22 +135,100 @@
         }, ms);
     }
 
+    /* The admin dashboard refreshes its KPI cards, tables and charts in place
+       (dashboard-live.js). Fall back to a reload if that script has not
+       finished loading yet. */
+    function notifyDashboard() {
+        if (!document.querySelector('[data-dashboard]')) {
+            return;
+        }
+        if (window.DashboardLive && typeof window.DashboardLive.refresh === 'function') {
+            window.DashboardLive.refresh();
+        } else {
+            reloadSoon(150);
+        }
+    }
+
+    /* The admin reports page is fed by the same stream: order or stock
+       changes re-fetch the current period's analytics in place
+       (reports-live.js), falling back to a reload if it has not loaded. */
+    function notifyReports() {
+        if (!document.querySelector('[data-reports]')) {
+            return;
+        }
+        if (window.ReportsLive && typeof window.ReportsLive.refresh === 'function') {
+            window.ReportsLive.refresh();
+        } else {
+            reloadSoon(150);
+        }
+    }
+
     // Subscribe only to what this page can act on: stock is always fine
     // (it is public data), order events only matter on pages that render
     // them, and cart events only apply to a logged-in user. /realtime
     // refuses private topics for anonymous sessions anyway.
     var topics = ['stock'];
-    if (document.querySelector('[data-order-status], [data-cancelcard], [data-order-detail], [data-dashboard]')) {
+    if (document.querySelector('[data-order-status], [data-cancelcard], [data-order-detail], [data-dashboard], [data-reports]')) {
         topics.push('orders');
+    }
+    if (document.querySelector('[data-dashboard]') || document.querySelector('[data-live-review-count]')) {
+        topics.push('reviews'); // pending-review count is admin-only data
     }
     if (me) {
         topics.push('cart');
     }
     var es = new EventSource(CTX + '/realtime?topics=' + encodeURIComponent(topics.join(',')));
+
+    /* The dashboard's "Live" badge reflects the true stream state: green
+       when connected, amber while the browser is reconnecting. */
+    function setLiveIndicator(connected) {
+        var els = document.querySelectorAll('[data-live-indicator]');
+        if (!els.length) {
+            return;
+        }
+        els.forEach(function (el) {
+            var alreadyOn = el.classList.contains('text-bg-primary');
+            if (alreadyOn === connected) {
+                return;
+            }
+            el.classList.toggle('text-bg-primary', connected);
+            el.classList.toggle('text-bg-warning', !connected);
+            var icon = el.querySelector('i');
+            if (icon) {
+                icon.className = connected ? 'bi bi-broadcast me-1' : 'bi bi-arrow-repeat me-1';
+            }
+            var label = el.querySelector('[data-live-indicator-label]');
+            if (label) {
+                label.textContent = connected ? 'Live' : 'Reconnecting';
+            }
+        });
+    }
+
+    es.addEventListener('open', function () {
+        setLiveIndicator(true);
+    });
+    es.addEventListener('error', function () {
+        setLiveIndicator(false);
+    });
+
+    function patchReviewBadges(pending) {
+        if (typeof pending !== 'number') {
+            return;
+        }
+        document.querySelectorAll('[data-live-review-count]').forEach(function (b) {
+            if (b.textContent !== String(pending)) {
+                b.textContent = pending;
+            }
+            b.classList.toggle('d-none', pending <= 0);
+        });
+    }
+
     es.addEventListener('stock', function (e) {
         var d = parse(e);
         if (d) {
             applyStock(d);
+            notifyDashboard();
+            notifyReports();
         }
     });
     es.addEventListener('orders', function (e) {
@@ -163,5 +242,12 @@
         if (d) {
             applyCart(d);
         }
+    });
+    es.addEventListener('reviews', function (e) {
+        var d = parse(e);
+        if (d) {
+            patchReviewBadges(d.pending);
+        }
+        notifyDashboard();
     });
 })();

@@ -31,7 +31,7 @@ public class RealtimeStreamServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
     private static final Set<String> PUBLIC_TOPICS = Collections.singleton("stock");
-    private static final Set<String> PRIVATE_TOPICS = Set.of("orders", "cart", "*");
+    private static final Set<String> PRIVATE_TOPICS = Set.of("orders", "cart", "reviews", "*");
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) {

@@ -75,6 +75,15 @@ public class DashboardService {
     }
 
     /**
+     * Same assembled stats as {@link #getAdminStats()} but always recomputed
+     * fresh, bypassing the dashboard cache. Used by the dashboard's realtime
+     * JSON endpoint so live patches never serve a stale 5-minute snapshot.
+     */
+    public Map<String, Object> getFreshAdminStats() {
+        return buildAdminStats();
+    }
+
+    /**
      * One round-trip for the seven scalar dashboard counters instead of seven
      * separate connection borrows.
      */

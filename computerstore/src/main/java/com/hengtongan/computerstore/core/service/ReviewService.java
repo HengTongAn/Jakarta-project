@@ -9,6 +9,7 @@ import com.hengtongan.computerstore.core.domain.entity.Product;
 import com.hengtongan.computerstore.core.domain.entity.RatingSummary;
 import com.hengtongan.computerstore.core.domain.entity.Review;
 import com.hengtongan.computerstore.infrastructure.persistence.DBConnection;
+import com.hengtongan.computerstore.infrastructure.realtime.EventHub;
 import com.hengtongan.computerstore.util.web.ErrorHandler;
 import com.hengtongan.computerstore.util.validation.ValidationUtil;
 
@@ -82,6 +83,7 @@ public class ReviewService {
         if (CacheManager.isCacheEnabled()) {
             CacheManager.invalidateAllDashboard();
         }
+        publishPendingReviewCount();
         return review;
     }
 
@@ -156,6 +158,7 @@ public class ReviewService {
             CacheManager.invalidateAllDashboard();
             CacheManager.invalidateAllCatalog(); // approved testimonials on the storefront home
         }
+        publishPendingReviewCount();
     }
 
     public boolean delete(int reviewId) {
@@ -164,6 +167,18 @@ public class ReviewService {
             CacheManager.invalidateAllDashboard();
             CacheManager.invalidateAllCatalog(); // approved testimonials on the storefront home
         }
+        if (removed) {
+            publishPendingReviewCount();
+        }
         return removed;
+    }
+
+    /**
+     * Broadcasts the fresh pending-review count so every open admin UI (nav
+     * badge, dashboard card) updates in realtime; the payload carries the
+     * figure so clients do not need a follow-up request.
+     */
+    private void publishPendingReviewCount() {
+        EventHub.publish("reviews", "{\"pending\":" + reviewDAO.count(Review.Status.PENDING) + "}");
     }
 }
