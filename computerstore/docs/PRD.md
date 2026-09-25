@@ -101,7 +101,6 @@ Retailers without a point-of-sale system operate with three compounding failures
 - Realtime SSE (stock / cart / order / mail updates)
 - Performance: Hikari pooling, Caffeine caches, gzip compression, covering indexes, batch utilities
 - Observability: `/health`, `/metrics`, `/admin/performance`; database migration runner
-- Web auto-fill assistant for product forms (admin-only, SSRF-guarded)
 
 ---
 

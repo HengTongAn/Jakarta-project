@@ -14,30 +14,6 @@
         <div class="alert alert-danger"><c:out value="${error}"/></div>
     </c:if>
 
-    <div class="card card-hover mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <strong><i class="bi bi-magic me-1" aria-hidden="true"></i> Auto-fill details from the web</strong>
-            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#webInfoPanel" aria-expanded="true" aria-controls="webInfoPanel">Show / hide</button>
-        </div>
-        <div id="webInfoPanel" class="collapse show">
-            <div class="card-body" data-product-autofill>
-                <p class="form-text mb-2">
-                    Search the web for the official product page (manufacturer spec page), pick a result, and the app
-                    will pre-fill the details and specifications below as <strong>editable suggestions</strong>.
-                    Always review — and edit — them before saving.
-                </p>
-                <div class="input-group">
-                    <input type="text" id="webInfoQuery" class="form-control"
-                           placeholder="e.g. ASUS ROG Strix G16 official specifications" maxlength="300">
-                    <button class="btn btn-brand" type="button" id="webInfoSearchBtn">Search the web</button>
-                </div>
-                <div id="webInfoStatus" class="mt-2" role="status" aria-live="polite"></div>
-                <div id="webInfoResults" class="mt-2"></div>
-            </div>
-        </div>
-    </div>
-
     <div class="card card-hover">
         <div class="card-body p-4">
             <form method="post" action="${pageContext.request.contextPath}/admin/products" enctype="multipart/form-data">
@@ -113,7 +89,7 @@
                 </div>
 
                 <hr class="my-4">
-                <h6 class="fw-bold mb-3"><i class="bi bi-card-list me-1" aria-hidden="true"></i> Product details (auto-fillable, then editable)</h6>
+                <h6 class="fw-bold mb-3"><i class="bi bi-card-list me-1" aria-hidden="true"></i> Product details</h6>
                 <div class="row g-3">
                     <div class="col-12">
                         <label class="form-label">Highlights</label>
@@ -162,7 +138,7 @@
                             </table>
                         </div>
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="addSpecBtn">+ Add specification</button>
-                        <div class="form-text">e.g. Display: 15.6&quot; QHD+ 165Hz. Filled automatically from the official page, then editable.</div>
+                        <div class="form-text">e.g. Display: 15.6&quot; QHD+ 165Hz. Add key/value pairs as needed.</div>
                     </div>
                 </div>
 
@@ -176,5 +152,5 @@
         </div>
     </div>
 </div>
-<script src="${pageContext.request.contextPath}/assets/js/product-autofill.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/product-spec-editor.js"></script>
 <%@ include file="../../layouts/footer.jspf" %>

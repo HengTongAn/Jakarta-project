@@ -188,9 +188,6 @@
 			<computerstore.audit.database.enabled>false</computerstore.audit.database.enabled>
 			<!-- The seeded default accounts exist only in local dev/test DBs. -->
 			<computerstore.security.checkDefaultCredentials>false</computerstore.security.checkDefaultCredentials>
-			<!-- Hermetic extractor tests use reserved example host names and stub
-			     the HTTP client; production keeps DNS validation enabled. -->
-			<computerstore.webinfo.resolveHosts>false</computerstore.webinfo.resolveHosts>
 			<!-- Disable Mockito inline mock maker (causes issues with final classes in Java 25).
 			     Declared once: systemPropertyVariables AND -D in argLine would be a duplicate. -->
 			<mockito.inline>false</mockito.inline>
