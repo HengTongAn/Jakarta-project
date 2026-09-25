@@ -30,7 +30,7 @@
             <div class="row g-3">
                 <div class="col-lg-8">
                     <div class="card card-hover">
-                        <div class="table-responsive">
+                        <div class="table-responsive d-none d-sm-block">
                             <table class="table align-middle mb-0 cart-table">
                                 <thead class="table-light">
                                 <tr>
@@ -104,6 +104,71 @@
                                 </c:forEach>
                                 </tbody>
                             </table>
+                        </div>
+
+                        <!-- Phone layout: each cart line as a stacked card instead of the 650px-wide table. -->
+                        <div class="d-sm-none d-flex flex-column gap-3">
+                            <c:forEach var="item" items="${items}">
+                                <div class="card card-hover">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex gap-3">
+                                            <c:choose>
+                                                <c:when test="${item.product.hasImage()}">
+                                                    <img src="${pageContext.request.contextPath}/${item.product.imageUrl}" alt="<c:out value='${item.product.name}'/>"
+                                                         class="rounded" style="width:76px; height:76px; object-fit: cover; flex-shrink:0;">
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <div class="bg-secondary d-flex align-items-center justify-content-center rounded"
+                                                         style="width:76px; height:76px; flex-shrink:0;">
+                                                        <span class="text-white small">No img</span>
+                                                    </div>
+                                                </c:otherwise>
+                                            </c:choose>
+                                            <div class="flex-grow-1 min-w-0">
+                                                <a href="${pageContext.request.contextPath}/products?id=${item.product.productId}"
+                                                   class="text-decoration-none fw-semibold d-inline-block">
+                                                    <c:out value="${item.product.name}"/>
+                                                </a>
+                                                <div class="small text-muted"><c:out value="${item.product.brandName}"/></div>
+                                                <div class="small text-muted mt-1">$<fmt:formatNumber value="${item.product.price}" pattern="#,##0.00"/> each</div>
+                                                <c:if test="${item.quantity > item.product.stockQuantity}">
+                                                    <span class="badge bg-danger mt-1">Stock reduced</span>
+                                                </c:if>
+                                            </div>
+                                        </div>
+                                        <hr class="my-2">
+                                        <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+                                            <form method="post" action="${pageContext.request.contextPath}/cart/update"
+                                                  class="d-flex flex-column align-items-center gap-1 mb-0" data-no-spinner>
+                                                <input type="hidden" name="csrfToken" value="${csrfToken}">
+                                                <input type="hidden" name="cartItemId" value="${item.cartItemId}">
+                                                <div class="input-group input-group-sm cart-qty">
+                                                    <button type="button" class="btn btn-outline-secondary" data-step="-1" data-target="m-qty-${item.cartItemId}" data-submit="true" aria-label="Decrease quantity">
+                                                        <i class="bi bi-dash-lg" aria-hidden="true"></i>
+                                                    </button>
+                                                    <input type="number" id="m-qty-${item.cartItemId}" name="quantity" value="${item.quantity}" min="1"
+                                                           max="${item.product.stockQuantity}" class="form-control text-center" aria-label="Quantity for ${item.product.name}">
+                                                    <button type="button" class="btn btn-outline-secondary" data-step="1" data-target="m-qty-${item.cartItemId}" data-submit="true" aria-label="Increase quantity">
+                                                        <i class="bi bi-plus-lg" aria-hidden="true"></i>
+                                                    </button>
+                                                </div>
+                                                <button type="submit" class="btn btn-link btn-sm p-0 d-none">Update</button>
+                                                <c:if test="${item.quantity < item.product.stockQuantity}">
+                                                    <div class="small text-muted">${item.product.stockQuantity} available</div>
+                                                </c:if>
+                                            </form>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="money fw-semibold">$<fmt:formatNumber value="${item.product.price * item.quantity}" pattern="#,##0.00"/></span>
+                                                <form method="post" action="${pageContext.request.contextPath}/cart/remove" class="cart-remove-form mb-0">
+                                                    <input type="hidden" name="csrfToken" value="${csrfToken}">
+                                                    <input type="hidden" name="cartItemId" value="${item.cartItemId}">
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm" data-confirm>Remove</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </c:forEach>
                         </div>
                     </div>
                 </div>
