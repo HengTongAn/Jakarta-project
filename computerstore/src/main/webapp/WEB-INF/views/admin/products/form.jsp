@@ -47,18 +47,18 @@
                 </c:if>
 
                 <div class="row g-3">
-                    <div class="col-md-6">
+                    <div class="col-6 col-md-6">
                         <label class="form-label">Product name *</label>
                         <input type="text" name="name" id="name" class="form-control" required
                                value="<c:out value="${empty product ? param.name : product.name}"/>">
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-6 col-md-6">
                         <label class="form-label">SKU *</label>
                         <input type="text" name="sku" class="form-control" required
                                value="<c:out value="${empty product ? param.sku : product.sku}"/>">
                         <div class="form-text">Must be unique.</div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-6 col-md-6">
                         <label class="form-label">Category *</label>
                         <select name="categoryId" class="form-select" required>
                             <option value="">Select category</option>
@@ -70,7 +70,7 @@
                             </c:forEach>
                         </select>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-6 col-md-6">
                         <label class="form-label">Brand *</label>
                         <select name="brandId" class="form-select" required>
                             <option value="">Select brand</option>
@@ -100,12 +100,12 @@
                             <div id="productImageStatus" class="form-text" aria-live="polite">Leave empty to keep existing image. Max file size: 5MB. Allowed formats: JPG, PNG, GIF, WEBP.</div>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-6 col-md-6">
                         <label class="form-label">Price ($) *</label>
                         <input type="number" step="0.01" min="0.01" name="price" class="form-control" required
                                value="<c:out value="${empty product ? param.price : product.price}"/>">
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-6 col-md-6">
                         <label class="form-label">Stock quantity</label>
                         <input type="number" step="1" min="0" name="stockQuantity" class="form-control"
                                value="<c:out value="${empty product ? (empty param.stockQuantity ? 0 : param.stockQuantity) : product.stockQuantity}"/>">
@@ -121,12 +121,12 @@
                                   placeholder="One selling point per line, e.g.&#10;16-inch 165Hz QHD+ display&#10;Intel Core i9-14900HX processor"><c:out value="${empty product ? param.highlights : product.highlights}"/></textarea>
                         <div class="form-text">One highlight per line — rendered as bullets on the product page.</div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-6 col-md-6">
                         <label class="form-label">What's in the box</label>
                         <input type="text" name="boxContents" id="boxContentsField" class="form-control" maxlength="500"
                                value="<c:out value="${empty product ? param.boxContents : product.boxContents}"/>">
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-6 col-md-6">
                         <label class="form-label">Warranty</label>
                         <input type="text" name="warrantyInfo" id="warrantyInfoField" class="form-control" maxlength="255"
                                value="<c:out value="${empty product ? param.warrantyInfo : product.warrantyInfo}"/>">

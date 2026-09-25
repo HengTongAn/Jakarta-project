@@ -1001,3 +1001,28 @@ th.sortable[aria-sort="descending"] {
        width; allow the button group to drop below the title. */
     .chat-shell-head { flex-wrap: wrap; }
 }
+
+/* ---- Phone fixes, part 2 (audit pass) ---- */
+@media (max-width: 575.98px) {
+    /* Admin list toolbars (orders/products/users): the filter input, status
+       select and action button used to share one non-wrapping row and got
+       squeezed on phones. Stack them instead. */
+    .admin-filter-toolbar { row-gap: .5rem; }
+    .admin-filter-toolbar .table-filter { flex: 1 1 100%; min-width: 0; }
+    .admin-filter-toolbar form { flex: 1 1 100%; }
+    .admin-filter-toolbar form .form-select { width: 100%; }
+
+    /* Customer account nav: 4 links become an awkward 3+1 grid below sm.
+       Use a clean 2x2 grid with matching separators instead. */
+    .customer-sidebar .list-group { grid-template-columns: repeat(2, 1fr); }
+    .customer-sidebar .list-group-item { border-right: 1px solid var(--line); }
+    .customer-sidebar .list-group-item:nth-child(even) { border-right: 0; }
+    .customer-sidebar .list-group-item:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+    .customer-sidebar .list-group-item:last-child { border-right: 0; }
+}
+
+/* Chat header identity block can carry long usernames/subjects - let it
+   shrink and break instead of clipping inside the shell. */
+.chat-shell-head > .d-flex:first-child { min-width: 0; }
+.chat-shell-head .fw-bold,
+.chat-shell-head .small { overflow-wrap: anywhere; }

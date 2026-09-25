@@ -21,7 +21,8 @@
                 <c:when test="${not empty secret}">
                     <p>Save this secret in an authenticator app, then enter the generated 6-digit code to confirm setup.</p>
                     <div class="alert alert-warning"><strong>Secret:</strong> <code><c:out value="${secret}"/></code></div>
-                    <p class="small text-muted">Manual setup URI: <code><c:out value="${qrCodeUrl}"/></code></p>
+                    <p class="small text-muted">Manual setup URI — enter this in your authenticator app if you cannot scan the QR code:</p>
+                    <code class="d-block small mb-3" style="overflow-wrap:anywhere; word-break:break-word;"><c:out value="${qrCodeUrl}"/></code>
                     <form method="post" action="${pageContext.request.contextPath}/account/2fa">
                         <input type="hidden" name="csrfToken" value="${csrfToken}">
                         <input type="hidden" name="action" value="enable">

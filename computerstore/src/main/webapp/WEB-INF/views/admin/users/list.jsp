@@ -8,7 +8,7 @@
 <div class="container py-4">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <h4 class="fw-bold mb-0">Users <span class="badge bg-secondary rounded-pill align-middle" id="usersCount">${users.size()}</span></h4>
-        <div class="d-flex gap-2">
+        <div class="d-flex flex-wrap gap-2 admin-filter-toolbar">
             <label for="usersFilter" class="visually-hidden">Filter users</label>
             <input type="search" id="usersFilter" class="form-control form-control-sm table-filter" placeholder="Filter users…">
             <a href="${pageContext.request.contextPath}/admin/users?action=new" class="btn btn-brand btn-sm">+ Add User</a>

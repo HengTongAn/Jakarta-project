@@ -15,16 +15,16 @@
     <div class="card card-hover mb-3">
         <div class="card-body">
             <div class="row text-muted small">
-                <div class="col-md-3">
+                <div class="col-6 col-md-3">
 <div class="fw-semibold text-body">Order number</div>                    #${order.orderId}
                 </div>
-                <div class="col-md-3">
+                <div class="col-6 col-md-3">
 <div class="fw-semibold text-body">Order date</div>                    <fmt:formatDate value="${order.orderDate}" pattern="dd MMM yyyy HH:mm"/>
                 </div>
-                <div class="col-md-3">
+                <div class="col-6 col-md-3">
 <div class="fw-semibold text-body">Placed by</div>                    <c:out value="${empty order.customerName ? sessionScope.user.fullName : order.customerName}"/>
                 </div>
-                <div class="col-md-3">
+                <div class="col-6 col-md-3">
 <div class="fw-semibold text-body">Total amount</div>                    <span class="money">$<fmt:formatNumber value="${order.totalAmount}" pattern="#,##0.00"/></span>
                 </div>
             </div>
@@ -88,8 +88,8 @@
                     <ul class="list-group list-group-flush">
                         <c:forEach var="event" items="${order.statusEvents}">
                             <li class="list-group-item px-0">
-                                <div class="d-flex justify-content-between align-items-center gap-2">
-                                    <div>
+                                <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                                    <div class="flex-grow-1 min-w-0" style="overflow-wrap:anywhere;">
                                         <span class="fw-semibold"><c:out value="${event.changedBy}"/></span>
                                         <span class="text-muted">moved the order to</span>
                                         <c:set var="_statusLabel" value="${event.toStatus}"/>

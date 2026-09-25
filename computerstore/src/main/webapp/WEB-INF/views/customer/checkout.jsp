@@ -69,9 +69,9 @@
                     <div id="cardPaymentPanel" class="card-payment-panel mt-3">
                         <div class="row g-3">
                             <div class="col-12"><label class="form-label" for="cardNumber">Card number</label><div class="input-icon-wrap"><i class="bi bi-credit-card-2-front" aria-hidden="true"></i><input id="cardNumber" class="form-control" type="text" inputmode="numeric" autocomplete="cc-number" placeholder="1234 5678 9012 3456" maxlength="19"><span class="card-brands">VISA&nbsp; MC</span></div></div>
-                            <div class="col-7"><label class="form-label" for="cardName">Name on card</label><input id="cardName" class="form-control" type="text" autocomplete="cc-name" placeholder="Alex Morgan"></div>
-                            <div class="col-3"><label class="form-label" for="cardExpiry">Expiry</label><input id="cardExpiry" class="form-control" type="text" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/YY" maxlength="5"></div>
-                            <div class="col-2"><label class="form-label" for="cardCvc">CVC</label><input id="cardCvc" class="form-control" type="password" inputmode="numeric" autocomplete="cc-csc" placeholder="•••" maxlength="4"></div>
+                            <div class="col-12 col-sm-7"><label class="form-label" for="cardName">Name on card</label><input id="cardName" class="form-control" type="text" autocomplete="cc-name" placeholder="Alex Morgan"></div>
+                            <div class="col-6 col-sm-3"><label class="form-label" for="cardExpiry">Expiry</label><input id="cardExpiry" class="form-control" type="text" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/YY" maxlength="5"></div>
+                            <div class="col-6 col-sm-2"><label class="form-label" for="cardCvc">CVC</label><input id="cardCvc" class="form-control" type="password" inputmode="numeric" autocomplete="cc-csc" placeholder="•••" maxlength="4"></div>
                         </div>
                     </div>
                     <div class="cash-payment-panel mt-3 d-none"><div class="cash-payment-copy"><i class="bi bi-box-seam"></i><div><strong>Pay on delivery</strong><p class="mb-0 text-muted small">Have the exact amount ready when your package arrives.</p></div></div></div>

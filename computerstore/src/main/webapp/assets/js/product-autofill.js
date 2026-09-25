@@ -92,14 +92,15 @@
                 " Pick the official manufacturer page.", false);
             items.forEach(function (item) {
                 var row = document.createElement("div");
-                row.className = "border rounded p-2 mb-2 d-flex justify-content-between align-items-start gap-2";
+                row.className = "border rounded p-2 mb-2 d-flex justify-content-between align-items-start gap-2 flex-wrap";
 
                 var copy = document.createElement("div");
+                copy.className = "flex-grow-1 min-w-0";
                 var title = document.createElement("div");
                 title.className = "fw-semibold small";
                 title.textContent = item.title || "(untitled)";
                 var meta = document.createElement("div");
-                meta.className = "text-muted small";
+                meta.className = "text-muted small text-break";
                 meta.textContent = item.url || "";
                 var snippet = document.createElement("div");
                 snippet.className = "small";

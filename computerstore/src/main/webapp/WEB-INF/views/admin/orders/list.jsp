@@ -8,7 +8,7 @@
 <div class="container py-4">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <h4 class="fw-bold mb-0">Orders <span class="badge bg-secondary rounded-pill align-middle" id="ordersCount">${totalOrders}</span></h4>
-        <div class="d-flex gap-2 align-items-center">
+        <div class="d-flex flex-wrap gap-2 align-items-center admin-filter-toolbar">
             <label for="ordersFilter" class="visually-hidden">Filter orders</label>
             <input type="search" id="ordersFilter" class="form-control form-control-sm table-filter" placeholder="Filter orders…">
             <form method="get" action="${pageContext.request.contextPath}/admin/orders" class="d-flex gap-2">

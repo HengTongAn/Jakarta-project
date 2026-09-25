@@ -8,7 +8,7 @@
 <div class="container py-4">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <h4 class="fw-bold mb-0">Manage Products <span class="badge bg-secondary rounded-pill align-middle" id="productsCount">${products.size()}</span></h4>
-        <div class="d-flex gap-2">
+        <div class="d-flex flex-wrap gap-2 admin-filter-toolbar">
             <label for="productsFilter" class="visually-hidden">Filter products</label>
             <input type="search" id="productsFilter" class="form-control form-control-sm table-filter" placeholder="Filter products…">
             <a href="${pageContext.request.contextPath}/admin/products?action=new" class="btn btn-brand" title="Paste a product URL in the new form to auto-fill details from the web">Add product</a>
