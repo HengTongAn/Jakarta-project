@@ -324,3 +324,88 @@ a { transition: color .15s ease; }
 [data-bs-theme="dark"] .hero-float-card span {
     color: var(--ink);
 }
+
+/* =========================================================================
+   Top bar wears the hero colours (.site-topbar).
+   The shared navbar keeps its bootstrap navbar-dark classes in markup; these
+   rules repaint it like the hero section on every page: dark ink on the soft
+   light gradient, light ink on the deep dark gradient. A hairline bottom edge
+   marks the bar so it reads as a bar on top of the page instead of blending
+   into it. Loaded last, so these win over bootstrap / pages.css.
+   ========================================================================= */
+
+/* Light scheme (also the no-attribute default): hero gradient + glows. */
+.site-topbar {
+    color: #0f172a;
+    background:
+        radial-gradient(1100px 560px at 88% -12%, rgba(99, 102, 241, .15), transparent 60%),
+        radial-gradient(900px 520px at 5% 115%, rgba(59, 130, 246, .13), transparent 62%),
+        radial-gradient(800px 500px at 50% 120%, rgba(244, 114, 182, .09), transparent 60%),
+        linear-gradient(180deg, #ffffff 0%, #f6f8fa 100%);
+    border-bottom: 1px solid var(--line); /* the line that marks the bar */
+    box-shadow: 0 4px 18px rgba(2, 6, 23, .10);
+    --bs-navbar-color: #0f172a;
+    --bs-navbar-hover-color: #2563eb;
+    --bs-navbar-active-color: #1e3a8a;
+    --bs-navbar-brand-color: #0f172a;
+    --bs-navbar-brand-hover-color: #2563eb;
+    --bs-navbar-toggler-border-color: rgba(30, 58, 138, .4);
+}
+.site-topbar .navbar-nav .nav-link { color: #0f172a; }
+.site-topbar .navbar-nav .nav-link:hover { color: #2563eb; }
+.site-topbar .nav-admin-btn {
+    color: #1e3a8a;
+    border-color: rgba(30, 58, 138, .4);
+}
+.site-topbar .nav-admin-btn:hover {
+    color: #fff;
+    background: #1e3a8a;
+    border-color: #1e3a8a;
+}
+.site-topbar .nav-shop-btn.active,
+.site-topbar .nav-login-btn.active,
+.site-topbar .nav-register-btn.active {
+    color: #fff;
+    background: var(--brand);
+    border-color: var(--brand);
+}
+.site-topbar .navbar-toggler {
+    border-color: rgba(30, 58, 138, .4);
+}
+.site-topbar .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(15, 23, 42, .75)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+/* Dark scheme: hero gradient (deep navy -> page bg) + stronger glows;
+   text and buttons fall back to the navbar-dark white scheme. */
+[data-bs-theme="dark"] .site-topbar {
+    background:
+        radial-gradient(1100px 560px at 88% -12%, rgba(99, 102, 241, .28), transparent 60%),
+        radial-gradient(900px 520px at 5% 115%, rgba(59, 130, 246, .24), transparent 62%),
+        radial-gradient(800px 500px at 50% 120%, rgba(244, 114, 182, .16), transparent 60%),
+        linear-gradient(180deg, var(--brand-bg-strong) 0%, var(--bg) 100%);
+}
+[data-bs-theme="dark"] .site-topbar .navbar-nav .nav-link { color: rgba(255, 255, 255, .85); }
+[data-bs-theme="dark"] .site-topbar .navbar-nav .nav-link:hover { color: #fff; }
+[data-bs-theme="dark"] .site-topbar .nav-admin-btn {
+    color: rgba(255, 255, 255, .9);
+    border-color: rgba(255, 255, 255, .55);
+}
+[data-bs-theme="dark"] .site-topbar .nav-admin-btn:hover {
+    color: #fff;
+    background: var(--brand);
+    border-color: var(--brand);
+}
+[data-bs-theme="dark"] .site-topbar .nav-shop-btn.active,
+[data-bs-theme="dark"] .site-topbar .nav-login-btn.active,
+[data-bs-theme="dark"] .site-topbar .nav-register-btn.active {
+    color: #fff;
+    background: rgba(255, 255, 255, .14);
+    border-color: rgba(255, 255, 255, .72);
+}
+[data-bs-theme="dark"] .site-topbar .navbar-toggler {
+    border-color: rgba(255, 255, 255, .55);
+}
+[data-bs-theme="dark"] .site-topbar .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.55)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
