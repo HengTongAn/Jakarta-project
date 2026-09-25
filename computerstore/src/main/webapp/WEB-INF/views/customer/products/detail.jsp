@@ -13,8 +13,8 @@
     </nav>
     <div class="card card-hover">
         <div class="row g-0">
-            <div class="col-md-5 d-flex align-items-center justify-content-center p-4"
-                 style="background:#e2e8f0; min-height:320px;">
+            <div class="col-md-5 d-flex align-items-center justify-content-center p-4 product-image-panel"
+                 style="min-height:320px;">
                 <c:choose>
                     <c:when test="${product.hasImage()}">
                         <img src="${pageContext.request.contextPath}/${product.imageUrl}" alt="<c:out value='${product.name}'/>"

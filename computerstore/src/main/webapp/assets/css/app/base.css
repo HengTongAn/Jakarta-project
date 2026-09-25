@@ -107,7 +107,7 @@ a {
     width: 76px;
     height: 76px;
     border-radius: 50%;
-    background: #eff6ff;
+    background: var(--soft-accent);
     color: var(--brand);
     display: inline-flex;
     align-items: center;
