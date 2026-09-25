@@ -186,6 +186,10 @@
     letter-spacing: .16em;
     color: var(--brand);
     margin-bottom: .2rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
 }
 
 .p-title {
@@ -199,6 +203,7 @@
     overflow: hidden;
     min-height: 2.58em;
     margin-bottom: .2rem;
+    min-width: 0;
 }
 
 .p-title a {
@@ -218,20 +223,29 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
     margin-bottom: 0;
+    min-width: 0;
 }
 
 .p-rating {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: .35rem;
     margin-top: .4rem;
     font-size: .8rem;
+    min-width: 0;
 }
 
 .p-rating .stars {
     font-size: .82rem;
     letter-spacing: .04em;
+    white-space: nowrap;
+    flex: 0 0 auto;
+}
+
+.p-rating .text-muted {
+    white-space: nowrap;
+    min-width: 0;
 }
 
 .p-buy {
@@ -250,6 +264,7 @@
     font-size: 1.1rem;
     letter-spacing: -.01em;
     color: var(--ink);
+    min-width: 0;
 }
 
 .p-stock {
@@ -262,6 +277,7 @@
     padding: .18rem .6rem;
     border: 1px solid transparent;
     border-radius: 999px;
+    min-width: 0;
 }
 
 .p-stock .dot {
