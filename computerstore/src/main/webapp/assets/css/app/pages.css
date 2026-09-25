@@ -389,6 +389,21 @@
     }
 }
 
+/* ---------- Reports period selector (responsive) ---------- */
+/* On wider screens the four period buttons stay a joined segment control;
+   on phones they wrap into separate rounded pills so the row can never
+   overflow the container. */
+@media (max-width: 575.98px) {
+    .reports-range {
+        flex-wrap: wrap;
+        gap: .35rem;
+    }
+
+    .reports-range > .btn {
+        border-radius: 999px !important;
+    }
+}
+
 /* ---------- Trending strip ---------- */
 .trending-title {
     font-size: 1.3rem;

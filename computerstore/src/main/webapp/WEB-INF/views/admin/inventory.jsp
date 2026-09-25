@@ -102,7 +102,7 @@
             <span class="d-flex align-items-center gap-2">
                 <span class="small text-muted">+ adds, &minus; removes &middot; every change is logged with a reason</span>
                 <label for="stockFilter" class="visually-hidden">Filter products</label>
-                <input type="search" id="stockFilter" class="form-control form-control-sm table-filter" style="max-width:220px" placeholder="Filter products…">
+                <input type="search" id="stockFilter" class="form-control form-control-sm table-filter" placeholder="Filter products…">
             </span>
         </div>
         <div class="table-responsive">
