@@ -15,14 +15,23 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Admin inventory management:
  *   GET  /admin/inventory     -> stock overview, low stock, out of stock, logs
- *   POST /admin/inventory     -> manual stock adjustment
+ *   POST /admin/inventory     -> manual stock adjustment (delta + reason)
  */
 @WebServlet("/admin/inventory")
 public class AdminInventoryServlet extends BaseServlet {
+
+    private static final Map<String, String> REASON_LABELS = Map.of(
+            InventoryService.REASON_RECEIVED, "Received",
+            InventoryService.REASON_DAMAGED, "Damaged",
+            InventoryService.REASON_COUNT, "Counted",
+            InventoryService.REASON_RETURNED, "Return",
+            InventoryService.REASON_CORRECTION, "Correction");
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -45,6 +54,8 @@ public class AdminInventoryServlet extends BaseServlet {
             }
         }
 
+        request.setAttribute("lowStockThreshold", threshold);
+        request.setAttribute("reorderTarget", InventoryService.REORDER_TARGET);
         request.setAttribute("lowStock", lowStock);
         request.setAttribute("outOfStock", outOfStock);
         request.setAttribute("logs", app().inventoryService().getRecentLogs(15));
@@ -56,17 +67,43 @@ public class AdminInventoryServlet extends BaseServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         User user = sessionUser(request);
+        int productId;
+        int delta;
+        String reason;
         try {
-            int productId = Integer.parseInt(request.getParameter("productId"));
-            int newQuantity = Integer.parseInt(request.getParameter("newQuantity"));
-            app().inventoryService().adjustStock(productId, newQuantity, user.getUserId());
+            productId = Integer.parseInt(request.getParameter("productId"));
+            delta = Integer.parseInt(request.getParameter("delta").trim());
+            reason = request.getParameter("reason");
+        } catch (NumberFormatException | NullPointerException e) {
+            Flash.error(request, "Invalid stock quantity.");
+            response.sendRedirect(request.getContextPath() + "/admin/inventory");
+            return;
+        }
+
+        if (!InventoryService.isValidReason(reason)) {
+            Flash.error(request, "Choose a reason for the change.");
+            response.sendRedirect(request.getContextPath() + "/admin/inventory");
+            return;
+        }
+        if (delta == 0) {
+            Flash.error(request, "A change of 0 does nothing.");
+            response.sendRedirect(request.getContextPath() + "/admin/inventory");
+            return;
+        }
+        if (InventoryService.REASON_RECEIVED.equals(reason) && delta < 0) {
+            Flash.error(request, "Receive quantity must be positive.");
+            response.sendRedirect(request.getContextPath() + "/admin/inventory");
+            return;
+        }
+
+        String reasonLabel = REASON_LABELS.getOrDefault(reason, reason);
+        try {
+            app().inventoryService().adjustStock(productId, delta, reason, user.getUserId());
             AuditLogger.logAdminAction("STOCK_ADJUST",
                     user != null ? user.getUsername() : "UNKNOWN",
                     "product #" + productId,
-                    "Manual stock change to " + newQuantity);
-            Flash.success(request, "Stock updated.");
-        } catch (NumberFormatException e) {
-            Flash.error(request, "Invalid stock quantity.");
+                    (delta > 0 ? "+" : "") + delta + " (" + reasonLabel + ")");
+            Flash.success(request, "Stock updated (" + reasonLabel + ").");
         } catch (RuntimeException e) {
             Flash.error(request, e.getMessage());
         }
