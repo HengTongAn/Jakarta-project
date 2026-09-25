@@ -3,6 +3,7 @@ package com.hengtongan.computerstore.web.controller.admin;
 import com.hengtongan.computerstore.core.domain.entity.InventoryLog;
 import com.hengtongan.computerstore.core.domain.entity.Product;
 import com.hengtongan.computerstore.core.domain.entity.User;
+import com.hengtongan.computerstore.core.service.InventoryService;
 import com.hengtongan.computerstore.util.web.AuditLogger;
 import com.hengtongan.computerstore.util.web.Flash;
 import jakarta.servlet.ServletException;
