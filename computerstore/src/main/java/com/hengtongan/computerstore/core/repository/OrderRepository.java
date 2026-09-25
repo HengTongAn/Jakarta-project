@@ -350,6 +350,161 @@ public class OrderRepository {
         return 0;
     }
 
+    /** Revenue for orders in the window starting at {@code since} (null = all
+     *  time); cancelled and refunded orders never count as revenue. */
+    public java.math.BigDecimal totalRevenueSince(java.sql.Timestamp since) {
+        StringBuilder sql = new StringBuilder("SELECT COALESCE(SUM(total_amount), 0) FROM orders "
+                + "WHERE status NOT IN ('CANCELLED', 'REFUNDED')");
+        if (since != null) {
+            sql.append(" AND order_date >= ?");
+        }
+        try (Connection c = conn(); PreparedStatement ps = c.prepareStatement(sql.toString())) {
+            if (since != null) {
+                ps.setTimestamp(1, since);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getBigDecimal(1);
+                }
+            }
+        } catch (SQLException e) {
+            throw ErrorHandler.handleDatabaseError("summing windowed revenue", e);
+        }
+        return java.math.BigDecimal.ZERO;
+    }
+
+    /** Items sold in the window starting at {@code since} (null = all time). */
+    public long totalItemsSoldSince(java.sql.Timestamp since) {
+        StringBuilder sql = new StringBuilder("SELECT COALESCE(SUM(oi.quantity), 0) FROM order_items oi "
+                + "JOIN orders o ON o.order_id = oi.order_id "
+                + "WHERE o.status NOT IN ('CANCELLED', 'REFUNDED')");
+        if (since != null) {
+            sql.append(" AND o.order_date >= ?");
+        }
+        try (Connection c = conn(); PreparedStatement ps = c.prepareStatement(sql.toString())) {
+            if (since != null) {
+                ps.setTimestamp(1, since);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getLong(1);
+                }
+            }
+        } catch (SQLException e) {
+            throw ErrorHandler.handleDatabaseError("summing windowed items sold", e);
+        }
+        return 0;
+    }
+
+    /** Orders placed in the window starting at {@code since} (null = all time). */
+    public long countSince(java.sql.Timestamp since) {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM orders");
+        if (since != null) {
+            sql.append(" WHERE order_date >= ?");
+        }
+        try (Connection c = conn(); PreparedStatement ps = c.prepareStatement(sql.toString())) {
+            if (since != null) {
+                ps.setTimestamp(1, since);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getLong(1);
+                }
+            }
+        } catch (SQLException e) {
+            throw ErrorHandler.handleDatabaseError("counting windowed orders", e);
+        }
+        return 0;
+    }
+
+    /** Orders with the given status placed since {@code since} (null = all time). */
+    public long countByStatusSince(Order.Status status, java.sql.Timestamp since) {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM orders WHERE status = ?");
+        if (since != null) {
+            sql.append(" AND order_date >= ?");
+        }
+        try (Connection c = conn(); PreparedStatement ps = c.prepareStatement(sql.toString())) {
+            int i = 1;
+            ps.setString(i++, status.name());
+            if (since != null) {
+                ps.setTimestamp(i++, since);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getLong(1);
+                }
+            }
+        } catch (SQLException e) {
+            throw ErrorHandler.handleDatabaseError("counting windowed orders by status", e);
+        }
+        return 0;
+    }
+
+    /** Revenue per day since {@code since}, ascending; rows are {Date, BigDecimal}. */
+    public List<Object[]> revenueByDay(java.sql.Timestamp since) {
+        String sql = "SELECT DATE(order_date) AS day, COALESCE(SUM(total_amount), 0) "
+                + "FROM orders WHERE status NOT IN ('CANCELLED', 'REFUNDED') AND order_date >= ? "
+                + "GROUP BY DATE(order_date) ORDER BY day";
+        List<Object[]> rows = new ArrayList<>();
+        try (Connection c = conn(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setTimestamp(1, since);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    rows.add(new Object[]{rs.getDate("day"), rs.getBigDecimal(2)});
+                }
+            }
+        } catch (SQLException e) {
+            throw ErrorHandler.handleDatabaseError("listing daily revenue", e);
+        }
+        return rows;
+    }
+
+    /** Revenue per month, ascending by 'yyyy-MM'; rows are {String, BigDecimal}. */
+    public List<Object[]> revenueByMonth() {
+        String sql = "SELECT DATE_FORMAT(order_date, '%Y-%m') AS month, COALESCE(SUM(total_amount), 0) "
+                + "FROM orders WHERE status NOT IN ('CANCELLED', 'REFUNDED') "
+                + "GROUP BY DATE_FORMAT(order_date, '%Y-%m') ORDER BY month";
+        List<Object[]> rows = new ArrayList<>();
+        try (Connection c = conn(); PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                rows.add(new Object[]{rs.getString("month"), rs.getBigDecimal(2)});
+            }
+        } catch (SQLException e) {
+            throw ErrorHandler.handleDatabaseError("listing monthly revenue", e);
+        }
+        return rows;
+    }
+
+    /** Top-selling products by units in the window (null = all time). */
+    public List<Object[]> topSelling(int limit, java.sql.Timestamp since) {
+        StringBuilder sql = new StringBuilder("SELECT p.name, COALESCE(SUM(oi.quantity), 0) AS qty, "
+                + "COALESCE(SUM(oi.subtotal), 0) AS revenue "
+                + "FROM order_items oi JOIN orders o ON o.order_id = oi.order_id "
+                + "JOIN products p ON p.product_id = oi.product_id "
+                + "WHERE o.status NOT IN ('CANCELLED', 'REFUNDED')");
+        if (since != null) {
+            sql.append(" AND o.order_date >= ?");
+        }
+        sql.append(" GROUP BY p.product_id, p.name ORDER BY qty DESC, revenue DESC LIMIT ?");
+        List<Object[]> rows = new ArrayList<>();
+        try (Connection c = conn(); PreparedStatement ps = c.prepareStatement(sql.toString())) {
+            int i = 1;
+            if (since != null) {
+                ps.setTimestamp(i++, since);
+            }
+            ps.setInt(i, Math.max(1, limit));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    rows.add(new Object[]{rs.getString("name"), rs.getLong("qty"), rs.getBigDecimal("revenue")});
+                }
+            }
+        } catch (SQLException e) {
+            throw ErrorHandler.handleDatabaseError("listing top-selling products", e);
+        }
+        return rows;
+    }
+
     public List<Order> recentOrders(int limit) {
         String sql = "SELECT " + COLUMNS + " " + FROM_JOINS + " ORDER BY o.order_date DESC LIMIT ?";
         List<Order> list = new ArrayList<>();
