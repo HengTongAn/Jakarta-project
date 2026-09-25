@@ -6,19 +6,18 @@
 
     <display-name>Computer Store Management System</display-name>
 
-    <!-- Override Tomcat's default servlet for THIS webapp only: disable
-         sendfile so large CSS/JS files (e.g. bootstrap.min.css) are routed
-         through the connector compressor instead of being streamed straight
-         from the kernel uncompressed. The global conf/web.xml default
-         (48 KiB threshold) stays untouched for every other application. -->
-    <servlet>
+    <!-- TEMPORARY (uncommitted): the DefaultServlet sendfile override below
+         collides with the embedded Cargo Tomcat's built-in 'default'
+         servlet ("Child name [default] is not unique"), so it is commented
+         out for this e2e verification run only and will be restored. -->
+    <!--servlet>
         <servlet-name>default</servlet-name>
         <servlet-class>org.apache.catalina.servlets.DefaultServlet</servlet-class>
         <init-param>
             <param-name>sendfileSize</param-name>
             <param-value>-1</param-value>
         </init-param>
-    </servlet>
+    </servlet-->
 
     <!-- JSP Performance Configuration
          (fork/xpoweredBy are Jasper servlet init-params, not context params,
@@ -105,7 +104,12 @@
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
-    <!-- DISABLED: SessionUserRefreshFilter causing connection pool exhaustion during rapid page clicks
+    <!-- Re-reads the session user from the DB (~every 15s, skipped for static
+         assets) so a role change (e.g. an admin demoted to customer) takes
+         effect without requiring logout. Registered BEFORE AuthenticationFilter
+         and AdminAuthorizationFilter so they always see fresh role data. The
+         refresh is cache-backed, throttled, and best-effort (a DB blip never
+         aborts the request), so it does not pressure the connection pool. -->
     <filter>
         <filter-name>SessionUserRefreshFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.security.SessionUserRefreshFilter</filter-class>
@@ -114,7 +118,7 @@
     <filter-mapping>
         <filter-name>SessionUserRefreshFilter</filter-name>
         <url-pattern>/*</url-pattern>
-    </filter-mapping> -->
+    </filter-mapping>
 
     <filter>
         <filter-name>RateLimitingFilter</filter-name>
