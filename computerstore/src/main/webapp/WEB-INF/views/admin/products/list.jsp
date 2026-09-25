@@ -11,13 +11,9 @@
         <div class="d-flex flex-wrap gap-2 admin-filter-toolbar">
             <label for="productsFilter" class="visually-hidden">Filter products</label>
             <input type="search" id="productsFilter" class="form-control form-control-sm table-filter" placeholder="Filter products…">
-            <a href="${pageContext.request.contextPath}/admin/products?action=new" class="btn btn-brand" title="Paste a product URL in the new form to auto-fill details from the web">Add product</a>
+            <a href="${pageContext.request.contextPath}/admin/products?action=new" class="btn btn-brand">Add product</a>
         </div>
     </div>
-    <p class="small text-muted mb-3">
-        Tip: open <em>Add product</em> (or an edit form) and paste a manufacturer product URL into the
-        <em>Auto-fill from the web</em> panel — it fetches the official description, specs and image.
-    </p>
 
     <div class="card card-hover">
         <div class="table-responsive">

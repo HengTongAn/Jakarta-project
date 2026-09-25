@@ -1,8 +1,8 @@
 -- ============================================================
 -- Migration: Add rich product detail fields + product_specs table
 -- Rich, editable product details (highlights, box contents, warranty,
--- official source URL) plus a key/value specifications table that the
--- admin form's "auto-fill from the web" panel populates.
+-- official source URL) plus a key/value specifications table, all
+-- maintained manually in the admin product form.
 -- ============================================================
 
 -- Extra product detail columns (all optional).

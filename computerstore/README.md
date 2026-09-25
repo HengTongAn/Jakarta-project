@@ -310,7 +310,6 @@ computerstore/
 │   │   │   ├── DashboardService.java
 │   │   │   ├── ReportService.java
 │   │   │   ├── AuditLogService.java
-│   │   │   └── WebProductInfoService.java
 │   │   │   └── impl/        # Service implementations
 │   │   │       ├── AuthServiceImpl.java
 │   │   │       ├── CartServiceImpl.java
@@ -334,7 +333,6 @@ computerstore/
 │   │   │   │   ├── AdminMailServlet.java
 │   │   │   │   ├── AdminReportsServlet.java
 │   │   │   │   ├── AdminHistoryServlet.java
-│   │   │   │   ├── AdminWebInfoServlet.java
 │   │   │   │   └── PerformanceMonitoringServlet.java
 │   │   │   ├── auth/        # Authentication controllers
 │   │   │   │   ├── LoginServlet.java
