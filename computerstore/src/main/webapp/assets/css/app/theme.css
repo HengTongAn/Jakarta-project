@@ -212,6 +212,8 @@ a { transition: color .15s ease; }
     .product-card .p-meta { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
     .product-card .product-price { font-size: .98rem; }
     .product-card .p-stock { font-size: .66rem; padding: .14rem .5rem; }
+    .product-card .p-rating { gap: .25rem; margin-top: .3rem; }
+    .product-card .p-rating .stars { font-size: .72rem; }
     .auth-logo { height: 38px !important; }
     .footer-bottom span:last-child { display: none; }
 }
