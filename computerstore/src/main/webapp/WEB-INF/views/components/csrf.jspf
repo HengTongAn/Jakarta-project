@@ -1,4 +1,4 @@
-<%@ page import="com.example.computer_store.util.security.CSRFUtil" %>
+<%@ page import="com.hengtongan.computerstore.util.security.CSRFUtil" %>
 <%
     // Generate CSRF token for this session
     String csrfToken = CSRFUtil.generateToken(session);

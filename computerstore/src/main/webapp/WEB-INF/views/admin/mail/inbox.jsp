@@ -3,13 +3,13 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <%
-    java.util.List<com.example.computer_store.core.domain.entity.MailMessage> msgs =
-            (java.util.List<com.example.computer_store.core.domain.entity.MailMessage>) request.getAttribute("messages");
-    java.util.LinkedHashMap<Integer, com.example.computer_store.core.domain.entity.MailMessage> convs = new java.util.LinkedHashMap<>();
+    java.util.List<com.hengtongan.computerstore.core.domain.entity.MailMessage> msgs =
+            (java.util.List<com.hengtongan.computerstore.core.domain.entity.MailMessage>) request.getAttribute("messages");
+    java.util.LinkedHashMap<Integer, com.hengtongan.computerstore.core.domain.entity.MailMessage> convs = new java.util.LinkedHashMap<>();
     java.util.LinkedHashMap<Integer, Integer> unreadBy = new java.util.LinkedHashMap<>();
     if (msgs != null) {
         java.util.Collections.sort(msgs, (a, b) -> Long.compare(b.getCreatedAt().getTime(), a.getCreatedAt().getTime()));
-        for (com.example.computer_store.core.domain.entity.MailMessage msg : msgs) {
+        for (com.hengtongan.computerstore.core.domain.entity.MailMessage msg : msgs) {
             Integer key = Integer.valueOf(msg.getSenderId());
             if (!convs.containsKey(key)) {
                 convs.put(key, msg);

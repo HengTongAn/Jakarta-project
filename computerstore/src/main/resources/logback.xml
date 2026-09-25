@@ -79,7 +79,7 @@
     </appender>
 
     <!-- Logger for audit events (sent to separate file) -->
-    <logger name="com.example.computer_store.util.web.AuditLogger" level="INFO" additivity="false">
+    <logger name="com.hengtongan.computerstore.util.web.AuditLogger" level="INFO" additivity="false">
         <appender-ref ref="ASYNC_AUDIT_FILE" />
     </logger>
 
@@ -91,7 +91,7 @@
     </root>
 
     <!-- Package-specific log levels -->
-    <logger name="com.example.computer_store" level="DEBUG" />
+    <logger name="com.hengtongan.computerstore" level="DEBUG" />
     <logger name="org.hibernate" level="WARN" />
     <logger name="com.zaxxer.hikari" level="INFO" />
     <logger name="jakarta.mail" level="INFO" />
