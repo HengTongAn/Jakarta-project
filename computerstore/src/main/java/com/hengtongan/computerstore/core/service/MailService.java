@@ -5,6 +5,7 @@ import com.hengtongan.computerstore.core.exception.NotFoundException;
 import com.hengtongan.computerstore.core.exception.ValidationException;
 import com.hengtongan.computerstore.core.domain.entity.MailMessage;
 import com.hengtongan.computerstore.core.domain.entity.User;
+import com.hengtongan.computerstore.infrastructure.cache.CacheManager;
 import com.hengtongan.computerstore.infrastructure.messaging.EmailUtil;
 import com.hengtongan.computerstore.util.validation.ValidationUtil;
 
@@ -40,6 +41,7 @@ public class MailService {
         message.setBody(body.trim());
         mailDAO.create(message);
 
+        invalidateUnread(recipientId);
         notifyByEmail(recipient, message);
         return message;
     }
@@ -61,6 +63,7 @@ public class MailService {
         message.setBody(body.trim());
         mailDAO.create(message);
 
+        invalidateUnread(peerId);
         notifyByEmail(userService.get(peerId), message);
         return message;
     }
@@ -85,11 +88,13 @@ public class MailService {
         }
         message.setReadFlag(!message.isReadFlag());
         mailDAO.setRead(id, message.isReadFlag());
+        invalidateUnread(userId);
         return message;
     }
 
     public void markAllRead(int userId) {
         mailDAO.markAllRead(userId);
+        invalidateUnread(userId);
     }
 
     public MailMessage getMessageForUser(int id, int userId) {
@@ -100,8 +105,28 @@ public class MailService {
         return message;
     }
 
+    /**
+     * Unread inbox count for nav badges. Memoized (single-flight) so rapid
+     * page clicks do not each open a DB connection.
+     */
     public int countUnread(int userId) {
+        if (userId <= 0) {
+            return 0;
+        }
+        if (CacheManager.isCacheEnabled()) {
+            Object memo = CacheManager.getOrLoadCart(mailUnreadKey(userId),
+                    k -> mailDAO.countUnread(userId));
+            return memo instanceof Integer ? (Integer) memo : 0;
+        }
         return mailDAO.countUnread(userId);
+    }
+
+    private static void invalidateUnread(int userId) {
+        CacheManager.invalidateCart(mailUnreadKey(userId));
+    }
+
+    private static String mailUnreadKey(int userId) {
+        return "mail_unread_" + userId;
     }
 
     private void notifyByEmail(User recipient, MailMessage message) {

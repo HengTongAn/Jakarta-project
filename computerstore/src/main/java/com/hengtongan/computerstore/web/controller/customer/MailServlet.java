@@ -4,6 +4,7 @@ import com.hengtongan.computerstore.core.exception.NotFoundException;
 import com.hengtongan.computerstore.core.exception.ValidationException;
 import com.hengtongan.computerstore.core.domain.entity.MailMessage;
 import com.hengtongan.computerstore.core.domain.entity.User;
+import com.hengtongan.computerstore.util.cache.CountCache;
 import com.hengtongan.computerstore.util.web.Flash;
 import com.hengtongan.computerstore.util.validation.ValidationUtil;
 import jakarta.servlet.ServletException;
@@ -127,6 +128,7 @@ public class MailServlet extends BaseServlet {
             }
         } else if ("/mail/read-all".equals(path)) {
             app().mailService().markAllRead(user.getUserId());
+            CountCache.invalidate(request.getSession(false), "mail");
             Flash.success(request, "All messages marked as read.");
             response.sendRedirect(request.getContextPath() + "/mail");
         } else if ("/mail/toggle".equals(path)) {
@@ -137,6 +139,7 @@ public class MailServlet extends BaseServlet {
             }
             try {
                 MailMessage message = app().mailService().toggleRead(id, user.getUserId());
+                CountCache.invalidate(request.getSession(false), "mail");
                 response.sendRedirect(request.getContextPath() + "/mail/view?id=" + message.getMessageId());
             } catch (NotFoundException e) {
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);

@@ -1,7 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
-<c:set var="pageTitle" value="Checkout - TechStore"/>
+<c:set var="pageTitle" value="Checkout - Apach_PC/STORE"/>
 <%@ include file="../layouts/header.jspf" %>
 <div class="container py-4 checkout-page">
     <div class="checkout-heading d-flex justify-content-between align-items-start gap-3 mb-1">

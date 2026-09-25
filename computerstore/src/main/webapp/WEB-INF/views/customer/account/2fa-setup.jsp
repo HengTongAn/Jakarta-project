@@ -1,6 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<c:set var="pageTitle" value="Two-factor authentication - TechStore"/>
+<c:set var="pageTitle" value="Two-factor authentication - Apach_PC/STORE"/>
 <%@ include file="../../layouts/header.jspf" %>
 <div class="container py-4">
     <div class="row justify-content-center"><div class="col-lg-7">

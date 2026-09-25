@@ -59,10 +59,17 @@ public final class CacheManager {
             .recordStats()
             .build();
 
-    // Cart cache - for user cart operations
+    // Cart cache - cart counts and small cart payloads (single-flight)
     private static final Cache<String, Object> CART_CACHE = Caffeine.newBuilder()
             .maximumSize(1000)
             .expireAfterWrite(30, TimeUnit.MINUTES)
+            .recordStats()
+            .build();
+
+    // Product-detail page memo (specs + approved reviews + rating) — 60s TTL
+    private static final Cache<String, Object> DETAIL_CACHE = Caffeine.newBuilder()
+            .maximumSize(2000)
+            .expireAfterWrite(60, TimeUnit.SECONDS)
             .recordStats()
             .build();
 
@@ -292,6 +299,17 @@ public final class CacheManager {
     }
 
     /**
+     * Single-flight cart load (used for per-user cart counts so badge filters
+     * never stampede the DB under a click burst).
+     */
+    public static Object getOrLoadCart(String key, java.util.function.Function<String, Object> loader) {
+        return CART_CACHE.get(key, k -> {
+            MetricsCollector.recordCacheMiss();
+            return loader.apply(k);
+        });
+    }
+
+    /**
      * Puts cart data in cache.
      */
     public static void putCart(String key, Object cart) {
@@ -305,12 +323,48 @@ public final class CacheManager {
         CART_CACHE.invalidate(key);
     }
 
+    /** Convenience: drop the memoized cart-count for one user. */
+    public static void invalidateCartCount(int userId) {
+        CART_CACHE.invalidate(cartCountKey(userId));
+    }
+
+    public static String cartCountKey(int userId) {
+        return "cart_count_" + userId;
+    }
+
     /**
      * Invalidates all carts from cache.
      */
     public static void invalidateAllCarts() {
         CART_CACHE.invalidateAll();
         LOGGER.info("All carts invalidated from cache");
+    }
+
+    /**
+     * Single-flight product-detail page memo (specs + approved reviews + rating).
+     * User-specific fields (myReview) must stay outside this cache.
+     */
+    public static Object getOrLoadDetail(String key, java.util.function.Function<String, Object> loader) {
+        return DETAIL_CACHE.get(key, k -> {
+            MetricsCollector.recordCacheMiss();
+            return loader.apply(k);
+        });
+    }
+
+    public static void invalidateProductDetail(int productId) {
+        DETAIL_CACHE.invalidate("detail_" + productId);
+    }
+
+    public static void invalidateAllProductDetails() {
+        DETAIL_CACHE.invalidateAll();
+        LOGGER.info("All product-detail memos invalidated");
+    }
+
+    /** Admin product list memo key (full inventory for admin pages). */
+    public static final String PRODUCTS_ALL_KEY = "products_all";
+
+    public static void invalidateProductList() {
+        PRODUCT_CACHE.invalidate(PRODUCTS_ALL_KEY);
     }
 
     /**
@@ -389,6 +443,7 @@ public final class CacheManager {
     public static void clearAll() {
         PRODUCT_CACHE.invalidateAll();
         CATALOG_CACHE.invalidateAll();
+        DETAIL_CACHE.invalidateAll();
         CATEGORY_CACHE.invalidateAll();
         BRAND_CACHE.invalidateAll();
         USER_CACHE.invalidateAll();
@@ -407,6 +462,7 @@ public final class CacheManager {
         java.util.LinkedHashMap<String, Map<String, Object>> all = new java.util.LinkedHashMap<>();
         addStats(all, "products", PRODUCT_CACHE);
         addStats(all, "catalog", CATALOG_CACHE);
+        addStats(all, "details", DETAIL_CACHE);
         addStats(all, "categories", CATEGORY_CACHE);
         addStats(all, "brands", BRAND_CACHE);
         addStats(all, "users", USER_CACHE);
@@ -432,6 +488,7 @@ public final class CacheManager {
     public static void logStats() {
         CacheStats productStats = PRODUCT_CACHE.stats();
         CacheStats catalogStats = CATALOG_CACHE.stats();
+        CacheStats detailStats = DETAIL_CACHE.stats();
         CacheStats categoryStats = CATEGORY_CACHE.stats();
         CacheStats brandStats = BRAND_CACHE.stats();
         CacheStats userStats = USER_CACHE.stats();
@@ -444,6 +501,8 @@ public final class CacheManager {
                 productStats.hitRate() * 100, productStats.hitCount(), productStats.missCount());
         LOGGER.info("Catalog - Hit Rate: {}%, Hits: {}, Misses: {}",
                 catalogStats.hitRate() * 100, catalogStats.hitCount(), catalogStats.missCount());
+        LOGGER.info("Details - Hit Rate: {}%, Hits: {}, Misses: {}",
+                detailStats.hitRate() * 100, detailStats.hitCount(), detailStats.missCount());
         LOGGER.info("Categories - Hit Rate: {}%, Hits: {}, Misses: {}",
                 categoryStats.hitRate() * 100, categoryStats.hitCount(), categoryStats.missCount());
         LOGGER.info("Brands - Hit Rate: {}%, Hits: {}, Misses: {}",

@@ -518,6 +518,8 @@
 
 .brand-txt {
     color: #e0f2fe;
+    white-space: nowrap;
+    line-height: 1;
     background: linear-gradient(90deg, #ffffff, #7dd3fc 45%, #c4b5fd);
     -webkit-background-clip: text;
     background-clip: text;

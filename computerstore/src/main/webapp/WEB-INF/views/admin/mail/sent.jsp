@@ -2,16 +2,16 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
-<c:set var="pageTitle" value="Sent Mail - Admin"/>
+<c:set var="pageTitle" value="Sent - Contact support - Admin"/>
 <%@ include file="../../layouts/header.jspf" %>
 <%@ include file="../../layouts/admin-nav.jspf" %>
 <div class="container py-4">
     <div class="mail-layout">
         <div class="mail-rail">
-            <a class="btn btn-brand w-100 mb-3" href="${pageContext.request.contextPath}/admin/mail/compose">Compose</a>
-            <span class="mail-nav-sm-text">Mailbox</span>
+            <a class="btn btn-brand w-100 mb-3" href="${pageContext.request.contextPath}/admin/mail/compose">New message</a>
+            <span class="mail-nav-sm-text">Contact support</span>
             <a class="mail-nav-link" href="${pageContext.request.contextPath}/admin/mail">
-                Inbox
+                Conversations
                 <span class="mail-nav-count<c:if test="${empty mailCount || mailCount == 0}"> d-none</c:if>">${mailCount}</span>
             </a>
             <a class="mail-nav-link active" href="${pageContext.request.contextPath}/admin/mail/sent">Sent</a>

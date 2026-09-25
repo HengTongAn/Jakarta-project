@@ -119,6 +119,28 @@ public class CartRepository {
         return null;
     }
 
+    /** One cart line by primary key, scoped to the owning user. */
+    public CartItem findByCartItemId(int userId, int cartItemId) {
+        String sql = "SELECT " + getColumns() + " "
+                + "FROM cart_items ci "
+                + "JOIN products p ON p.product_id = ci.product_id "
+                + "JOIN categories c ON c.category_id = p.category_id "
+                + "JOIN brands b ON b.brand_id = p.brand_id "
+                + "WHERE ci.user_id = ? AND ci.cart_item_id = ?";
+        try (Connection c = conn(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, cartItemId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapRow(rs);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error loading cart item", e);
+        }
+        return null;
+    }
+
     public void saveItem(int userId, int productId, int quantity) {
         String sql = "INSERT INTO cart_items (user_id, product_id, quantity) VALUES (?, ?, ?) "
                 + "ON DUPLICATE KEY UPDATE quantity = ?";

@@ -69,6 +69,13 @@ public class ProductService {
     }
 
     public List<Product> getAll() {
+        if (CacheManager.isCacheEnabled()) {
+            Object memo = CacheManager.getOrLoadProduct(CacheManager.PRODUCTS_ALL_KEY,
+                    k -> productDAO.findAll());
+            @SuppressWarnings("unchecked")
+            List<Product> products = (List<Product>) memo;
+            return products;
+        }
         return productDAO.findAll();
     }
 
@@ -123,6 +130,8 @@ public class ProductService {
         CacheManager.invalidateAllCategories(); // product counts in sidebar
         CacheManager.invalidateAllDashboard();  // totals / stock counters changed
         CacheManager.invalidateAllCatalog();    // list pages read fresh after the write
+        CacheManager.invalidateProductList();
+        CacheManager.invalidateProductDetail(productId);
         return productId;
     }
 
@@ -178,6 +187,8 @@ public class ProductService {
         CacheManager.invalidateAllCategories(); // product counts in sidebar
         CacheManager.invalidateAllDashboard();  // stock counters may have changed
         CacheManager.invalidateAllCatalog();    // list pages read fresh after the write
+        CacheManager.invalidateProductList();
+        CacheManager.invalidateProductDetail(productId);
     }
 
     public void updateImage(int productId, String imageUrl) {
@@ -185,6 +196,8 @@ public class ProductService {
         product.setImageUrl(imageUrl);
         productDAO.update(product);
         CacheManager.invalidateAllCatalog(); // card images on list pages
+        CacheManager.invalidateProductList();
+        CacheManager.invalidateProductDetail(productId);
     }
 
     public List<ProductSpec> getSpecs(int productId) {
@@ -276,6 +289,8 @@ public class ProductService {
             CacheManager.invalidateAllCategories(); // product counts in sidebar
             CacheManager.invalidateAllDashboard();  // product total changed
             CacheManager.invalidateAllCatalog();    // list pages read fresh
+            CacheManager.invalidateProductList();
+            CacheManager.invalidateProductDetail(productId);
             return true;
         }
         // Referenced by historical orders -> discontinue instead of deleting.
@@ -289,6 +304,8 @@ public class ProductService {
         CacheManager.invalidateAllCategories(); // product counts in sidebar
         CacheManager.invalidateAllDashboard();  // stock counters changed
         CacheManager.invalidateAllCatalog();    // list pages read fresh
+        CacheManager.invalidateProductList();
+        CacheManager.invalidateProductDetail(productId);
         return false;
     }
 

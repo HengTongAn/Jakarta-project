@@ -45,7 +45,8 @@ class CompressionFilterTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        System.clearProperty("computerstore.compression.enabled");
+        // Filter defaults to off (Tomcat 11 safety); tests exercise the ON path.
+        System.setProperty("computerstore.compression.enabled", "true");
         filter = new CompressionFilter();
         filter.init(mock(FilterConfig.class));
 
@@ -182,6 +183,19 @@ class CompressionFilterTest {
 
         verify(response, never()).setHeader("Content-Encoding", "gzip");
         assertArrayEquals(PAYLOAD.getBytes(StandardCharsets.UTF_8), rawBytes.toByteArray());
+    }
+
+    @Test
+    void skipsWhenCompressionDisabledByDefault() throws IOException, ServletException {
+        System.clearProperty("computerstore.compression.enabled");
+        CompressionFilter offByDefault = new CompressionFilter();
+        offByDefault.init(mock(FilterConfig.class));
+        FilterChain chain = mock(FilterChain.class);
+
+        offByDefault.doFilter(request, response, chain);
+
+        verify(chain).doFilter(same(request), same(response));
+        verify(response, never()).setHeader(eq("Content-Encoding"), anyString());
     }
 
     private static byte[] gunzip(byte[] gzipped) throws IOException {

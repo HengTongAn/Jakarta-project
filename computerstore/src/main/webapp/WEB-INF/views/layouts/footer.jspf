@@ -3,14 +3,14 @@
     <div class="container">
         <div class="row g-4 py-5">
             <div class="col-lg-5">
-                <p class="footer-brand"><img class="brand-logo-sm" src="${pageContext.request.contextPath}/assets/images/techstore-mark.svg" alt="TechStore logo"></p>
+                <p class="footer-brand"><img class="brand-logo-sm" src="${pageContext.request.contextPath}/assets/images/apach-pc-store.svg" alt="Apach_PC/STORE logo"><span>Apach_PC/STORE</span></p>
                 <p class="footer-copy">Reliable computer parts and practical setups for gaming, work, study, and everything in between.</p>
             </div>
             <div class="col-6 col-lg-2"><h2 class="footer-heading">Shop</h2><a href="${pageContext.request.contextPath}/products">Browse products</a><a href="${pageContext.request.contextPath}/products?sort=newest">New arrivals</a><a href="${pageContext.request.contextPath}/products?sort=price_asc">Best value</a></div>
             <div class="col-6 col-lg-2"><h2 class="footer-heading">Account</h2><a href="${pageContext.request.contextPath}/account">My account</a><a href="${pageContext.request.contextPath}/account/orders">My orders</a><a href="${pageContext.request.contextPath}/cart">Shopping cart</a></div>
             <div class="col-lg-3"><h2 class="footer-heading">Need help?</h2><p class="footer-copy small">Our team can help you choose compatible components for your next build.</p><a class="footer-support" href="${pageContext.request.contextPath}${empty sessionScope.user ? '/login' : '/mail/compose'}">Contact support <i class="bi bi-arrow-right"></i></a></div>
         </div>
-        <div class="footer-bottom"><span>&copy; 2026 TechStore</span><span>Secure shopping &middot; Helpful support &middot; Quality technology</span></div>
+        <div class="footer-bottom"><span>&copy; 2026 Apach_PC/STORE</span><span>Secure shopping &middot; Helpful support &middot; Quality technology</span></div>
     </div>
 </footer>
 <script src="${pageContext.request.contextPath}/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>

@@ -638,10 +638,9 @@
         initCheckoutFormatting();
         initImageUploads();
         initPasswordConfirmation();
-        // Cart count filter is disabled (pool pressure); refresh badge on load.
-        if (document.body && document.body.getAttribute("data-userid") && document.getElementById("cartCountBadge")) {
-            refreshCartCount();
-        }
+        // Cart / mail badges are server-rendered by CountFilters (Caffeine +
+        // CountCache). Live updates come from SSE (realtime.js); refreshCartCount
+        // is only used after AJAX add-to-cart — no per-page /cart/count XHR.
     }
 
     if (document.readyState === "loading") {

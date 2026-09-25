@@ -14,6 +14,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
@@ -31,7 +32,7 @@ public final class TwoFactorAuthService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TwoFactorAuthService.class);
 
-    private static final String ISSUER = "ComputerStore";
+    private static final String ISSUER = "Apach_PC/STORE";
     private static final GoogleAuthenticator gAuth = new GoogleAuthenticator();
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final String KEY_PROPERTY = "computerstore.2fa.encryption.key";
@@ -57,8 +58,11 @@ public final class TwoFactorAuthService {
         GoogleAuthenticatorKey key = gAuth.createCredentials();
 
         String secret = key.getKey();
-        // Generate manual entry URL format: otpauth://totp/ISSUER:USERNAME?secret=SECRET
-        String qrCodeUrl = "otpauth://totp/" + ISSUER + ":" + user.getUsername() + "?secret=" + secret;
+        // Encode the issuer and account label because the store name contains a slash.
+        String issuer = URLEncoder.encode(ISSUER, StandardCharsets.UTF_8);
+        String account = URLEncoder.encode(user.getUsername(), StandardCharsets.UTF_8);
+        String qrCodeUrl = "otpauth://totp/" + issuer + ":" + account
+                + "?secret=" + secret + "&issuer=" + issuer;
 
         // Store the secret in the database (not yet enabled)
         try {

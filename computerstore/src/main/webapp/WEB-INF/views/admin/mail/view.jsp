@@ -4,14 +4,14 @@
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="peerName" value="${isRecipient ? m.senderName : m.recipientName}"/>
 <c:set var="peerAvatarUrl" value="${isRecipient ? m.senderAvatarUrl : m.recipientAvatarUrl}"/>
-<c:set var="pageTitle" value="Chat with ${peerName}"/>
+<c:set var="pageTitle" value="Contact support — ${peerName}"/>
 <%@ include file="../../layouts/header.jspf" %>
 <%@ include file="../../layouts/admin-nav.jspf" %>
 <div class="container py-4">
     <div class="chat-shell chat-shell-chat">
         <div class="chat-shell-head">
             <div class="d-flex align-items-center gap-2">
-                <a class="btn btn-light btn-sm" href="${pageContext.request.contextPath}/admin/mail" title="Back to chats">&larr;</a>
+                <a class="btn btn-light btn-sm" href="${pageContext.request.contextPath}/admin/mail" title="Back to Contact support">&larr;</a>
                 <span class="chat-avatar chat-avatar-sm">
                     <c:choose>
                         <c:when test="${not empty peerAvatarUrl}">

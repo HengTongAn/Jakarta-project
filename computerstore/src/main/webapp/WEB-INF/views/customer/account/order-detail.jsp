@@ -1,7 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
-<c:set var="pageTitle" value="Order #${order.orderId} - TechStore"/>
+<c:set var="pageTitle" value="Order #${order.orderId} - Apach_PC/STORE"/>
 <%@ include file="../../layouts/header.jspf" %>
 <div class="container py-4" data-order-detail="${order.orderId}" data-current-status="${order.status.name()}">
     <div class="d-flex justify-content-between align-items-center mb-3">

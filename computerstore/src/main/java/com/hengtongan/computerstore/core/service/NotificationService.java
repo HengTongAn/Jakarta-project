@@ -25,7 +25,7 @@ public class NotificationService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NotificationService.class);
 
-    private static final String STORE_NAME = "TechStore";
+    private static final String STORE_NAME = "Apach_PC/STORE";
     private static final String ENABLED_PROPERTY = "computerstore.mail.notifications.enabled";
 
     private final UserService userService;
