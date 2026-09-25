@@ -391,6 +391,8 @@ computerstore/
 │   │   │   ├── MetricsCollector.java
 │   │   │   ├── MetricsServlet.java
 │   │   │   └── QueryMonitor.java
+│   │   ├── optimization/     # Query batching
+│   │   │   └── QueryBatchOptimizer.java
 │   │   ├── realtime/        # Real-time updates
 │   │   │   ├── EventHub.java
 │   │   │   └── RealtimeStreamServlet.java
@@ -400,8 +402,7 @@ computerstore/
 │   │   │   ├── DBConnection.java
 │   │   │   ├── ConnectionProvider.java
 │   │   │   ├── SchemaUtil.java
-│   │   │   ├── DatabaseMigrationRunner.java
-│   │   │   └── BatchOperationUtil.java
+│   │   │   └── DatabaseMigrationRunner.java
 │   │   └── messaging/       # Email/messaging
 │   │       └── EmailUtil.java
 │   └── util/                # Minimal utilities
