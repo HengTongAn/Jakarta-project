@@ -60,7 +60,7 @@
                         <td class="text-center text-warning">
                             <c:forEach begin="1" end="${rv.rating}">★</c:forEach><c:forEach begin="${rv.rating + 1}" end="5">☆</c:forEach>
                         </td>
-                        <td style="max-width:360px">
+                        <td>
                             <c:if test="${not empty rv.title}">
                                 <div class="fw-semibold"><c:out value="${rv.title}"/></div>
                             </c:if>

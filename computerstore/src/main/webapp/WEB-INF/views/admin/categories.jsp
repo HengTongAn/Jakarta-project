@@ -44,7 +44,7 @@
             <div class="card card-hover">
 <div class="card-header bg-body d-flex justify-content-between align-items-center gap-2">                    <span class="fw-semibold">Categories</span>
                     <label for="categoriesFilter" class="visually-hidden">Filter categories</label>
-                    <input type="search" id="categoriesFilter" class="form-control form-control-sm table-filter" style="max-width:200px" placeholder="Filter…">
+                    <input type="search" id="categoriesFilter" class="form-control form-control-sm table-filter" placeholder="Filter…">
                 </div>
                 <div class="table-responsive">
                     <table class="table align-middle mb-0" data-sortable data-filter-target="categoriesFilter">

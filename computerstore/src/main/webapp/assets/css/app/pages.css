@@ -984,3 +984,20 @@ th.sortable[aria-sort="descending"] {
     justify-content: flex-end;
     padding: .4rem 1.15rem 1rem;
 }
+
+/* ---- Phone fixes (iPhone-class widths) ---- */
+@media (max-width: 767.98px) {
+    /* History search: the base rule above fixes a 300px min-width; on phones let
+       the input shrink and the form wrap so it can never overflow the screen. */
+    .history-search { flex-wrap: wrap; }
+    .history-search .history-keyword { min-width: 0; flex: 1 1 14rem; }
+    .history-search .btn { flex: 0 0 auto; }
+    /* Trim truncation so the reviews table does not blow out on small screens. */
+    .review-trunc { max-width: 240px; }
+}
+
+@media (max-width: 575.98px) {
+    /* Chat header (Chats + mark-all-read/new buttons) may exceed a small phone
+       width; allow the button group to drop below the title. */
+    .chat-shell-head { flex-wrap: wrap; }
+}
