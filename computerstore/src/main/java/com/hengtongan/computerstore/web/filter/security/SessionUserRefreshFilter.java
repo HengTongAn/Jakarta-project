@@ -16,21 +16,31 @@ import java.io.IOException;
 
 /**
  * Kills stale sessions. Periodically re-reads the session user from the
- * database so a role change (e.g. an admin demoted to customer) takes effect
- * without requiring logout. If the account no longer exists or was soft-deleted,
- * the session is ended immediately.
+ * database so a role change (e.g. an admin demoted to customer, or a customer
+ * promoted to admin) takes effect without requiring logout/login. Profile
+ * edits (name, email, avatar) are picked up by the same refresh. If the
+ * account no longer exists or was soft-deleted, the session is ended
+ * immediately.
  *
- * <p>Refresh is throttled and skipped for static assets so a single page load
- * does not trigger one DB round-trip per CSS/JS/image request.
+ * <p>Refresh is throttled to one check per {@link #REFRESH_INTERVAL_MS} and
+ * skipped for static assets so a single page load does not trigger a DB
+ * round-trip for every CSS/JS/image request. The user row is served by the
+ * user cache (invalidated on every DB write), so a steady-state tick is a
+ * cache hit, not a query.
  *
- * Registered in web.xml BEFORE AuthenticationFilter / AdminAuthorizationFilter
+ * <p><b>Resilience:</b> a transient DB/pool failure never aborts the request
+ * nor hot-loops the filter: every tick advances {@link #LAST_REFRESH_ATTR}
+ * before touching the database, and non-fatal errors keep the current session
+ * user. Only a definitive "row gone" or "soft-deleted" ends the session.
+ *
+ * <p>Registered in web.xml BEFORE AuthenticationFilter / AdminAuthorizationFilter
  * so those filters always see fresh role data.
  */
 public class SessionUserRefreshFilter implements Filter {
 
     private static final String LAST_REFRESH_ATTR = "userRefreshAt";
     /** How often to re-query the user row for a logged-in session. */
-    private static final long REFRESH_INTERVAL_MS = 30_000L;
+    private static final long REFRESH_INTERVAL_MS = 15_000L;
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse,
@@ -49,24 +59,31 @@ public class SessionUserRefreshFilter implements Filter {
             return;
         }
 
-        Long lastRefresh = (Long) session.getAttribute(LAST_REFRESH_ATTR);
         long now = System.currentTimeMillis();
+        Long lastRefresh = (Long) session.getAttribute(LAST_REFRESH_ATTR);
         if (lastRefresh != null && now - lastRefresh < REFRESH_INTERVAL_MS) {
             return;
         }
 
-        User fresh = null;
-        try {
-            fresh = AppContext.get().userService().get(sessionUser.getUserId());
-        } catch (NotFoundException ignored) {
-            // account no longer exists: the session must not survive
-        }
-        if (fresh == null || fresh.isDeleted()) {
-            session.invalidate();
-            return;
-        }
-        fresh.setPasswordHash(null);
-        session.setAttribute("user", fresh);
+        // Advance the tick unconditionally: if the DB is down we already paid
+        // for one attempt and must NOT retry on the very next request (that is
+        // how a struggling pool becomes an exhausted one).
         session.setAttribute(LAST_REFRESH_ATTR, now);
+
+        try {
+            User fresh = AppContext.get().userService().get(sessionUser.getUserId());
+            if (fresh.isDeleted()) {
+                session.invalidate();
+                return;
+            }
+            fresh.setPasswordHash(null);
+            session.setAttribute("user", fresh);
+        } catch (NotFoundException e) {
+            // Account no longer exists: the session must not survive.
+            session.invalidate();
+        } catch (RuntimeException e) {
+            // Transient DB/pool failure: keep the current session user so
+            // navigation is never blocked; the next tick retries.
+        }
     }
 }
