@@ -1,7 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
-<c:set var="pageTitle" value="My Account - TechStore"/>
+<c:set var="pageTitle" value="My Account - Apach_PC/STORE"/>
 <%@ include file="../../layouts/header.jspf" %>
 <div class="container py-4">
     <div class="row g-3">

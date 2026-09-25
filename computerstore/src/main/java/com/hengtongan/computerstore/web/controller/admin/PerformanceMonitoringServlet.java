@@ -44,7 +44,7 @@ public class PerformanceMonitoringServlet extends BaseServlet {
 
         request.setAttribute("cacheEnabled", CacheManager.isCacheEnabled());
         request.setAttribute("compressionEnabled",
-                Boolean.parseBoolean(System.getProperty("computerstore.compression.enabled", "true")));
+                Boolean.parseBoolean(System.getProperty("computerstore.compression.enabled", "false")));
         request.setAttribute("cacheStats", cacheStats);
         request.setAttribute("poolStats", poolStats);
         request.setAttribute("jvm", jvmStats());
@@ -88,9 +88,10 @@ public class PerformanceMonitoringServlet extends BaseServlet {
             tips.add("Caching is disabled (-Dcomputerstore.cache.enabled=false). "
                     + "Leave it enabled for production traffic.");
         }
-        if (!Boolean.parseBoolean(System.getProperty("computerstore.compression.enabled", "true"))) {
-            tips.add("HTTP compression is disabled (-Dcomputerstore.compression.enabled=false). "
-                    + "Re-enable it to cut bandwidth and page-load time.");
+        if (Boolean.parseBoolean(System.getProperty("computerstore.compression.enabled", "false"))) {
+            tips.add("App-level CompressionFilter is ON. Prefer Tomcat connector gzip "
+                    + "(-Dcomputerstore.compression.enabled=false) to avoid full-body "
+                    + "buffering and Tomcat 11 blank-page issues.");
         }
         Object waiting = poolStats.get("waiting");
         if (waiting instanceof Number && ((Number) waiting).intValue() > 0) {
@@ -145,7 +146,7 @@ public class PerformanceMonitoringServlet extends BaseServlet {
         out.write("{");
         out.write("\"cacheEnabled\":" + CacheManager.isCacheEnabled() + ",");
         out.write("\"compressionEnabled\":"
-                + Boolean.parseBoolean(System.getProperty("computerstore.compression.enabled", "true")) + ",");
+                + Boolean.parseBoolean(System.getProperty("computerstore.compression.enabled", "false")) + ",");
 
         out.write("\"cacheStats\":{");
         boolean first = true;

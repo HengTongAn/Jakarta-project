@@ -143,7 +143,7 @@
         if (!convs.length) {
             var empty = document.createElement('div');
             empty.className = 'chat-empty';
-            empty.appendChild(textNode('No messages yet.'));
+            empty.appendChild(textNode('No support conversations yet.'));
             convListEl.appendChild(empty);
             return;
         }

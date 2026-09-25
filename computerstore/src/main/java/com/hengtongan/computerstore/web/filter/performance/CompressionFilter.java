@@ -34,17 +34,18 @@ import java.util.zip.GZIPOutputStream;
  * because buffering those would defeat streaming and waste memory on binaries.</p>
  *
  * <p>Configurable via system property {@code computerstore.compression.enabled}
- * (default: {@code true}), typically set in {@code setenv.sh}.</p>
+ * (default: {@code false}). Prefer Tomcat connector gzip
+ * ({@code compression="on"} in {@code server.xml}) over this filter.</p>
  *
- * <p><strong>Deployment note:</strong> this deployment disables the filter
- * ({@code -Dcomputerstore.compression.enabled=false}) and relies on the Tomcat
- * connector's native gzip ({@code compression="on"} in {@code server.xml}).
- * The buffering wrapper cannot replay responses on Tomcat 11: JSP forwards are
- * dispatched through {@code ApplicationDispatcher}, whose
- * {@code SuspendWrappedResponseAfterForward} handling finishes the real
- * response mid-chain, silently dropping everything the filter writes after
- * {@code chain.doFilter()} returns (observed as {@code Content-Length: 0}
- * bodies - i.e. blank pages - for gzip-negotiating clients).</p>
+ * <p><strong>Why default off:</strong> the buffering wrapper cannot reliably
+ * replay responses on Tomcat 11. JSP forwards go through
+ * {@code ApplicationDispatcher}, whose {@code SuspendWrappedResponseAfterForward}
+ * handling finishes the real response mid-chain, silently dropping everything
+ * the filter writes after {@code chain.doFilter()} returns (observed as
+ * {@code Content-Length: 0} / blank pages for gzip-negotiating clients). It
+ * also buffers the full body before flush, which adds TTFB delay on every
+ * HTML page. Opt in only with {@code -Dcomputerstore.compression.enabled=true}
+ * when you know the connector cannot gzip.</p>
  */
 public class CompressionFilter implements Filter {
 
@@ -64,12 +65,12 @@ public class CompressionFilter implements Filter {
         COMPRESSIBLE_TYPES.add("application/xhtml+xml");
     }
 
-    private boolean enabled = true;
+    private boolean enabled = false;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         this.enabled = Boolean.parseBoolean(
-                System.getProperty("computerstore.compression.enabled", "true"));
+                System.getProperty("computerstore.compression.enabled", "false"));
     }
 
     @Override

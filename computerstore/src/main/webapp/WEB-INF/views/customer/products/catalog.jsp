@@ -1,7 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
-<c:set var="pageTitle" value="Browse Products - TechStore"/>
+<c:set var="pageTitle" value="Browse Products - Apach_PC/STORE"/>
 <%@ include file="../../layouts/header.jspf" %>
 
 <c:set var="totalCount" value="0"/>
@@ -59,7 +59,7 @@
             <div class="hero-showcase" aria-label="Featured performance setup">
                 <div class="hero-showcase-glow"></div>
                 <div class="hero-window">
-                    <div class="hero-window-bar"><span></span><span></span><span></span><b>TECHSTORE / BUILD LAB</b></div>
+                    <div class="hero-window-bar"><span></span><span></span><span></span><b>APACH_PC/STORE / BUILD LAB</b></div>
                     <div class="hero-screen">
                         <div class="hero-screen-grid"></div>
                         <div class="hero-chip-float"><i class="bi bi-lightning-charge-fill"></i> Performance pick</div>
@@ -269,14 +269,14 @@
     </section>
 
     <section class="store-section container" aria-labelledby="new-title">
-        <div class="section-heading"><div><span class="eyebrow">Just added to TechStore</span><h2 id="new-title">New arrivals</h2></div><a href="#catalog" class="section-link">See all products <i class="bi bi-arrow-right"></i></a></div>
+        <div class="section-heading"><div><span class="eyebrow">Just added to Apach_PC/STORE</span><h2 id="new-title">New arrivals</h2></div><a href="#catalog" class="section-link">See all products <i class="bi bi-arrow-right"></i></a></div>
         <div class="row g-4">
             <c:forEach var="p" items="${newArrivals}"><div class="col-6 col-sm-6 col-lg-3"><%@ include file="../../components/product-card.jspf" %></div></c:forEach>
         </div>
     </section>
 
     <section class="why-section" aria-labelledby="why-title">
-        <div class="container"><div class="section-heading"><div><span class="eyebrow">The TechStore promise</span><h2 id="why-title">Why choose us?</h2></div></div><div class="row g-4">
+        <div class="container"><div class="section-heading"><div><span class="eyebrow">The Apach_PC/STORE promise</span><h2 id="why-title">Why choose us?</h2></div></div><div class="row g-4">
             <div class="col-6 col-md-3"><div class="why-card"><i class="bi bi-patch-check"></i><h3>Quality checked</h3><p>Every product is carefully selected for dependable performance.</p></div></div>
             <div class="col-6 col-md-3"><div class="why-card"><i class="bi bi-diagram-3"></i><h3>Compatible parts</h3><p>Clear product details help you build a system that works together.</p></div></div>
             <div class="col-6 col-md-3"><div class="why-card"><i class="bi bi-chat-heart"></i><h3>Human support</h3><p>Get practical guidance before and after your purchase.</p></div></div>

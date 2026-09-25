@@ -1,13 +1,13 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<c:set var="pageTitle" value="Create Account - TechStore"/>
+<c:set var="pageTitle" value="Create Account - Apach_PC/STORE"/>
 <%@ include file="../layouts/header.jspf" %>
 <div class="container my-5">
     <div class="row justify-content-center">
         <div class="col-md-6 col-lg-5">
             <div class="text-center mb-4">
-                <img class="auth-logo" src="${pageContext.request.contextPath}/assets/images/techstore-mark.svg" alt="TechStore" style="height:44px;width:auto">
-                <h4 class="fw-bold mb-0 mt-3">TechStore</h4>
+                <img class="auth-logo" src="${pageContext.request.contextPath}/assets/images/apach-pc-store.svg" alt="Apach_PC/STORE" style="height:44px;width:auto">
+                <h4 class="fw-bold mb-0 mt-3">Apach_PC/STORE</h4>
             </div>
             <div class="card card-hover">
                 <div class="card-body p-4">

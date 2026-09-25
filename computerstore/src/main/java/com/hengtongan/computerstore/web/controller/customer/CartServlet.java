@@ -3,6 +3,7 @@ package com.hengtongan.computerstore.web.controller.customer;
 import com.hengtongan.computerstore.core.exception.NotFoundException;
 import com.hengtongan.computerstore.core.exception.ValidationException;
 import com.hengtongan.computerstore.core.domain.entity.User;
+import com.hengtongan.computerstore.util.cache.CountCache;
 import com.hengtongan.computerstore.util.web.Flash;
 import com.hengtongan.computerstore.util.validation.ValidationUtil;
 import jakarta.servlet.ServletException;
@@ -55,6 +56,7 @@ public class CartServlet extends BaseServlet {
                 }
                 default -> throw new NotFoundException("Unknown cart action.");
             }
+            CountCache.invalidate(request.getSession(false), "cart");
         } catch (ValidationException | NotFoundException e) {
             if (ajax) {
                 writeJson(response, HttpServletResponse.SC_BAD_REQUEST, false, e.getMessage(), 0);

@@ -4,7 +4,7 @@
          xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
          version="6.0">
 
-    <display-name>Computer Store Management System</display-name>
+    <display-name>Apach_PC/STORE</display-name>
 
     <!-- TEMPORARY (uncommitted): the DefaultServlet sendfile override below
          collides with the embedded Cargo Tomcat's built-in 'default'
@@ -165,7 +165,9 @@
         <url-pattern>/mail/*</url-pattern>
     </filter-mapping>
 
-    <!-- DISABLED: CartCountFilter causing connection pool exhaustion during rapid page clicks
+    <!-- Badge counts: Caffeine-backed in CartService/MailService/ReviewService
+         (single-flight) plus CountCache (30s, single-flight per session) so a
+         click burst cannot exhaust the pool the way the old uncached filters did. -->
     <filter>
         <filter-name>CartCountFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.web.CartCountFilter</filter-class>
@@ -174,9 +176,8 @@
     <filter-mapping>
         <filter-name>CartCountFilter</filter-name>
         <url-pattern>/*</url-pattern>
-    </filter-mapping> -->
+    </filter-mapping>
 
-    <!-- DISABLED: MailCountFilter causing connection pool exhaustion during rapid page clicks
     <filter>
         <filter-name>MailCountFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.web.MailCountFilter</filter-class>
@@ -185,9 +186,8 @@
     <filter-mapping>
         <filter-name>MailCountFilter</filter-name>
         <url-pattern>/*</url-pattern>
-    </filter-mapping> -->
+    </filter-mapping>
 
-    <!-- DISABLED: ReviewCountFilter causing connection pool exhaustion during rapid page clicks
     <filter>
         <filter-name>ReviewCountFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.web.ReviewCountFilter</filter-class>
@@ -196,7 +196,7 @@
         <filter-name>ReviewCountFilter</filter-name>
         <url-pattern>/admin</url-pattern>
         <url-pattern>/admin/*</url-pattern>
-    </filter-mapping> -->
+    </filter-mapping>
 
     <filter>
         <filter-name>AdminAuthorizationFilter</filter-name>

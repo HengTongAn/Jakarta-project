@@ -6,6 +6,7 @@ import com.hengtongan.computerstore.core.exception.NotFoundException;
 import com.hengtongan.computerstore.core.exception.ValidationException;
 import com.hengtongan.computerstore.core.domain.entity.InventoryLog;
 import com.hengtongan.computerstore.core.domain.entity.Product;
+import com.hengtongan.computerstore.infrastructure.cache.CacheManager;
 import com.hengtongan.computerstore.infrastructure.realtime.EventHub;
 import com.hengtongan.computerstore.infrastructure.persistence.DBConnection;
 
@@ -105,6 +106,9 @@ public class InventoryService {
 
         // Live update after the change is committed (best-effort).
         ProductRepository.invalidateProductCache(productId);
+        CacheManager.invalidateAllCatalog();
+        CacheManager.invalidateProductList();
+        CacheManager.invalidateProductDetail(productId);
         EventHub.publishStock(productId, newQuantity, nextStatus.name());
     }
 

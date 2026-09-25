@@ -1,13 +1,12 @@
 package com.hengtongan.computerstore.core.service;
 
-import com.hengtongan.computerstore.core.service.CartService;
-
 import com.hengtongan.computerstore.core.repository.CartRepository;
 import com.hengtongan.computerstore.core.repository.ProductRepository;
 import com.hengtongan.computerstore.core.exception.NotFoundException;
 import com.hengtongan.computerstore.core.exception.ValidationException;
 import com.hengtongan.computerstore.core.domain.entity.CartItem;
 import com.hengtongan.computerstore.core.domain.entity.Product;
+import com.hengtongan.computerstore.infrastructure.cache.CacheManager;
 import com.hengtongan.computerstore.infrastructure.realtime.EventHub;
 
 import java.math.BigDecimal;
@@ -31,9 +30,18 @@ public class CartService {
         return cartDAO.findItemsByUser(userId);
     }
 
+    /**
+     * Sum of quantities in the user's cart. Memoized in Caffeine (single-flight)
+     * so header badge filters never stampede the DB under rapid navigation.
+     */
     public int countItems(int userId) {
         if (userId <= 0) {
             return 0;
+        }
+        if (CacheManager.isCacheEnabled()) {
+            Object memo = CacheManager.getOrLoadCart(CacheManager.cartCountKey(userId),
+                    k -> cartDAO.countItems(userId));
+            return memo instanceof Integer ? (Integer) memo : 0;
         }
         return cartDAO.countItems(userId);
     }
@@ -84,10 +92,10 @@ public class CartService {
         if (quantity <= 0) {
             throw new ValidationException("Quantity must be at least 1.");
         }
-        CartItem item = cartDAO.findItemsByUser(userId).stream()
-                .filter(i -> i.getCartItemId() == cartItemId)
-                .findFirst()
-                .orElseThrow(() -> new NotFoundException("Cart item does not exist."));
+        CartItem item = cartDAO.findByCartItemId(userId, cartItemId);
+        if (item == null) {
+            throw new NotFoundException("Cart item does not exist.");
+        }
         if (quantity > item.getProduct().getStockQuantity()) {
             throw new ValidationException("Only " + item.getProduct().getStockQuantity()
                     + " units of this product are available.");
@@ -112,6 +120,7 @@ public class CartService {
      * never make a successfully persisted cart operation look like a failure.
      */
     private void publishCartCount(int userId) {
+        CacheManager.invalidateCartCount(userId);
         int count;
         try {
             count = countItems(userId);
@@ -119,5 +128,10 @@ public class CartService {
             return;
         }
         EventHub.publishCart(userId, count);
+    }
+
+    /** Drop the memo after checkout clears the cart outside this service. */
+    public void invalidateCount(int userId) {
+        CacheManager.invalidateCartCount(userId);
     }
 }

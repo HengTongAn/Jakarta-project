@@ -158,13 +158,19 @@ public class OrderService {
             // after commit avoids a concurrent reader re-caching pre-commit stock.
             for (CartItem item : items) {
                 ProductRepository.invalidateProductCache(item.getProductId());
+                CacheManager.invalidateProductDetail(item.getProductId());
             }
-            // Order counts / revenue on the admin dashboard changed, and the
-            // storefront "trending" rows now include the new sales.
+            // Order counts / revenue on the admin dashboard changed.
+            // Catalog list stock is refreshed via per-product cache eviction + SSE;
+            // only bust the catalog memo so trending/sales strips heal within the
+            // 60s TTL without waiting for an admin product edit.
             if (CacheManager.isCacheEnabled()) {
                 CacheManager.invalidateAllDashboard();
                 CacheManager.invalidateAllCatalog();
             }
+            // Cart was cleared in-transaction; drop the badge memo so the next
+            // page render does not show a stale count.
+            CacheManager.invalidateCartCount(userId);
             order.setOrderId(orderId);
             AuditLogger.logDataModification("ORDER_CREATED", user.getUsername(), "ORDER",
                     String.valueOf(orderId), "Checkout total " + total);
@@ -307,16 +313,19 @@ public class OrderService {
             orderDAO.insertStatusEvent(conn, event);
 
             conn.commit();
-            // Any status change alters the dashboard's order lists/counters
-            // (and cancelled/refunded changes revenue and storefront trending).
+            // Dashboard lists/counters always change; catalog stock/trending only
+            // change when units are returned to inventory (cancel/refund).
             if (CacheManager.isCacheEnabled()) {
                 CacheManager.invalidateAllDashboard();
-                CacheManager.invalidateAllCatalog();
+                if (restock) {
+                    CacheManager.invalidateAllCatalog();
+                }
             }
             if (restock) {
                 // Evict after commit so the returned stock is visible at once.
                 for (Integer productId : restoredQuantities.keySet()) {
                     ProductRepository.invalidateProductCache(productId);
+                    CacheManager.invalidateProductDetail(productId);
                 }
                 AuditLogger.logDataModification(logAction, actorName, "ORDER",
                         String.valueOf(orderId),

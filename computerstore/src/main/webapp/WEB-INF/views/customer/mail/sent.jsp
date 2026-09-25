@@ -2,15 +2,15 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
-<c:set var="pageTitle" value="Sent Mail - TechStore"/>
+<c:set var="pageTitle" value="Sent - Contact support - Apach_PC/STORE"/>
 <%@ include file="../../layouts/header.jspf" %>
 <div class="container py-4">
     <div class="mail-layout">
         <div class="mail-rail">
-            <a class="btn btn-brand w-100 mb-3" href="${pageContext.request.contextPath}/mail/compose">Compose</a>
-            <span class="mail-nav-sm-text">Mailbox</span>
+            <a class="btn btn-brand w-100 mb-3" href="${pageContext.request.contextPath}/mail/compose">New request</a>
+            <span class="mail-nav-sm-text">Contact support</span>
             <a class="mail-nav-link" href="${pageContext.request.contextPath}/mail">
-                Inbox
+                Conversations
                 <span class="mail-nav-count<c:if test="${empty mailCount || mailCount == 0}"> d-none</c:if>">${mailCount}</span>
             </a>
             <a class="mail-nav-link active" href="${pageContext.request.contextPath}/mail/sent">Sent</a>

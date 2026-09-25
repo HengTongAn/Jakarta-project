@@ -55,22 +55,22 @@ public class ProductServlet extends BaseServlet {
 
     private void showDetail(int productId, HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        ProductService productService = app().productService();
         CategoryService categoryService = app().categoryService();
         ReviewService reviewService = app().reviewService();
         try {
-            Product product = productService.get(productId);
+            Map<String, Object> detail = loadDetail(productId);
+            Product product = (Product) detail.get("product");
             if (product.getStatus() == Product.Status.DISCONTINUED) {
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
             }
-            request.setAttribute("product", ProductViewMapper.toDetail(product, app().productService().getSpecs(productId)));
+            request.setAttribute("product", detail.get("view"));
             request.setAttribute("categories", categoryService.getAll());
-            // Customer reviews (approved only) + the aggregate rating.
-            request.setAttribute("reviews", reviewService.findApprovedByProduct(productId));
-            request.setAttribute("ratingSummary", reviewService.getRatingSummary(productId));
+            request.setAttribute("reviews", detail.get("reviews"));
+            request.setAttribute("ratingSummary", detail.get("ratingSummary"));
             User user = currentUser(request);
             if (user != null) {
+                // User-specific — never share via the detail memo.
                 request.setAttribute("myReview", reviewService.findByUserAndProduct(user.getUserId(), productId));
             }
         } catch (NotFoundException e) {
@@ -78,6 +78,32 @@ public class ProductServlet extends BaseServlet {
             return;
         }
         forward(request, response, "customer/products/detail.jsp");
+    }
+
+    /**
+     * Shared half of a product detail page (product + specs + approved reviews
+     * + rating). Memoized 60s with single-flight so concurrent detail hits do
+     * not each open a pile of connections.
+     */
+    private Map<String, Object> loadDetail(int productId) {
+        final String key = "detail_" + productId;
+        if (CacheManager.isCacheEnabled()) {
+            Object memo = CacheManager.getOrLoadDetail(key, k -> buildDetail(productId));
+            return (Map<String, Object>) memo;
+        }
+        return buildDetail(productId);
+    }
+
+    private Map<String, Object> buildDetail(int productId) {
+        ProductService productService = app().productService();
+        ReviewService reviewService = app().reviewService();
+        Product product = productService.get(productId);
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("product", product);
+        data.put("view", ProductViewMapper.toDetail(product, productService.getSpecs(productId)));
+        data.put("reviews", reviewService.findApprovedByProduct(productId));
+        data.put("ratingSummary", reviewService.getRatingSummary(productId));
+        return data;
     }
 
     private void showList(HttpServletRequest request, HttpServletResponse response)

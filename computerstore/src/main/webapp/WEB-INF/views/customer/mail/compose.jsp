@@ -1,20 +1,20 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<c:set var="pageTitle" value="Compose - TechStore"/>
+<c:set var="pageTitle" value="Contact support - Apach_PC/STORE"/>
 <%@ include file="../../layouts/header.jspf" %>
 <div class="container py-4">
     <div class="mail-layout">
         <div class="mail-rail">
-            <a class="btn btn-brand w-100 mb-3" href="${pageContext.request.contextPath}/mail/compose">Compose</a>
-            <span class="mail-nav-sm-text">Mailbox</span>
+            <a class="btn btn-brand w-100 mb-3" href="${pageContext.request.contextPath}/mail/compose">New request</a>
+            <span class="mail-nav-sm-text">Contact support</span>
             <a class="mail-nav-link" href="${pageContext.request.contextPath}/mail">
-                Inbox
+                Conversations
                 <span class="mail-nav-count<c:if test="${empty mailCount || mailCount == 0}"> d-none</c:if>">${mailCount}</span>
             </a>
             <a class="mail-nav-link" href="${pageContext.request.contextPath}/mail/sent">Sent</a>
         </div>
         <div class="mail-main p-3">
-            <h5 class="fw-bold mb-3">New message</h5>
+            <h5 class="fw-bold mb-3">Contact support</h5>
 
             <c:if test="${not empty original}">
                 <div class="alert alert-light border small">
@@ -35,7 +35,7 @@
                         </c:when>
                         <c:otherwise>
                             <select class="form-select" name="recipientId" required>
-                                <option value="">Choose a recipient…</option>
+                                <option value="">Choose support staff…</option>
                                 <c:forEach var="r" items="${recipients}">
                                     <option value="${r.userId}"><c:out value="${r.fullName}"/> (<c:out value="${r.username}"/>)</option>
                                 </c:forEach>

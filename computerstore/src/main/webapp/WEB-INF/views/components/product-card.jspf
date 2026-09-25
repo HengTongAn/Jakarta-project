@@ -1,3 +1,4 @@
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%-- Reusable product card. Expects ${p} (a ProductCardVM) in scope. --%>
 <div class="card product-card h-100">
     <a href="${pageContext.request.contextPath}/products?id=${p.productId}" class="product-media text-decoration-none">
@@ -27,7 +28,7 @@
         <c:if test="${p.hasReviews()}">
             <div class="p-rating">
                 <span class="stars text-warning" aria-hidden="true">
-                    <c:forEach begin="1" end="${p.displayStars}">★</c:forEach><c:forEach begin="${p.displayStars + 1}" end="5">☆</c:forEach>
+                    <c:forEach begin="1" end="${p.displayStars}">&#9733;</c:forEach><c:forEach begin="${p.displayStars + 1}" end="5">&#9734;</c:forEach>
                 </span>
                 <span class="text-muted">${p.average} (${p.reviewCount})</span>
             </div>

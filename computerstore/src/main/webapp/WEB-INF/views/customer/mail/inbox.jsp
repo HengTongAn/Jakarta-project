@@ -20,21 +20,21 @@
     request.setAttribute("_convs", convs);
     request.setAttribute("_unreadBy", unreadBy);
 %>
-<c:set var="pageTitle" value="Chats - TechStore"/>
+<c:set var="pageTitle" value="Contact support - Apach_PC/STORE"/>
 <%@ include file="../../layouts/header.jspf" %>
 <div class="container py-4">
     <div class="chat-shell">
         <div class="chat-shell-head">
             <div>
-                <h5 class="mb-0 fw-bold">Chats</h5>
-                <span class="small text-muted">${unreadCount} unread messages</span>
+                <h5 class="mb-0 fw-bold">Contact support</h5>
+                <span class="small text-muted">${unreadCount} unread</span>
             </div>
             <div class="d-flex gap-2 align-items-center">
                 <form method="post" action="${pageContext.request.contextPath}/mail/read-all">
                     <input type="hidden" name="csrfToken" value="${csrfToken}">
                     <button type="submit" class="btn btn-light btn-sm">Mark all read</button>
                 </form>
-                <a class="btn btn-brand btn-sm" href="${pageContext.request.contextPath}/mail/compose">New message</a>
+                <a class="btn btn-brand btn-sm" href="${pageContext.request.contextPath}/mail/compose">New request</a>
             </div>
         </div>
         <div class="chat-conv-list"
@@ -66,7 +66,7 @@
                 </a>
             </c:forEach>
             <c:if test="${empty _convs}">
-                <div class="chat-empty">No messages yet.</div>
+                <div class="chat-empty">No support conversations yet. Start with a new request.</div>
             </c:if>
         </div>
     </div>

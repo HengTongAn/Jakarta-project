@@ -11,7 +11,7 @@ import java.util.function.IntSupplier;
  * Tiny session-scoped cache used by the header count filters. The unread-mail
  * and cart counters sit in the navigation on every page, but there is no need
  * to re-run their SQL on each of the ten CSS/JS/image requests that a single
- * page view causes. Values are cached for a few seconds; the real-time SSE
+ * page view causes. Values are cached for a short window; the real-time SSE
  * events keep them fresh in the browser in between.
  *
  * <p>Values are keyed by the session id in a plain {@link ConcurrentHashMap}
@@ -19,12 +19,20 @@ import java.util.function.IntSupplier;
  * synchronizes attribute access on the session object, so every tab of the
  * same browser contended on that lock just to read a counter; the map removes
  * session-lock traffic from the request path entirely. Entries are pruned on a
- * TTL basis (rollover of the 4 s window), so a session that stops visiting
- * cleans itself up on the next {@link #get} sweep.</p>
+ * TTL basis, so a session that stops visiting cleans itself up on the next
+ * {@link #get} sweep.</p>
+ *
+ * <p>Misses are single-flight per session+key (synchronized on the session
+ * bag) so a click burst cannot stampede the database with concurrent loaders.
+ * Call {@link #invalidate} after mutations so badges stay correct without
+ * waiting for TTL.</p>
  */
 public final class CountCache {
 
-    private static final long TTL_MS = 4000L;
+    /** Long enough to absorb a click burst; short enough to self-heal if a
+     * mutation forgets to invalidate. Service-layer Caffeine is the primary
+     * DB shield; this is the per-session micro-cache. */
+    private static final long TTL_MS = 30_000L;
 
     /** Every {sessionId -> {key -> entry}} pair. Bounded by active sessions. */
     private static final ConcurrentHashMap<String, Map<String, Entry>> SESSIONS = new ConcurrentHashMap<>();
@@ -37,16 +45,42 @@ public final class CountCache {
     }
 
     public static int get(HttpSession session, String key, IntSupplier loader) {
-        long now = System.currentTimeMillis();
         Map<String, Entry> bag = SESSIONS.computeIfAbsent(session.getId(), k -> new ConcurrentHashMap<>());
+        long now = System.currentTimeMillis();
         Entry entry = bag.get(key);
         if (entry != null && now - entry.storedAt < TTL_MS) {
             return entry.value;
         }
-        int value = loader.getAsInt();
-        bag.put(key, new Entry(value, now));
-        maybeSweep();
-        return value;
+        // Single-flight: concurrent misses for the same session+key share one load.
+        synchronized (bag) {
+            entry = bag.get(key);
+            now = System.currentTimeMillis();
+            if (entry != null && now - entry.storedAt < TTL_MS) {
+                return entry.value;
+            }
+            int value = loader.getAsInt();
+            bag.put(key, new Entry(value, now));
+            maybeSweep();
+            return value;
+        }
+    }
+
+    /** Drops one counter so the next page view reloads it. */
+    public static void invalidate(HttpSession session, String key) {
+        if (session == null || key == null) {
+            return;
+        }
+        Map<String, Entry> bag = SESSIONS.get(session.getId());
+        if (bag != null) {
+            bag.remove(key);
+        }
+    }
+
+    /** Drops every counter for a session (logout / session rotate). */
+    public static void invalidateSession(HttpSession session) {
+        if (session != null) {
+            SESSIONS.remove(session.getId());
+        }
     }
 
     /**

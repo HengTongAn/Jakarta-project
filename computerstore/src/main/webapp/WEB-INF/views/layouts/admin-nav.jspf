@@ -4,8 +4,8 @@
 <c:set var="_sp" value="${empty requestScope['jakarta.servlet.forward.servlet_path'] ? pageContext.request.servletPath : requestScope['jakarta.servlet.forward.servlet_path']}"/>
 <nav class="navbar navbar-expand-lg border-bottom py-1 admin-nav" data-bs-theme="auto">
     <div class="container d-flex align-items-center gap-2">
-        <span class="admin-brand d-flex align-items-center gap-2 me-1" aria-label="TechStore admin panel">
-            <img src="${pageContext.request.contextPath}/assets/images/techstore-mark.svg" alt="TechStore" style="height:22px;width:auto">
+        <span class="admin-brand d-flex align-items-center gap-2 me-1" aria-label="Apach_PC/STORE admin panel">
+            <img src="${pageContext.request.contextPath}/assets/images/apach-pc-store.svg" alt="Apach_PC/STORE" style="height:22px;width:auto">
             <span class="fw-semibold">Admin Panel</span>
         </span>
         <span class="admin-nav-label d-none d-xl-inline">Manage your store</span>
@@ -21,7 +21,7 @@
             </a>
             <a class="nav-link${fn:startsWith(_sp, '/admin/users') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/users') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/users"><i class="bi bi-people" aria-hidden="true"></i> Users</a>
             <a class="nav-link position-relative${fn:startsWith(_sp, '/admin/mail') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/mail') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/mail">
-                <i class="bi bi-envelope" aria-hidden="true"></i> Mail
+                <i class="bi bi-headset" aria-hidden="true"></i> Contact support
                 <span class="badge bg-danger rounded-pill mail-live-count<c:if test="${empty mailCount || mailCount == 0}"> d-none</c:if>">${mailCount}</span>
             </a>
             <a class="nav-link${fn:startsWith(_sp, '/admin/history') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/history') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/history"><i class="bi bi-clock-history" aria-hidden="true"></i> History</a>

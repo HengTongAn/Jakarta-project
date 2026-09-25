@@ -69,9 +69,9 @@ public class PasswordResetService {
                 + link + "\n\n"
                 + "The link expires in " + PasswordResetToken.EXPIRY_MINUTES
                 + " minutes and can be used only once. If you didn't ask for this, ignore the email.\n\n"
-                + "TechStore";
+                + "Apach_PC/STORE";
 
-        boolean sent = EmailUtil.send(user.getEmail(), "Reset your password - TechStore", body);
+        boolean sent = EmailUtil.send(user.getEmail(), "Reset your password - Apach_PC/STORE", body);
         if (!sent) {
             // Development fallback: the link must never leak to the console by
             // default. Log it only when explicitly opted in via

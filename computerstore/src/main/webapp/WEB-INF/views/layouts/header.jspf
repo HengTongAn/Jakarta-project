@@ -42,7 +42,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><c:out value="${empty pageTitle ? 'Computer Store' : pageTitle}"/></title>
+    <title><c:out value="${empty pageTitle ? 'Apach_PC/STORE' : pageTitle}"/></title>
     <script>
         /* FOUC-safe theme boot: apply the saved (or OS-preferred) scheme
            before the stylesheets paint so the page never flashes light-ven.
@@ -59,9 +59,8 @@
             root.style.colorScheme = theme;
         })();
     </script>
-    <link rel="icon" type="image/png" sizes="32x32" href="${pageContext.request.contextPath}/assets/images/favicon-32.png">
-    <link rel="icon" type="image/png" sizes="48x48" href="${pageContext.request.contextPath}/assets/images/favicon-48.png">
-    <link rel="apple-touch-icon" href="${pageContext.request.contextPath}/assets/images/apple-touch-icon.png">
+    <link rel="icon" type="image/svg+xml" href="${pageContext.request.contextPath}/assets/images/apach-pc-store.svg">
+    <link rel="apple-touch-icon" type="image/svg+xml" href="${pageContext.request.contextPath}/assets/images/apach-pc-store.svg">
     <link href="${pageContext.request.contextPath}/assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
     <link href="${pageContext.request.contextPath}/assets/vendor/bootstrap-icons/bootstrap-icons.min.css" rel="stylesheet">
     <%-- App stylesheets - LAYER ORDER MATTERS: tokens -> base -> layout ->
@@ -96,8 +95,9 @@
 <div id="scrollProgress" class="scroll-progress" role="progressbar" aria-label="Page reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top site-topbar">
     <div class="container">
-        <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="${pageContext.request.contextPath}/products" aria-label="TechStore home">
-            <img class="brand-logo" src="${pageContext.request.contextPath}/assets/images/techstore-mark.svg" alt="TechStore logo">
+        <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="${pageContext.request.contextPath}/products" aria-label="Apach_PC/STORE home">
+            <img class="brand-logo" src="${pageContext.request.contextPath}/assets/images/apach-pc-store.svg" alt="Apach_PC/STORE logo">
+            <span class="brand-txt">Apach_PC/STORE</span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -156,7 +156,7 @@
                                 <li><a class="dropdown-item${fn:startsWith(_sp, '/account/profile') ? ' active' : ''}" href="${pageContext.request.contextPath}/account/profile"><i class="bi bi-person-vcard me-2" aria-hidden="true"></i>Profile</a></li>
                                 <li>
                                     <a class="dropdown-item${fn:startsWith(_sp, '/mail') || fn:startsWith(_sp, '/admin/mail') ? ' active' : ''}" href="${pageContext.request.contextPath}${sessionScope.user.isAdmin() ? '/admin/mail' : '/mail'}">
-                                        <i class="bi bi-envelope me-2" aria-hidden="true"></i>Messages
+                                        <i class="bi bi-headset me-2" aria-hidden="true"></i>Contact support
                                         <span class="badge bg-danger rounded-pill mail-live-count<c:if test="${empty mailCount || mailCount == 0}"> d-none</c:if>">${mailCount}</span>
                                     </a>
                                 </li>

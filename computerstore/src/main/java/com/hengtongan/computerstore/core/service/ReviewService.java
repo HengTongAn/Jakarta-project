@@ -82,6 +82,7 @@ public class ReviewService {
         // Pending count shown to admins changed.
         if (CacheManager.isCacheEnabled()) {
             CacheManager.invalidateAllDashboard();
+            CacheManager.invalidateCart("pending_reviews");
         }
         publishPendingReviewCount();
         return review;
@@ -138,6 +139,11 @@ public class ReviewService {
     }
 
     public int count(Review.Status status) {
+        if (status == Review.Status.PENDING && CacheManager.isCacheEnabled()) {
+            Object memo = CacheManager.getOrLoadCart("pending_reviews",
+                    k -> reviewDAO.count(Review.Status.PENDING));
+            return memo instanceof Integer ? (Integer) memo : 0;
+        }
         return reviewDAO.count(status);
     }
 
@@ -150,22 +156,30 @@ public class ReviewService {
     }
 
     private void changeStatus(int reviewId, Review.Status status) {
-        if (reviewDAO.findById(reviewId) == null) {
+        Review existing = reviewDAO.findById(reviewId);
+        if (existing == null) {
             throw new NotFoundException("Review not found.");
         }
         reviewDAO.updateStatus(reviewId, status);
         if (CacheManager.isCacheEnabled()) {
             CacheManager.invalidateAllDashboard();
             CacheManager.invalidateAllCatalog(); // approved testimonials on the storefront home
+            CacheManager.invalidateCart("pending_reviews");
+            CacheManager.invalidateProductDetail(existing.getProductId());
         }
         publishPendingReviewCount();
     }
 
     public boolean delete(int reviewId) {
+        Review existing = reviewDAO.findById(reviewId);
         boolean removed = reviewDAO.delete(reviewId);
         if (removed && CacheManager.isCacheEnabled()) {
             CacheManager.invalidateAllDashboard();
             CacheManager.invalidateAllCatalog(); // approved testimonials on the storefront home
+            CacheManager.invalidateCart("pending_reviews");
+            if (existing != null) {
+                CacheManager.invalidateProductDetail(existing.getProductId());
+            }
         }
         if (removed) {
             publishPendingReviewCount();
@@ -179,6 +193,6 @@ public class ReviewService {
      * figure so clients do not need a follow-up request.
      */
     private void publishPendingReviewCount() {
-        EventHub.publish("reviews", "{\"pending\":" + reviewDAO.count(Review.Status.PENDING) + "}");
+        EventHub.publish("reviews", "{\"pending\":" + count(Review.Status.PENDING) + "}");
     }
 }

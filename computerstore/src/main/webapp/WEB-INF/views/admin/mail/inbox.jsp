@@ -20,15 +20,15 @@
     request.setAttribute("_convs", convs);
     request.setAttribute("_unreadBy", unreadBy);
 %>
-<c:set var="pageTitle" value="Chats - Admin"/>
+<c:set var="pageTitle" value="Contact support - Admin"/>
 <%@ include file="../../layouts/header.jspf" %>
 <%@ include file="../../layouts/admin-nav.jspf" %>
 <div class="container py-4">
     <div class="chat-shell">
         <div class="chat-shell-head">
             <div>
-                <h5 class="mb-0 fw-bold">Chats</h5>
-                <span class="small text-muted">${unreadCount} unread messages</span>
+                <h5 class="mb-0 fw-bold">Contact support</h5>
+                <span class="small text-muted">${unreadCount} unread</span>
             </div>
             <div class="d-flex gap-2 align-items-center">
                 <form method="post" action="${pageContext.request.contextPath}/admin/mail/read-all">
