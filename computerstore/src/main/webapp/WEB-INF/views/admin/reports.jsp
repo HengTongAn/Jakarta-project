@@ -5,109 +5,149 @@
 <%@ include file="../layouts/header.jspf" %>
 <%@ include file="../layouts/admin-nav.jspf" %>
 
-<div class="container py-4">
-    <h4 class="fw-bold mb-3">Reports</h4>
+<div class="container py-4" data-reports data-reports-range="${activeRange}">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <h4 class="fw-bold mb-0">Reports</h4>
+            <span class="small text-muted">Sales analytics · stock valuation</span>
+        </div>
+        <div class="btn-group" role="group" aria-label="Report period">
+            <a class="btn btn-sm ${activeRange == 'today' ? 'btn-primary' : 'btn-outline-primary'}"
+               href="?range=today">Today</a>
+            <a class="btn btn-sm ${activeRange == '7d' ? 'btn-primary' : 'btn-outline-primary'}"
+               href="?range=7d">Last 7 days</a>
+            <a class="btn btn-sm ${activeRange == '30d' ? 'btn-primary' : 'btn-outline-primary'}"
+               href="?range=30d">Last 30 days</a>
+            <a class="btn btn-sm ${activeRange == 'all' ? 'btn-primary' : 'btn-outline-primary'}"
+               href="?range=all">All time</a>
+        </div>
+    </div>
 
     <div class="row g-3 mb-3">
         <div class="col-md-3 col-sm-6">
             <div class="card stats-card">
                 <div class="card-body d-flex align-items-center gap-3">
-                    <div class="icon bg-primary bg-opacity-10 text-primary">O</div>
-                    <div><div class="fs-4 fw-bold">${summary.totalOrders}</div><div class="small text-muted">Total orders</div></div>
+                    <div class="icon bg-primary bg-opacity-10 text-primary">$</div>
+                    <div>
+                        <div class="fs-4 fw-bold money" data-live-report="totalRevenue">$<fmt:formatNumber value="${summary.totalRevenue}" pattern="#,##0.00"/></div>
+                        <div class="small text-muted">Revenue · ${periodLabel}</div>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="col-md-3 col-sm-6">
             <div class="card stats-card">
                 <div class="card-body d-flex align-items-center gap-3">
-                    <div class="icon bg-success bg-opacity-10 text-success">$</div>
-                    <div><div class="fs-4 fw-bold money">$<fmt:formatNumber value="${summary.totalRevenue}" pattern="#,##0.00"/></div><div class="small text-muted">Total revenue</div></div>
+                    <div class="icon bg-success bg-opacity-10 text-success">S</div>
+                    <div>
+                        <div class="fs-4 fw-bold" data-live-report="itemsSold">${summary.itemsSold}</div>
+                        <div class="small text-muted">Items sold · ${periodLabel}</div>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="col-md-3 col-sm-6">
             <div class="card stats-card">
                 <div class="card-body d-flex align-items-center gap-3">
-                    <div class="icon bg-info bg-opacity-10 text-info">S</div>
-                    <div><div class="fs-4 fw-bold">${summary.itemsSold}</div><div class="small text-muted">Items sold</div></div>
+                    <div class="icon bg-info bg-opacity-10 text-info">O</div>
+                    <div>
+                        <div class="fs-4 fw-bold" data-live-report="totalOrders">${summary.totalOrders}</div>
+                        <div class="small text-muted">Orders · ${periodLabel}</div>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="col-md-3 col-sm-6">
             <div class="card stats-card">
                 <div class="card-body d-flex align-items-center gap-3">
-                    <div class="icon bg-secondary bg-opacity-10 text-secondary">P</div>
-                    <div><div class="fs-4 fw-bold">${summary.productCount}</div><div class="small text-muted">Products in catalogue</div></div>
+                    <div class="icon bg-secondary bg-opacity-10 text-secondary">A</div>
+                    <div>
+                        <div class="fs-4 fw-bold money" data-live-report="avgOrderValue">$<fmt:formatNumber value="${summary.avgOrderValue}" pattern="#,##0.00"/></div>
+                        <div class="small text-muted">Avg order value · ${periodLabel}</div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="row g-3 mb-3">
-        <div class="col-lg-4">
-            <div class="card card-hover h-100">
+        <div class="col-lg-8">
+            <div class="card card-hover dashboard-chart-card h-100" aria-labelledby="revenueTrendTitle">
+                <div class="card-header bg-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 id="revenueTrendTitle" class="mb-0 fw-semibold">Revenue trend</h5>
+                        <span class="small text-muted">Net sales · ${periodLabel}</span>
+                    </div>
+                    <span class="badge text-bg-primary" data-live-indicator><i class="bi bi-broadcast me-1" aria-hidden="true"></i><span data-live-indicator-label>Live</span></span>
+                </div>
                 <div class="card-body">
-                    <h6 class="fw-bold mb-3">Orders by status</h6>
+                    <div class="chart-wrap">
+                        <canvas id="revenueTrendChart" aria-label="Line chart of revenue over the selected period" role="img"></canvas>
+                        <div class="chart-empty d-none" id="revenueTrendEmpty">No sales in this period yet.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 d-flex flex-column gap-3">
+            <div class="card card-hover">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3">Orders by status <span class="small text-muted fw-normal">· ${periodLabel}</span></h6>
                     <table class="table table-sm table-borderless mb-0 small">
                         <tbody>
-                        <tr><td>Pending</td><td class="text-end fw-semibold">${summary.pending}</td></tr>
-                        <tr><td>Processing</td><td class="text-end fw-semibold">${summary.processing}</td></tr>
-                        <tr><td>Shipped</td><td class="text-end fw-semibold">${summary.shipped}</td></tr>
-                        <tr><td>Completed</td><td class="text-end fw-semibold">${summary.completed}</td></tr>
-                        <tr><td>Cancelled</td><td class="text-end fw-semibold">${summary.cancelled}</td></tr>
-                        <tr><td>Refunded</td><td class="text-end fw-semibold">${summary.refunded}</td></tr>
+                        <tr><td>Pending</td><td class="text-end fw-semibold" data-live-funnel="pending">${summary.pending}</td></tr>
+                        <tr><td>Processing</td><td class="text-end fw-semibold" data-live-funnel="processing">${summary.processing}</td></tr>
+                        <tr><td>Shipped</td><td class="text-end fw-semibold" data-live-funnel="shipped">${summary.shipped}</td></tr>
+                        <tr><td>Completed</td><td class="text-end fw-semibold" data-live-funnel="completed">${summary.completed}</td></tr>
+                        <tr><td>Cancelled</td><td class="text-end fw-semibold" data-live-funnel="cancelled">${summary.cancelled}</td></tr>
+                        <tr><td>Refunded</td><td class="text-end fw-semibold" data-live-funnel="refunded">${summary.refunded}</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
-        </div>
-        <div class="col-lg-4">
-            <div class="card card-hover h-100">
+            <div class="card card-hover">
                 <div class="card-body">
-                    <h6 class="fw-bold mb-3">Stock values</h6>
+                    <h6 class="fw-bold mb-3">Stock values <span class="small text-muted fw-normal">(all time)</span></h6>
                     <table class="table table-sm table-borderless mb-0 small">
                         <tbody>
-                        <tr><td>Total stock value</td><td class="text-end fw-semibold money">$<fmt:formatNumber value="${stockValues.totalStockValue}" pattern="#,##0.00"/></td></tr>
-                        <tr><td>Low stock value</td><td class="text-end fw-semibold money">$<fmt:formatNumber value="${stockValues.lowStockValue}" pattern="#,##0.00"/></td></tr>
+                        <tr><td>Total stock value</td><td class="text-end fw-semibold money" data-live-stock="totalStockValue">$<fmt:formatNumber value="${stockValues.totalStockValue}" pattern="#,##0.00"/></td></tr>
+                        <tr><td>Low stock value</td><td class="text-end fw-semibold money" data-live-stock="lowStockValue">$<fmt:formatNumber value="${stockValues.lowStockValue}" pattern="#,##0.00"/></td></tr>
                         </tbody>
                     </table>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4">
-            <div class="card card-hover h-100">
-                <div class="card-body d-flex flex-column gap-2">
-                    <h6 class="fw-bold mb-0">Alerts</h6>
-                    <p class="small text-muted mb-0">
-                        Low stock products: <b>${lowStock.size()}</b><br>
-                        Out of stock products: <b>${outOfStock.size()}</b>
-                    </p>
-                    <a href="${pageContext.request.contextPath}/admin/inventory" class="btn btn-outline-primary btn-sm">Go to inventory</a>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="card card-hover">
-<div class="card-header bg-body fw-semibold">Restock attention (low stock)</div>        <div class="table-responsive">
+        <div class="card-header bg-body fw-semibold">Top-selling products <span class="small text-muted fw-normal">· ${periodLabel}</span></div>
+        <div class="table-responsive">
             <table class="table align-middle mb-0">
                 <thead class="table-light">
-                <tr><th>Product</th><th class="text-center">Stock</th><th class="text-end">Unit price</th></tr>
+                <tr><th class="text-muted fw-semibold" style="width:3rem">#</th><th>Product</th><th class="text-center">Units sold</th><th class="text-end">Revenue</th></tr>
                 </thead>
-                <tbody>
-                <c:forEach var="p" items="${lowStock}">
+                <tbody data-top-sellers>
+                <c:forEach var="s" items="${topSellers}" varStatus="st">
                     <tr>
-                        <td class="small"><c:out value="${p.name}"/></td>
-                        <td class="text-center text-warning fw-semibold">${p.stockQuantity}</td>
-                        <td class="text-end money">$<fmt:formatNumber value="${p.price}" pattern="#,##0.00"/></td>
+                        <td class="text-muted">${st.index + 1}</td>
+                        <td class="small"><c:out value="${s.name}"/></td>
+                        <td class="text-center fw-semibold">${s.quantity}</td>
+                        <td class="text-end money">$<fmt:formatNumber value="${s.revenue}" pattern="#,##0.00"/></td>
                     </tr>
                 </c:forEach>
-                <c:if test="${empty lowStock}">
-                    <tr><td colspan="3" class="text-center text-muted py-4">No low stock items.</td></tr>
+                <c:if test="${empty topSellers}">
+                    <tr><td colspan="4" class="text-center text-muted py-4">No sales in this period yet.</td></tr>
                 </c:if>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+
+<script src="${pageContext.request.contextPath}/assets/vendor/chart.js/chart.umd.min.js"></script>
+<script>
+    // Initial series data for reports-live.js. Chart creation lives there so
+    // a later refresh can also build the chart when data first arrives.
+    window.__reportSeries = [<c:forEach var="pt" items="${series}" varStatus="s">{label:'${pt.label}', value:${pt.value}}${s.last ? '' : ','}</c:forEach>];
+</script>
+<script src="${pageContext.request.contextPath}/assets/js/reports-live.js"></script>
 <%@ include file="../layouts/footer.jspf" %>
