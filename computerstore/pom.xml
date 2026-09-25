@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example</groupId>
+    <artifactId>computerstore</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>war</packaging>
+    <name>computerstore</name>
+
+    <properties>
+	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	<maven.compiler.release>17</maven.compiler.release>
+	<junit.version>5.10.2</junit.version>
+    </properties>
+
+    <dependencies>
+	<!-- Jakarta Servlet API (provided by container: Tomcat 11 / Jakarta EE 11) -->
+	<dependency>
+	    <groupId>jakarta.servlet</groupId>
+	    <artifactId>jakarta.servlet-api</artifactId>
+	    <version>6.1.0</version>
+	    <scope>provided</scope>
+	</dependency>
+	<!-- Jakarta JSP API (provided by container) -->
+	<dependency>
+	    <groupId>jakarta.servlet.jsp</groupId>
+	    <artifactId>jakarta.servlet.jsp-api</artifactId>
+	    <version>4.0.0</version>
+	    <scope>provided</scope>
+	</dependency>
+
+	<!-- JSTL API + implementation for jakarta.tags.core / fmt / functions -->
+	<dependency>
+	    <groupId>jakarta.servlet.jsp.jstl</groupId>
+	    <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
+	    <version>3.0.2</version>
+	</dependency>
+	<dependency>
+	    <groupId>org.glassfish.web</groupId>
+	    <artifactId>jakarta.servlet.jsp.jstl</artifactId>
+	    <version>3.0.1</version>
+	</dependency>
+
+	<!-- Jakarta Mail for SMTP notifications -->
+	<dependency>
+	    <groupId>com.sun.mail</groupId>
+	    <artifactId>jakarta.mail</artifactId>
+	    <version>2.0.1</version>
+	</dependency>
+
+	<!-- MySQL JDBC driver. 8.4.0 -> 9.6.0: 8.4.0 is affected by the Oracle
+	     July-2024 CPU CVEs (CVE-2024-21170, CVE-2024-21171); 9.6.0 also
+	     postdates CVE-2025-30706 (patched in 9.3.0) and predates the 2026
+	     9.7.x advisory, staying on the mature 9.x line. -->
+	<dependency>
+	    <groupId>com.mysql</groupId>
+	    <artifactId>mysql-connector-j</artifactId>
+	    <version>9.6.0</version>
+	</dependency>
+
+	<!-- SLF4J API -->
+	<dependency>
+	    <groupId>org.slf4j</groupId>
+	    <artifactId>slf4j-api</artifactId>
+	    <version>2.0.13</version>
+	</dependency>
+
+	<!-- Logback Classic (SLF4J implementation) -->
+	<dependency>
+	    <groupId>ch.qos.logback</groupId>
+	    <artifactId>logback-classic</artifactId>
+	    <version>1.5.6</version>
+	</dependency>
+
+	<!-- HikariCP connection pool: one pooled connection per query instead
+	of a fresh DriverManager connection (the per-page slowness source). -->
+	<dependency>
+	    <groupId>com.zaxxer</groupId>
+	    <artifactId>HikariCP</artifactId>
+	    <version>5.1.0</version>
+	</dependency>
+
+	<!-- BCrypt password hashing -->
+	<dependency>
+	    <groupId>org.mindrot</groupId>
+	    <artifactId>jbcrypt</artifactId>
+	    <version>0.4</version>
+	</dependency>
+
+	<!-- Caffeine caching library for in-memory caching -->
+	<dependency>
+	    <groupId>com.github.ben-manes.caffeine</groupId>
+	    <artifactId>caffeine</artifactId>
+	    <version>3.1.8</version>
+	</dependency>
+
+	<!-- Google Authenticator for TOTP 2FA -->
+	<dependency>
+	    <groupId>com.warrenstrange</groupId>
+	    <artifactId>googleauth</artifactId>
+	    <version>1.5.0</version>
+	</dependency>
+
+	<!-- QR Code generation for 2FA setup -->
+	<dependency>
+	    <groupId>com.google.zxing</groupId>
+	    <artifactId>core</artifactId>
+	    <version>3.5.2</version>
+	</dependency>
+	<dependency>
+	    <groupId>com.google.zxing</groupId>
+	    <artifactId>javase</artifactId>
+	    <version>3.5.2</version>
+	</dependency>
+
+	<!-- Tomcat 11 for embedded deployment (Cargo plugin) -->
+	<dependency>
+	    <groupId>org.apache.tomcat</groupId>
+	    <artifactId>tomcat-catalina</artifactId>
+	    <version>11.0.0</version>
+	    <scope>runtime</scope>
+	</dependency>
+	<dependency>
+	    <groupId>org.apache.tomcat</groupId>
+	    <artifactId>tomcat-coyote</artifactId>
+	    <version>11.0.0</version>
+	    <scope>runtime</scope>
+	</dependency>
+	<dependency>
+	    <groupId>org.apache.tomcat</groupId>
+	    <artifactId>tomcat-jasper</artifactId>
+	    <version>11.0.0</version>
+	    <scope>runtime</scope>
+	</dependency>
+
+	<!-- Unit tests -->
+	<dependency>
+	    <groupId>org.junit.jupiter</groupId>
+	    <artifactId>junit-jupiter</artifactId>
+	    <version>${junit.version}</version>
+	    <scope>test</scope>
+	</dependency>
+	<dependency>
+	    <groupId>org.mockito</groupId>
+	    <artifactId>mockito-core</artifactId>
+	    <version>5.12.0</version>
+	    <scope>test</scope>
+	</dependency>
+	<dependency>
+	    <groupId>org.mockito</groupId>
+	    <artifactId>mockito-junit-jupiter</artifactId>
+	    <version>5.12.0</version>
+	    <scope>test</scope>
+	</dependency>
+    </dependencies>
+
+    <build>
+	<finalName>computerstore</finalName>
+	<plugins>
+	    <plugin>
+		<groupId>org.apache.maven.plugins</groupId>
+		<artifactId>maven-compiler-plugin</artifactId>
+		<version>3.13.0</version>
+	    </plugin>
+	    <plugin>
+		<groupId>org.apache.maven.plugins</groupId>
+		<artifactId>maven-war-plugin</artifactId>
+		<version>3.4.0</version>
+	    </plugin>
+	    <plugin>
+		<groupId>org.apache.maven.plugins</groupId>
+		<artifactId>maven-surefire-plugin</artifactId>
+		<version>3.2.5</version>
+		<configuration>
+		    <systemPropertyVariables>
+			<computerstore.mail.notifications.enabled>false</computerstore.mail.notifications.enabled>
+			<computerstore.realtime.enabled>false</computerstore.realtime.enabled>
+			<!-- Unit tests run without the database: no audit rows. -->
+			<computerstore.audit.database.enabled>false</computerstore.audit.database.enabled>
+			<!-- The seeded default accounts exist only in local dev/test DBs. -->
+			<computerstore.security.checkDefaultCredentials>false</computerstore.security.checkDefaultCredentials>
+			<!-- Hermetic extractor tests use reserved example host names and stub
+			     the HTTP client; production keeps DNS validation enabled. -->
+			<computerstore.webinfo.resolveHosts>false</computerstore.webinfo.resolveHosts>
+			<!-- Disable Mockito inline mock maker (causes issues with final classes in Java 25).
+			     Declared once: systemPropertyVariables AND -D in argLine would be a duplicate. -->
+			<mockito.inline>false</mockito.inline>
+		    </systemPropertyVariables>
+		</configuration>
+	    </plugin>
+	    <plugin>
+		<groupId>org.codehaus.cargo</groupId>
+		<artifactId>cargo-maven3-plugin</artifactId>
+		<version>1.10.13</version>
+		<configuration>
+		    <container>
+			<containerId>tomcat11x</containerId>
+			<type>embedded</type>
+		    </container>
+		    <configuration>
+			<properties>
+			    <cargo.servlet.port>8081</cargo.servlet.port>
+			    <cargo.hostname>localhost</cargo.hostname>
+			</properties>
+		    </configuration>
+		    <deployables>
+			<deployable>
+			    <groupId>${project.groupId}</groupId>
+			    <artifactId>${project.artifactId}</artifactId>
+			    <type>war</type>
+			    <properties>
+				<context>computerstore</context>
+			    </properties>
+			</deployable>
+		    </deployables>
+		</configuration>
+	    </plugin>
+	</plugins>
+    </build>
+</project>

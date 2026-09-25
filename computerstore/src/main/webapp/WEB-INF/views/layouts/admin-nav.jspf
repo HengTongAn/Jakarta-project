@@ -1,0 +1,32 @@
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+<c:set var="_sp" value="${empty requestScope['jakarta.servlet.forward.servlet_path'] ? pageContext.request.servletPath : requestScope['jakarta.servlet.forward.servlet_path']}"/>
+<nav class="navbar navbar-expand-lg border-bottom py-1 admin-nav" data-bs-theme="auto">
+    <div class="container d-flex align-items-center gap-2">
+        <span class="admin-brand d-flex align-items-center gap-2 me-1" aria-label="TechStore admin panel">
+            <img src="${pageContext.request.contextPath}/assets/images/techstore-mark.svg" alt="TechStore" style="height:22px;width:auto">
+            <span class="fw-semibold">Admin Panel</span>
+        </span>
+        <span class="admin-nav-label d-none d-xl-inline">Manage your store</span>
+        <div class="navbar-nav flex-row flex-nowrap gap-1 ms-1 admin-nav-scroll">
+            <a class="nav-link${_sp == '/admin' ? ' active' : ''}"${_sp == '/admin' ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin"><i class="bi bi-speedometer2" aria-hidden="true"></i> Dashboard</a>
+            <a class="nav-link${fn:startsWith(_sp, '/admin/products') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/products') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/products"><i class="bi bi-box" aria-hidden="true"></i> Products</a>
+            <a class="nav-link${fn:startsWith(_sp, '/admin/categories') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/categories') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/categories"><i class="bi bi-tags" aria-hidden="true"></i> Categories</a>
+            <a class="nav-link${fn:startsWith(_sp, '/admin/brands') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/brands') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/brands"><i class="bi bi-award" aria-hidden="true"></i> Brands</a>
+            <a class="nav-link${fn:startsWith(_sp, '/admin/inventory') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/inventory') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/inventory"><i class="bi bi-boxes" aria-hidden="true"></i> Inventory</a>
+            <a class="nav-link${fn:startsWith(_sp, '/admin/orders') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/orders') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/orders"><i class="bi bi-receipt" aria-hidden="true"></i> Orders</a>
+            <a class="nav-link position-relative${fn:startsWith(_sp, '/admin/reviews') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/reviews') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/reviews"><i class="bi bi-star-half" aria-hidden="true"></i> Reviews
+                <span class="badge bg-warning text-dark rounded-pill<c:if test="${empty pendingReviewCount || pendingReviewCount == 0}"> d-none</c:if>">${pendingReviewCount}</span>
+            </a>
+            <a class="nav-link${fn:startsWith(_sp, '/admin/users') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/users') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/users"><i class="bi bi-people" aria-hidden="true"></i> Users</a>
+            <a class="nav-link position-relative${fn:startsWith(_sp, '/admin/mail') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/mail') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/mail">
+                <i class="bi bi-envelope" aria-hidden="true"></i> Mail
+                <span class="badge bg-danger rounded-pill mail-live-count<c:if test="${empty mailCount || mailCount == 0}"> d-none</c:if>">${mailCount}</span>
+            </a>
+            <a class="nav-link${fn:startsWith(_sp, '/admin/history') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/history') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/history"><i class="bi bi-clock-history" aria-hidden="true"></i> History</a>
+            <a class="nav-link${fn:startsWith(_sp, '/admin/reports') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/reports') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/reports"><i class="bi bi-graph-up" aria-hidden="true"></i> Reports</a>
+            <a class="nav-link${fn:startsWith(_sp, '/admin/performance') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/performance') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/performance"><i class="bi bi-activity" aria-hidden="true"></i> Performance</a>
+        </div>
+    </div>
+</nav>

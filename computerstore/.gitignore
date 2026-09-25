@@ -1,0 +1,17 @@
+# --- Build output ---
+target/
+*.war
+
+# --- Secrets / local configuration (NEVER commit) ---
+.env
+.env.*
+!.env.example
+src/main/resources/config/mail.properties
+src/main/resources/config/db.properties
+
+# --- IDE / OS clutter ---
+.idea/
+*.iml
+.vscode/
+.DS_Store
+*.log

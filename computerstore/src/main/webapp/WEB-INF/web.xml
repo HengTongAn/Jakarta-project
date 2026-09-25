@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
+         version="6.0">
+
+    <display-name>Computer Store Management System</display-name>
+
+    <!-- Override Tomcat's default servlet for THIS webapp only: disable
+         sendfile so large CSS/JS files (e.g. bootstrap.min.css) are routed
+         through the connector compressor instead of being streamed straight
+         from the kernel uncompressed. The global conf/web.xml default
+         (48 KiB threshold) stays untouched for every other application. -->
+    <servlet>
+        <servlet-name>default</servlet-name>
+        <servlet-class>org.apache.catalina.servlets.DefaultServlet</servlet-class>
+        <init-param>
+            <param-name>sendfileSize</param-name>
+            <param-value>-1</param-value>
+        </init-param>
+    </servlet>
+
+    <!-- JSP Performance Configuration
+         (fork/xpoweredBy are Jasper servlet init-params, not context params,
+         so they are intentionally not set here - they belong in Tomcat's
+         conf/web.xml and are ignored as context params.) -->
+    <jsp-config>
+        <jsp-property-group>
+            <url-pattern>*.jsp</url-pattern>
+            <page-encoding>UTF-8</page-encoding>
+            <trim-directive-whitespaces>true</trim-directive-whitespaces>
+            <deferred-syntax-allowed-as-literal>true</deferred-syntax-allowed-as-literal>
+            <buffer>32kb</buffer>
+        </jsp-property-group>
+    </jsp-config>
+
+    <!-- Filter order matters: encoding -> audit context -> security headers
+         -> session refresh -> rate limiting -> authentication -> count filters
+         -> admin authorization -> CSRF. -->
+    <filter>
+        <filter-name>EncodingFilter</filter-name>
+        <filter-class>com.example.computer_store.web.filter.web.EncodingFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
+    <filter-mapping>
+        <filter-name>EncodingFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <!-- Long-lived Cache-Control for static assets (CSS/JS/images/fonts). -->
+    <filter>
+        <filter-name>StaticResourceCacheFilter</filter-name>
+        <filter-class>com.example.computer_store.web.filter.performance.StaticResourceCacheFilter</filter-class>
+        <!-- Required so the /realtime SSE stream (an async request) passes
+             through this chain filter; without it startAsync() throws. -->
+        <async-supported>true</async-supported>
+    </filter>
+    <filter-mapping>
+        <filter-name>StaticResourceCacheFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <!-- Dynamic text compression. CompressionFilter buffers only eligible
+         responses and defers Content-Length until the final body is known. -->
+    <filter>
+        <filter-name>CompressionFilter</filter-name>
+        <filter-class>com.example.computer_store.web.filter.performance.CompressionFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
+    <filter-mapping>
+        <filter-name>CompressionFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <filter>
+        <filter-name>RequestAuditContextFilter</filter-name>
+        <filter-class>com.example.computer_store.web.filter.monitoring.RequestAuditContextFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
+    <filter-mapping>
+        <filter-name>RequestAuditContextFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <!-- Marks Set-Cookie headers "Secure" over TLS (or when forced via
+         -Dcomputerstore.session.cookie.secure=true). Runs early so the
+         session cookie stamped by any downstream code is rewritten. -->
+    <filter>
+        <filter-name>SecureCookieFilter</filter-name>
+        <filter-class>com.example.computer_store.web.filter.security.SecureCookieFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
+    <filter-mapping>
+        <filter-name>SecureCookieFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <filter>
+        <filter-name>SecurityHeadersFilter</filter-name>
+        <filter-class>com.example.computer_store.web.filter.security.SecurityHeadersFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
+    <filter-mapping>
+        <filter-name>SecurityHeadersFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <!-- DISABLED: SessionUserRefreshFilter causing connection pool exhaustion during rapid page clicks
+    <filter>
+        <filter-name>SessionUserRefreshFilter</filter-name>
+        <filter-class>com.example.computer_store.web.filter.security.SessionUserRefreshFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
+    <filter-mapping>
+        <filter-name>SessionUserRefreshFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping> -->
+
+    <filter>
+        <filter-name>RateLimitingFilter</filter-name>
+        <filter-class>com.example.computer_store.web.filter.security.RateLimitingFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>RateLimitingFilter</filter-name>
+        <url-pattern>/forgot</url-pattern>
+        <url-pattern>/login</url-pattern>
+        <url-pattern>/register</url-pattern>
+        <url-pattern>/reset</url-pattern>
+    </filter-mapping>
+
+    <filter>
+        <filter-name>UserRateLimitingFilter</filter-name>
+        <filter-class>com.example.computer_store.web.filter.security.UserRateLimitingFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
+    <filter-mapping>
+        <filter-name>UserRateLimitingFilter</filter-name>
+        <url-pattern>/cart</url-pattern>
+        <url-pattern>/cart/*</url-pattern>
+        <url-pattern>/checkout</url-pattern>
+        <url-pattern>/account</url-pattern>
+        <url-pattern>/account/*</url-pattern>
+        <url-pattern>/admin</url-pattern>
+        <url-pattern>/admin/*</url-pattern>
+    </filter-mapping>
+
+    <filter>
+        <filter-name>AuthenticationFilter</filter-name>
+        <filter-class>com.example.computer_store.web.filter.security.AuthenticationFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>AuthenticationFilter</filter-name>
+        <url-pattern>/admin</url-pattern>
+        <url-pattern>/admin/*</url-pattern>
+        <url-pattern>/cart</url-pattern>
+        <url-pattern>/cart/*</url-pattern>
+        <url-pattern>/checkout</url-pattern>
+        <url-pattern>/account</url-pattern>
+        <url-pattern>/account/*</url-pattern>
+        <url-pattern>/mail</url-pattern>
+        <url-pattern>/mail/*</url-pattern>
+    </filter-mapping>
+
+    <!-- DISABLED: CartCountFilter causing connection pool exhaustion during rapid page clicks
+    <filter>
+        <filter-name>CartCountFilter</filter-name>
+        <filter-class>com.example.computer_store.web.filter.web.CartCountFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
+    <filter-mapping>
+        <filter-name>CartCountFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping> -->
+
+    <!-- DISABLED: MailCountFilter causing connection pool exhaustion during rapid page clicks
+    <filter>
+        <filter-name>MailCountFilter</filter-name>
+        <filter-class>com.example.computer_store.web.filter.web.MailCountFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
+    <filter-mapping>
+        <filter-name>MailCountFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping> -->
+
+    <!-- DISABLED: ReviewCountFilter causing connection pool exhaustion during rapid page clicks
+    <filter>
+        <filter-name>ReviewCountFilter</filter-name>
+        <filter-class>com.example.computer_store.web.filter.web.ReviewCountFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>ReviewCountFilter</filter-name>
+        <url-pattern>/admin</url-pattern>
+        <url-pattern>/admin/*</url-pattern>
+    </filter-mapping> -->
+
+    <filter>
+        <filter-name>AdminAuthorizationFilter</filter-name>
+        <filter-class>com.example.computer_store.web.filter.security.AdminAuthorizationFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>AdminAuthorizationFilter</filter-name>
+        <url-pattern>/admin</url-pattern>
+        <url-pattern>/admin/*</url-pattern>
+    </filter-mapping>
+
+    <filter>
+        <filter-name>CSRFProtectionFilter</filter-name>
+        <filter-class>com.example.computer_store.web.filter.security.CSRFProtectionFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
+    <filter-mapping>
+        <filter-name>CSRFProtectionFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <!-- Explicit mapping keeps the account-security route available after deployment. -->
+    <servlet>
+        <servlet-name>SecuritySettingsServlet</servlet-name>
+        <servlet-class>com.example.computer_store.web.controller.customer.SecuritySettingsServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>SecuritySettingsServlet</servlet-name>
+        <url-pattern>/account/settings</url-pattern>
+    </servlet-mapping>
+
+    <welcome-file-list>
+        <welcome-file>index.jsp</welcome-file>
+    </welcome-file-list>
+
+    <session-config>
+        <session-timeout>30</session-timeout>
+        <cookie-config>
+            <http-only>true</http-only>
+            <!-- Secure is intentionally off here: the default Tomcat
+                 deployment has no TLS connector, so a Secure JSESSIONID
+                 would never be sent back by browsers and login would break.
+                 Over TLS the Secure attribute is added by SecureCookieFilter
+                 (auto on HTTPS, or force with
+                 -Dcomputerstore.session.cookie.secure=true behind the Caddy
+                 reverse proxy). -->
+        </cookie-config>
+        <tracking-mode>COOKIE</tracking-mode>
+    </session-config>
+
+    <error-page>
+        <error-code>403</error-code>
+        <location>/WEB-INF/views/errors/403.jsp</location>
+    </error-page>
+    <error-page>
+        <error-code>404</error-code>
+        <location>/WEB-INF/views/errors/404.jsp</location>
+    </error-page>
+    <error-page>
+        <error-code>500</error-code>
+        <location>/WEB-INF/views/errors/500.jsp</location>
+    </error-page>
+    <!-- Catch-all for unhandled exceptions -->
+    <error-page>
+        <exception-type>java.lang.Exception</exception-type>
+        <location>/error</location>
+    </error-page>
+
+    <!-- Database migration runner (auto-run when enabled) -->
+    <listener>
+        <listener-class>com.example.computer_store.infrastructure.persistence.DatabaseMigrationRunner</listener-class>
+    </listener>
+</web-app>

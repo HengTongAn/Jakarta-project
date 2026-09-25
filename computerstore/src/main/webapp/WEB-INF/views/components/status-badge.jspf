@@ -1,0 +1,10 @@
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<c:choose>
+    <c:when test="${_statusLabel.name() == 'PENDING'}"><span class="badge bg-warning text-dark badge-status">${_statusLabel}</span></c:when>
+    <c:when test="${_statusLabel.name() == 'PROCESSING'}"><span class="badge bg-info badge-status">${_statusLabel}</span></c:when>
+    <c:when test="${_statusLabel.name() == 'SHIPPED'}"><span class="badge bg-primary badge-status">${_statusLabel}</span></c:when>
+    <c:when test="${_statusLabel.name() == 'COMPLETED'}"><span class="badge bg-success badge-status">${_statusLabel}</span></c:when>
+    <c:when test="${_statusLabel.name() == 'REFUNDED'}"><span class="badge bg-danger badge-status">${_statusLabel}</span></c:when>
+    <c:when test="${_statusLabel.name() == 'CANCELLED'}"><span class="badge bg-secondary badge-status">${_statusLabel}</span></c:when>
+    <c:otherwise><span class="badge badge-status">${_statusLabel}</span></c:otherwise>
+</c:choose>

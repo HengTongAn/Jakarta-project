@@ -1,0 +1,15 @@
+-- Covering index for the storefront "Trending now" lookup.
+--
+-- ProductDAO.findTrending runs:
+--   LEFT JOIN (SELECT product_id, SUM(quantity) AS units_sold
+--              FROM order_items GROUP BY product_id) o ON ...
+--
+-- idx_order_item_product (product_id) lets MySQL group by product but forces
+-- it to fetch `quantity` from the table rows. This (product_id, quantity)
+-- index answers the GROUP BY as an index-only scan, which keeps the aggregate
+-- cheap even when order history grows large.
+--
+-- Registered in DatabaseMigrationRunner.discoverMigrations() after the reviews
+-- migration; duplicate-key errors (1061) are treated as "already applied" by
+-- the runner, so this is safe to re-run.
+CREATE INDEX idx_o_trending_product_qty ON order_items (product_id, quantity);
