@@ -7,7 +7,7 @@
 .hero {
     position: relative;
     overflow: hidden;
-    color: #0f172a;
+    color: var(--ink);
     padding: 3.5rem 0 4rem;
     background:
         radial-gradient(1100px 560px at 88% -12%, rgba(99, 102, 241, .16), transparent 60%),
@@ -238,7 +238,7 @@
 
 .hero-float-card i { color: #4f46e5; font-size: 1.15rem; }
 .hero-float-card span { color: #64748b; }
-.hero-float-card b { margin-left: .35rem; color: #0f172a; }
+.hero-float-card b { margin-left: .35rem; color: var(--ink); }
 .hero-float-card-top { top: 12%; right: -2%; }
 .hero-float-card-bottom { bottom: 10%; left: -4%; }
 
@@ -387,7 +387,7 @@
 .product-thumb {
     height: 160px;
     object-fit: cover;
-    background: #e2e8f0;
+    background: var(--surface-muted);
 }
 
 .product-price {
@@ -653,9 +653,9 @@
 
     .search-bar > * {
         height: 44px;
-        border: 1px solid #d5d9dc;
+        border: 1px solid var(--line);
         border-radius: 8px;
-        background: #fff;
+        background: var(--surface);
     }
 
     .search-cat {
