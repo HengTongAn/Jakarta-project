@@ -204,13 +204,14 @@ a { transition: color .15s ease; }
     .category-icon { width: 42px; height: 42px; margin-bottom: .45rem; }
     .category-tile strong { font-size: .78rem; }
     .build-card p { min-height: 0; }
-    .product-card .card-footer { padding: .65rem; }
-    .product-card .btn-add { font-size: .78rem; }
+    .product-card .card-footer { padding: .55rem .6rem .7rem; }
+    .product-card .btn-add { font-size: .78rem; padding: .48rem .6rem; }
     /* Two product cards per row on phones - keep titles, meta and price compact. */
+    .product-card .p-brand { font-size: .6rem; letter-spacing: .12em; }
     .product-card .p-title { font-size: .88rem; }
     .product-card .p-meta { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
-    .product-card .product-price { font-size: .95rem; }
-    .product-card .p-stock { font-size: .68rem; }
+    .product-card .product-price { font-size: .98rem; }
+    .product-card .p-stock { font-size: .66rem; padding: .14rem .5rem; }
     .auth-logo { height: 38px !important; }
     .footer-bottom span:last-child { display: none; }
 }

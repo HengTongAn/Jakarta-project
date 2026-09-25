@@ -13,25 +13,26 @@
         </c:choose>
     </a>
     <div class="card-body">
+        <c:if test="${not empty p.brandName}">
+            <p class="p-brand mb-0"><c:out value="${p.brandName}"/></p>
+        </c:if>
         <h6 class="p-title">
             <a href="${pageContext.request.contextPath}/products?id=${p.productId}">
                 <c:out value="${p.name}"/>
             </a>
         </h6>
         <p class="p-meta mb-0">
-            <c:out value="${p.brandName}"/>
-            &middot;
             <c:out value="${p.categoryName}"/>
         </p>
         <c:if test="${p.hasReviews()}">
-            <div class="p-rating small mt-1">
-                <span class="text-warning">
+            <div class="p-rating">
+                <span class="stars text-warning" aria-hidden="true">
                     <c:forEach begin="1" end="${p.displayStars}">★</c:forEach><c:forEach begin="${p.displayStars + 1}" end="5">☆</c:forEach>
                 </span>
-                <span class="text-muted ms-1">${p.average} (${p.reviewCount})</span>
+                <span class="text-muted">${p.average} (${p.reviewCount})</span>
             </div>
         </c:if>
-        <div class="d-flex justify-content-between align-items-center mt-2">
+        <div class="p-buy">
             <span class="product-price money">$<fmt:formatNumber value="${p.price}" pattern="#,##0.00"/></span>
             <span class="p-stock p-stock-${p.status.name() == 'OUT_OF_STOCK' ? 'out' : p.status.name() == 'LOW_STOCK' ? 'low' : 'in'}" data-stock-for="${p.productId}">
                 <span class="dot"></span>
