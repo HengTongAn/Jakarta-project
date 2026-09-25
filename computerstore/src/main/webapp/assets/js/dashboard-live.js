@@ -25,6 +25,16 @@
         CANCELLED: 'bg-secondary', REFUNDED: 'bg-danger'
     };
 
+    var ACTION_BADGES = {
+        ORDER_CREATED: { text: 'Order', cls: 'bg-info' },
+        ORDER_CANCELLED: { text: 'Cancelled', cls: 'bg-secondary' },
+        MANUAL_ADJUST_RECEIVED: { text: 'Received', cls: 'bg-success' },
+        MANUAL_ADJUST_DAMAGED: { text: 'Damaged', cls: 'bg-danger' },
+        MANUAL_ADJUST_COUNT: { text: 'Counted', cls: 'bg-success' },
+        MANUAL_ADJUST_RETURNED: { text: 'Return', cls: 'bg-secondary' },
+        MANUAL_ADJUST_CORRECTION: { text: 'Correction', cls: 'bg-warning text-dark' }
+    };
+
     var STATUS_COLORS = {
         PENDING: '#f59e0b', PROCESSING: '#0ea5e9',
         SHIPPED: '#2563eb', COMPLETED: '#16a34a'
@@ -126,13 +136,10 @@
             return;
         }
         logs.forEach(function (log) {
-            var actionClass = log.action === 'ORDER_CREATED' ? 'bg-info'
-                : log.action === 'ORDER_CANCELLED' ? 'bg-secondary' : 'bg-success';
-            var actionLabel = log.action === 'ORDER_CREATED' ? 'Order'
-                : log.action === 'ORDER_CANCELLED' ? 'Cancelled' : 'Adjust';
+            var action = ACTION_BADGES[log.action] || { text: 'Adjust', cls: 'bg-success' };
 
             var actionCell = cell('', 'text-center');
-            actionCell.appendChild(badge(actionLabel, actionClass));
+            actionCell.appendChild(badge(action.text, action.cls));
 
             var tr = document.createElement('tr');
             tr.appendChild(cell(log.productName, 'small'));

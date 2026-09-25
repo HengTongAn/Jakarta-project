@@ -163,6 +163,11 @@
                                     <c:choose>
                                         <c:when test="${log.action == 'ORDER_CREATED'}"><span class="badge bg-info badge-status">Order</span></c:when>
                                         <c:when test="${log.action == 'ORDER_CANCELLED'}"><span class="badge bg-secondary badge-status">Cancelled</span></c:when>
+                                        <c:when test="${log.action == 'MANUAL_ADJUST_RECEIVED'}"><span class="badge bg-success badge-status">Received</span></c:when>
+                                        <c:when test="${log.action == 'MANUAL_ADJUST_DAMAGED'}"><span class="badge bg-danger badge-status">Damaged</span></c:when>
+                                        <c:when test="${log.action == 'MANUAL_ADJUST_COUNT'}"><span class="badge bg-success badge-status">Counted</span></c:when>
+                                        <c:when test="${log.action == 'MANUAL_ADJUST_RETURNED'}"><span class="badge bg-secondary badge-status">Return</span></c:when>
+                                        <c:when test="${log.action == 'MANUAL_ADJUST_CORRECTION'}"><span class="badge bg-warning text-dark badge-status">Correction</span></c:when>
                                         <c:otherwise><span class="badge bg-success badge-status">Adjust</span></c:otherwise>
                                     </c:choose>
                                 </td>
