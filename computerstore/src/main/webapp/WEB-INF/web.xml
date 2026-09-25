@@ -39,7 +39,7 @@
          -> admin authorization -> CSRF. -->
     <filter>
         <filter-name>EncodingFilter</filter-name>
-        <filter-class>com.example.computer_store.web.filter.web.EncodingFilter</filter-class>
+        <filter-class>com.hengtongan.computerstore.web.filter.web.EncodingFilter</filter-class>
         <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
@@ -50,7 +50,7 @@
     <!-- Long-lived Cache-Control for static assets (CSS/JS/images/fonts). -->
     <filter>
         <filter-name>StaticResourceCacheFilter</filter-name>
-        <filter-class>com.example.computer_store.web.filter.performance.StaticResourceCacheFilter</filter-class>
+        <filter-class>com.hengtongan.computerstore.web.filter.performance.StaticResourceCacheFilter</filter-class>
         <!-- Required so the /realtime SSE stream (an async request) passes
              through this chain filter; without it startAsync() throws. -->
         <async-supported>true</async-supported>
@@ -64,7 +64,7 @@
          responses and defers Content-Length until the final body is known. -->
     <filter>
         <filter-name>CompressionFilter</filter-name>
-        <filter-class>com.example.computer_store.web.filter.performance.CompressionFilter</filter-class>
+        <filter-class>com.hengtongan.computerstore.web.filter.performance.CompressionFilter</filter-class>
         <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
@@ -74,7 +74,7 @@
 
     <filter>
         <filter-name>RequestAuditContextFilter</filter-name>
-        <filter-class>com.example.computer_store.web.filter.monitoring.RequestAuditContextFilter</filter-class>
+        <filter-class>com.hengtongan.computerstore.web.filter.monitoring.RequestAuditContextFilter</filter-class>
         <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
@@ -87,7 +87,7 @@
          session cookie stamped by any downstream code is rewritten. -->
     <filter>
         <filter-name>SecureCookieFilter</filter-name>
-        <filter-class>com.example.computer_store.web.filter.security.SecureCookieFilter</filter-class>
+        <filter-class>com.hengtongan.computerstore.web.filter.security.SecureCookieFilter</filter-class>
         <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
@@ -97,7 +97,7 @@
 
     <filter>
         <filter-name>SecurityHeadersFilter</filter-name>
-        <filter-class>com.example.computer_store.web.filter.security.SecurityHeadersFilter</filter-class>
+        <filter-class>com.hengtongan.computerstore.web.filter.security.SecurityHeadersFilter</filter-class>
         <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
@@ -108,7 +108,7 @@
     <!-- DISABLED: SessionUserRefreshFilter causing connection pool exhaustion during rapid page clicks
     <filter>
         <filter-name>SessionUserRefreshFilter</filter-name>
-        <filter-class>com.example.computer_store.web.filter.security.SessionUserRefreshFilter</filter-class>
+        <filter-class>com.hengtongan.computerstore.web.filter.security.SessionUserRefreshFilter</filter-class>
         <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
@@ -118,7 +118,7 @@
 
     <filter>
         <filter-name>RateLimitingFilter</filter-name>
-        <filter-class>com.example.computer_store.web.filter.security.RateLimitingFilter</filter-class>
+        <filter-class>com.hengtongan.computerstore.web.filter.security.RateLimitingFilter</filter-class>
     </filter>
     <filter-mapping>
         <filter-name>RateLimitingFilter</filter-name>
@@ -130,7 +130,7 @@
 
     <filter>
         <filter-name>UserRateLimitingFilter</filter-name>
-        <filter-class>com.example.computer_store.web.filter.security.UserRateLimitingFilter</filter-class>
+        <filter-class>com.hengtongan.computerstore.web.filter.security.UserRateLimitingFilter</filter-class>
         <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
@@ -146,7 +146,7 @@
 
     <filter>
         <filter-name>AuthenticationFilter</filter-name>
-        <filter-class>com.example.computer_store.web.filter.security.AuthenticationFilter</filter-class>
+        <filter-class>com.hengtongan.computerstore.web.filter.security.AuthenticationFilter</filter-class>
     </filter>
     <filter-mapping>
         <filter-name>AuthenticationFilter</filter-name>
@@ -164,7 +164,7 @@
     <!-- DISABLED: CartCountFilter causing connection pool exhaustion during rapid page clicks
     <filter>
         <filter-name>CartCountFilter</filter-name>
-        <filter-class>com.example.computer_store.web.filter.web.CartCountFilter</filter-class>
+        <filter-class>com.hengtongan.computerstore.web.filter.web.CartCountFilter</filter-class>
         <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
@@ -175,7 +175,7 @@
     <!-- DISABLED: MailCountFilter causing connection pool exhaustion during rapid page clicks
     <filter>
         <filter-name>MailCountFilter</filter-name>
-        <filter-class>com.example.computer_store.web.filter.web.MailCountFilter</filter-class>
+        <filter-class>com.hengtongan.computerstore.web.filter.web.MailCountFilter</filter-class>
         <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
@@ -186,7 +186,7 @@
     <!-- DISABLED: ReviewCountFilter causing connection pool exhaustion during rapid page clicks
     <filter>
         <filter-name>ReviewCountFilter</filter-name>
-        <filter-class>com.example.computer_store.web.filter.web.ReviewCountFilter</filter-class>
+        <filter-class>com.hengtongan.computerstore.web.filter.web.ReviewCountFilter</filter-class>
     </filter>
     <filter-mapping>
         <filter-name>ReviewCountFilter</filter-name>
@@ -196,7 +196,7 @@
 
     <filter>
         <filter-name>AdminAuthorizationFilter</filter-name>
-        <filter-class>com.example.computer_store.web.filter.security.AdminAuthorizationFilter</filter-class>
+        <filter-class>com.hengtongan.computerstore.web.filter.security.AdminAuthorizationFilter</filter-class>
     </filter>
     <filter-mapping>
         <filter-name>AdminAuthorizationFilter</filter-name>
@@ -206,7 +206,7 @@
 
     <filter>
         <filter-name>CSRFProtectionFilter</filter-name>
-        <filter-class>com.example.computer_store.web.filter.security.CSRFProtectionFilter</filter-class>
+        <filter-class>com.hengtongan.computerstore.web.filter.security.CSRFProtectionFilter</filter-class>
         <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
@@ -217,7 +217,7 @@
     <!-- Explicit mapping keeps the account-security route available after deployment. -->
     <servlet>
         <servlet-name>SecuritySettingsServlet</servlet-name>
-        <servlet-class>com.example.computer_store.web.controller.customer.SecuritySettingsServlet</servlet-class>
+        <servlet-class>com.hengtongan.computerstore.web.controller.customer.SecuritySettingsServlet</servlet-class>
     </servlet>
     <servlet-mapping>
         <servlet-name>SecuritySettingsServlet</servlet-name>
@@ -263,6 +263,6 @@
 
     <!-- Database migration runner (auto-run when enabled) -->
     <listener>
-        <listener-class>com.example.computer_store.infrastructure.persistence.DatabaseMigrationRunner</listener-class>
+        <listener-class>com.hengtongan.computerstore.infrastructure.persistence.DatabaseMigrationRunner</listener-class>
     </listener>
 </web-app>
