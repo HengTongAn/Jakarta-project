@@ -17,7 +17,7 @@
             <a class="nav-link${fn:startsWith(_sp, '/admin/inventory') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/inventory') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/inventory"><i class="bi bi-boxes" aria-hidden="true"></i> Inventory</a>
             <a class="nav-link${fn:startsWith(_sp, '/admin/orders') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/orders') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/orders"><i class="bi bi-receipt" aria-hidden="true"></i> Orders</a>
             <a class="nav-link position-relative${fn:startsWith(_sp, '/admin/reviews') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/reviews') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/reviews"><i class="bi bi-star-half" aria-hidden="true"></i> Reviews
-                <span class="badge bg-warning text-dark rounded-pill<c:if test="${empty pendingReviewCount || pendingReviewCount == 0}"> d-none</c:if>">${pendingReviewCount}</span>
+                <span class="badge bg-warning text-dark rounded-pill<c:if test="${empty pendingReviewCount || pendingReviewCount == 0}"> d-none</c:if>" data-live-review-count>${pendingReviewCount}</span>
             </a>
             <a class="nav-link${fn:startsWith(_sp, '/admin/users') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/users') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/users"><i class="bi bi-people" aria-hidden="true"></i> Users</a>
             <a class="nav-link position-relative${fn:startsWith(_sp, '/admin/mail') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/mail') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/mail">
