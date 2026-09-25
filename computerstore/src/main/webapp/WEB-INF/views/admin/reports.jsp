@@ -15,7 +15,7 @@
             <span class="small text-muted">Sales analytics · stock valuation</span>
         </div>
         <span class="d-flex align-items-center gap-2">
-            <div class="btn-group" role="group" aria-label="Report period">
+            <div class="btn-group reports-range" role="group" aria-label="Report period">
                 <a class="btn btn-sm ${activeRange == 'today' ? 'btn-primary' : 'btn-outline-primary'}"
                    href="?range=today">Today</a>
                 <a class="btn btn-sm ${activeRange == '7d' ? 'btn-primary' : 'btn-outline-primary'}"
@@ -30,7 +30,7 @@
     </div>
 
     <div class="row g-3 mb-3">
-        <div class="col-md-3 col-sm-6">
+        <div class="col-6 col-md-3">
             <div class="card stats-card"
              data-help="Net revenue for this period, from paid orders only."
              data-help-title="Revenue"
@@ -45,7 +45,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3 col-sm-6">
+        <div class="col-6 col-md-3">
             <div class="card stats-card"
              data-help="How many items left the shelves in this period."
              data-help-title="Items sold"
@@ -60,7 +60,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3 col-sm-6">
+        <div class="col-6 col-md-3">
             <div class="card stats-card"
              data-help="Orders created in this period, all statuses."
              data-help-title="Orders"
@@ -75,7 +75,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3 col-sm-6">
+        <div class="col-6 col-md-3">
             <div class="card stats-card"
              data-help="Average money per order in this period."
              data-help-title="Average order value"

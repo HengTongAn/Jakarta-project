@@ -19,7 +19,7 @@
     </div>
 
     <div class="row g-3 mb-3">
-        <div class="col-md-3 col-sm-6">
+        <div class="col-6 col-md-3">
             <div class="card stats-card"
                  data-help="Database connections currently in use."
                  data-help-title="Pool active connections"
@@ -34,7 +34,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3 col-sm-6">
+        <div class="col-6 col-md-3">
             <div class="card stats-card"
                  data-help="Requests that had to wait for a free connection."
                  data-help-title="Threads waiting"
@@ -49,7 +49,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3 col-sm-6">
+        <div class="col-6 col-md-3">
             <div class="card stats-card"
                  data-help="App memory in use, compared with the max available."
                  data-help-title="Heap used"
@@ -64,7 +64,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3 col-sm-6">
+        <div class="col-6 col-md-3">
             <div class="card stats-card"
                  data-help="How long since the app last restarted."
                  data-help-title="Uptime"
