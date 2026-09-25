@@ -206,6 +206,11 @@ a { transition: color .15s ease; }
     .build-card p { min-height: 0; }
     .product-card .card-footer { padding: .65rem; }
     .product-card .btn-add { font-size: .78rem; }
+    /* Two product cards per row on phones - keep titles, meta and price compact. */
+    .product-card .p-title { font-size: .88rem; }
+    .product-card .p-meta { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+    .product-card .product-price { font-size: .95rem; }
+    .product-card .p-stock { font-size: .68rem; }
     .auth-logo { height: 38px !important; }
     .footer-bottom span:last-child { display: none; }
 }

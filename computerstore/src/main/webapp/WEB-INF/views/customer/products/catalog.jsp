@@ -105,7 +105,7 @@
     <section class="store-section container" aria-labelledby="featured-title">
         <div class="section-heading"><div><span class="eyebrow">Popular with our customers</span><h2 id="featured-title">Featured products</h2></div><a href="#catalog" class="section-link">Browse the collection <i class="bi bi-arrow-right"></i></a></div>
         <div class="row g-4">
-            <c:forEach var="p" items="${trending}" end="3"><div class="col-sm-6 col-lg-3"><%@ include file="../../components/product-card.jspf" %></div></c:forEach>
+            <c:forEach var="p" items="${trending}" end="3"><div class="col-6 col-sm-6 col-lg-3"><%@ include file="../../components/product-card.jspf" %></div></c:forEach>
         </div>
     </section>
 
@@ -197,7 +197,7 @@
         <c:otherwise>
             <div class="row g-4">
                 <c:forEach var="p" items="${products}">
-                    <div class="col-md-4 col-sm-6">
+                    <div class="col-6 col-md-4">
                         <%@ include file="../../components/product-card.jspf" %>
                     </div>
                 </c:forEach>
@@ -271,16 +271,16 @@
     <section class="store-section container" aria-labelledby="new-title">
         <div class="section-heading"><div><span class="eyebrow">Just added to TechStore</span><h2 id="new-title">New arrivals</h2></div><a href="#catalog" class="section-link">See all products <i class="bi bi-arrow-right"></i></a></div>
         <div class="row g-4">
-            <c:forEach var="p" items="${newArrivals}"><div class="col-sm-6 col-lg-3"><%@ include file="../../components/product-card.jspf" %></div></c:forEach>
+            <c:forEach var="p" items="${newArrivals}"><div class="col-6 col-sm-6 col-lg-3"><%@ include file="../../components/product-card.jspf" %></div></c:forEach>
         </div>
     </section>
 
     <section class="why-section" aria-labelledby="why-title">
         <div class="container"><div class="section-heading"><div><span class="eyebrow">The TechStore promise</span><h2 id="why-title">Why choose us?</h2></div></div><div class="row g-4">
-            <div class="col-md-3"><div class="why-card"><i class="bi bi-patch-check"></i><h3>Quality checked</h3><p>Every product is carefully selected for dependable performance.</p></div></div>
-            <div class="col-md-3"><div class="why-card"><i class="bi bi-diagram-3"></i><h3>Compatible parts</h3><p>Clear product details help you build a system that works together.</p></div></div>
-            <div class="col-md-3"><div class="why-card"><i class="bi bi-chat-heart"></i><h3>Human support</h3><p>Get practical guidance before and after your purchase.</p></div></div>
-            <div class="col-md-3"><div class="why-card"><i class="bi bi-lock"></i><h3>Secure checkout</h3><p>Your account and order information are handled responsibly.</p></div></div>
+            <div class="col-6 col-md-3"><div class="why-card"><i class="bi bi-patch-check"></i><h3>Quality checked</h3><p>Every product is carefully selected for dependable performance.</p></div></div>
+            <div class="col-6 col-md-3"><div class="why-card"><i class="bi bi-diagram-3"></i><h3>Compatible parts</h3><p>Clear product details help you build a system that works together.</p></div></div>
+            <div class="col-6 col-md-3"><div class="why-card"><i class="bi bi-chat-heart"></i><h3>Human support</h3><p>Get practical guidance before and after your purchase.</p></div></div>
+            <div class="col-6 col-md-3"><div class="why-card"><i class="bi bi-lock"></i><h3>Secure checkout</h3><p>Your account and order information are handled responsibly.</p></div></div>
         </div></div>
     </section>
 
@@ -290,7 +290,7 @@
             <c:when test="${not empty recentReviews}">
                 <div class="row g-4">
                     <c:forEach var="rv" items="${recentReviews}">
-                        <div class="col-md-4"><div class="review-card">
+                        <div class="col-sm-6 col-md-4"><div class="review-card">
                             <div class="stars"><c:forEach begin="1" end="${rv.rating}">★</c:forEach></div>
                             <p>“<c:out value="${rv.reviewText}"/>”</p>
                             <strong>— <c:out value="${rv.userName}"/></strong>
@@ -301,9 +301,9 @@
             </c:when>
             <c:otherwise>
                 <div class="row g-4">
-                    <div class="col-md-4"><div class="review-card"><div class="stars">★★★★★</div><p>“The product details made it easy to choose compatible parts. Everything arrived quickly.”</p><strong>— Daniel R.</strong><small>Verified customer</small></div></div>
-                    <div class="col-md-4"><div class="review-card"><div class="stars">★★★★★</div><p>“Excellent selection and very helpful support. My new workstation runs perfectly.”</p><strong>— Maria S.</strong><small>Verified customer</small></div></div>
-                    <div class="col-md-4"><div class="review-card"><div class="stars">★★★★★</div><p>“Simple checkout, clear stock information, and fast delivery. I will shop here again.”</p><strong>— Alex K.</strong><small>Verified customer</small></div></div>
+                    <div class="col-sm-6 col-md-4"><div class="review-card"><div class="stars">★★★★★</div><p>“The product details made it easy to choose compatible parts. Everything arrived quickly.”</p><strong>— Daniel R.</strong><small>Verified customer</small></div></div>
+                    <div class="col-sm-6 col-md-4"><div class="review-card"><div class="stars">★★★★★</div><p>“Excellent selection and very helpful support. My new workstation runs perfectly.”</p><strong>— Maria S.</strong><small>Verified customer</small></div></div>
+                    <div class="col-sm-6 col-md-4"><div class="review-card"><div class="stars">★★★★★</div><p>“Simple checkout, clear stock information, and fast delivery. I will shop here again.”</p><strong>— Alex K.</strong><small>Verified customer</small></div></div>
                 </div>
             </c:otherwise>
         </c:choose>
