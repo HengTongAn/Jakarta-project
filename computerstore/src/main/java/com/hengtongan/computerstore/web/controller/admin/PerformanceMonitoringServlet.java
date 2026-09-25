@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.util.ArrayList;
@@ -24,7 +25,8 @@ import java.util.Map;
  * <p>Shows what the performance features are doing right now: Caffeine cache
  * hit rates and sizes, the HikariCP connection pool state, and JVM memory,
  * plus a small set of data-driven recommendations. Metrics are read live;
- * there is no sampling or persistence.</p>
+ * there is no sampling or persistence. {@code /admin/performance?json=1}
+ * returns the same data as JSON for {@code assets/js/performance-live.js}.</p>
  */
 @WebServlet("/admin/performance")
 public class PerformanceMonitoringServlet extends BaseServlet {
@@ -34,6 +36,11 @@ public class PerformanceMonitoringServlet extends BaseServlet {
             throws ServletException, IOException {
         Map<String, Object> poolStats = DBConnection.getPoolStats();
         Map<String, Map<String, Object>> cacheStats = CacheManager.getCacheStats();
+
+        if ("1".equals(request.getParameter("json"))) {
+            writePerformanceJson(response, poolStats, cacheStats);
+            return;
+        }
 
         request.setAttribute("cacheEnabled", CacheManager.isCacheEnabled());
         request.setAttribute("compressionEnabled",
@@ -119,5 +126,125 @@ public class PerformanceMonitoringServlet extends BaseServlet {
                     + "waiters on this page during peak traffic.");
         }
         return tips;
+    }
+
+    /**
+     * Live metrics for {@code assets/js/performance-live.js}. Same data as the
+     * JSP render, serialized as JSON (cache hit rates/sizes, pool state, JVM
+     * memory, top queries and recommendations) so the page can patch itself in
+     * place instead of reloading every 30s. This page is never cached.
+     */
+    private void writePerformanceJson(HttpServletResponse response,
+                                      Map<String, Object> poolStats,
+                                      Map<String, Map<String, Object>> cacheStats) throws IOException {
+        response.setContentType("application/json; charset=UTF-8");
+        response.setCharacterEncoding("UTF-8");
+        response.setHeader("Cache-Control", "no-store");
+
+        PrintWriter out = response.getWriter();
+        out.write("{");
+        out.write("\"cacheEnabled\":" + CacheManager.isCacheEnabled() + ",");
+        out.write("\"compressionEnabled\":"
+                + Boolean.parseBoolean(System.getProperty("computerstore.compression.enabled", "true")) + ",");
+
+        out.write("\"cacheStats\":{");
+        boolean first = true;
+        for (Map.Entry<String, Map<String, Object>> entry : cacheStats.entrySet()) {
+            if (!first) {
+                out.write(",");
+            }
+            first = false;
+            Map<String, Object> stats = entry.getValue();
+            out.write("\"" + esc(entry.getKey()) + "\":{");
+            out.write("\"hits\":" + toJsonNumber(stats.get("hits")) + ",");
+            out.write("\"misses\":" + toJsonNumber(stats.get("misses")) + ",");
+            out.write("\"hitRate\":" + toJsonNumber(stats.get("hitRate")) + ",");
+            out.write("\"size\":" + toJsonNumber(stats.get("size")));
+            out.write("}");
+        }
+        out.write("},");
+
+        out.write("\"poolStats\":{");
+        out.write("\"total\":" + toJsonNumber(poolStats.get("total")) + ",");
+        out.write("\"active\":" + toJsonNumber(poolStats.get("active")) + ",");
+        out.write("\"idle\":" + toJsonNumber(poolStats.get("idle")) + ",");
+        out.write("\"waiting\":" + toJsonNumber(poolStats.get("waiting")) + ",");
+        out.write("\"max\":" + toJsonNumber(poolStats.get("max")) + ",");
+        out.write("\"min\":" + toJsonNumber(poolStats.get("min")));
+        out.write("},");
+
+        out.write("\"jvm\":{");
+        Map<String, Object> jvm = jvmStats();
+        out.write("\"uptimeSeconds\":" + toJsonNumber(jvm.get("uptimeSeconds")) + ",");
+        out.write("\"heapUsedMb\":" + toJsonNumber(jvm.get("heapUsedMb")) + ",");
+        out.write("\"heapCommittedMb\":" + toJsonNumber(jvm.get("heapCommittedMb")) + ",");
+        out.write("\"heapMaxMb\":" + toJsonNumber(jvm.get("heapMaxMb")) + ",");
+        out.write("\"freeMb\":" + toJsonNumber(jvm.get("freeMb")) + ",");
+        out.write("\"processors\":" + toJsonNumber(jvm.get("processors")));
+        out.write("},");
+
+        out.write("\"queryStats\":[");
+        List<QueryMonitor.QueryInfo> queries = topQueryStats();
+        for (int i = 0; i < queries.size(); i++) {
+            if (i > 0) {
+                out.write(",");
+            }
+            QueryMonitor.QueryInfo q = queries.get(i);
+            out.write("{\"type\":\"" + esc(q.getType()) + "\",");
+            out.write("\"signature\":\"" + esc(q.getSignature()) + "\",");
+            out.write("\"count\":" + q.getStats().getCount() + ",");
+            out.write("\"avgTime\":" + toJsonNumber(q.getStats().getAvgTime()) + ",");
+            out.write("\"maxTime\":" + q.getStats().getMaxTime() + ",");
+            out.write("\"slowCount\":" + q.getStats().getSlowCount() + "}");
+        }
+        out.write("],");
+
+        out.write("\"recommendations\":[");
+        List<String> tips = recommendations(cacheStats, poolStats);
+        for (int i = 0; i < tips.size(); i++) {
+            if (i > 0) {
+                out.write(",");
+            }
+            out.write("\"" + esc(tips.get(i)) + "\"");
+        }
+        out.write("]");
+        out.write("}");
+    }
+
+    /** JSON number; {@code null} for absent values, non-finite doubles become 0. */
+    private static String toJsonNumber(Object value) {
+        if (value == null) {
+            return "null";
+        }
+        if (value instanceof Double d) {
+            return Double.isFinite(d) ? d.toString() : "0";
+        }
+        return String.valueOf(value);
+    }
+
+    /** Minimal JSON string escaper (same policy as the other JSON endpoints). */
+    private static String esc(String s) {
+        if (s == null) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder(s.length() + 16);
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            switch (c) {
+                case '"' -> sb.append("\\\"");
+                case '\\' -> sb.append("\\\\");
+                case '\n' -> sb.append("\\n");
+                case '\r' -> sb.append("\\r");
+                case '\t' -> sb.append("\\t");
+                default -> {
+                    if (c < 0x20) {
+                        sb.append(String.format("\\u%04x", (int) c));
+                    } else {
+                        sb.append(c);
+                    }
+                }
+            }
+        }
+        return sb.toString();
     }
 }
