@@ -71,3 +71,6 @@ out/
 .env
 .env.*
 !.env.example
+
+# NetBeans IDE user settings (machine-specific)
+nb-configuration.xml

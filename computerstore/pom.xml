@@ -4,7 +4,7 @@
 	 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.example</groupId>
+    <groupId>com.hengtongan</groupId>
     <artifactId>computerstore</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>war</packaging>
@@ -169,6 +169,12 @@
 		<groupId>org.apache.maven.plugins</groupId>
 		<artifactId>maven-war-plugin</artifactId>
 		<version>3.4.0</version>
+		<configuration>
+		    <!-- Tomcat runtime libs exist only for embedded `mvn cargo:run`;
+			 they must not ship inside the WAR (ecj is Jasper's compiler,
+			 pulled transitively by tomcat-jasper). -->
+		    <packagingExcludes>WEB-INF/lib/tomcat-*.jar, WEB-INF/lib/ecj-*.jar</packagingExcludes>
+		</configuration>
 	    </plugin>
 	    <plugin>
 		<groupId>org.apache.maven.plugins</groupId>
