@@ -26,7 +26,7 @@
     function initMotion() {
         var revealTargets = document.querySelectorAll(
             ".store-section, .benefits-strip, .promo-banner, .why-section, .faq-section, " +
-            ".support-cta, .product-card, .card-hover, .stats-card, .mail-row, .chat-conv, " +
+            ".support-cta, .product-card, .card-hover, .stats-card, " +
             ".category-tile, .build-card, .why-card, .review-card"
         );
 
@@ -45,7 +45,12 @@
                         currentObserver.unobserve(entry.target);
                     }
                 });
-            }, { threshold: 0.1, rootMargin: "0px 0px -36px 0px" });
+                // threshold MUST stay 0. A reveal target can be far taller than
+                // the viewport -- .card-hover wraps the admin products table, now
+                // 150 rows (~10000px). A fractional threshold is then impossible to
+                // satisfy, so is-visible is never added and the element stays at
+                // opacity 0 forever. Any overlap is enough to reveal.
+            }, { threshold: 0, rootMargin: "0px 0px -36px 0px" });
             revealTargets.forEach(function (element) { observer.observe(element); });
         }
 
@@ -519,13 +524,60 @@
         });
     }
 
+    /**
+     * Shows the explanatory panel matching the selected payment method. Panels are
+     * looked up by a data-payment-panel attribute rather than hard-coded ids, so
+     * adding a provider is a markup change instead of a JS change.
+     */
     function initCheckoutPayment() {
         var methods = document.querySelectorAll(".payment-method");
-        var cardPanel = document.getElementById("cardPaymentPanel");
-        var cashPanel = document.querySelector(".cash-payment-panel");
-        if (!methods.length || !cardPanel || !cashPanel) {
+        if (!methods.length) {
             return;
         }
+        var panels = document.querySelectorAll("[data-payment-panel]");
+        var form = document.getElementById("checkoutForm");
+
+        function showPanelFor(value) {
+            panels.forEach(function (panel) {
+                panel.classList.toggle("d-none", panel.dataset.paymentPanel !== value);
+            });
+            syncRequired(panels, value);
+        }
+
+        // Hiding a panel is not enough on its own. A control that carries
+        // "required" is validated by the browser even while it is display:none,
+        // and the browser then refuses to submit the form containing it. Because
+        // every payment method shares one form, a statically-required field in
+        // any hidden panel silently disables all the other methods: the customer
+        // presses Place order, nothing happens, and no message explains why
+        // (the offending control cannot be focused to show an error on).
+        //
+        // So required is owned by the active panel, applied only here and only
+        // to fields that opted in with data-active-required. Markup stays valid
+        // without it, and the server re-validates every field regardless, so
+        // this is a usability affordance and not a security control.
+        function syncRequired(allPanels, activeValue) {
+            allPanels.forEach(function (panel) {
+                var active = panel.dataset.paymentPanel === activeValue;
+                var fields = panel.querySelectorAll("[data-active-required]");
+                Array.prototype.forEach.call(fields, function (field) {
+                    field.required = active;
+                });
+            });
+        }
+
+        // The server-rendered default already has its panel visible, but the
+        // markup deliberately ships without required so the form still submits if
+        // this script never runs. Reconcile on load only when the active panel
+        // needs it, so a customer who arrives with cash selected and JS working
+        // gets the same treatment as one who clicks around.
+        if (form) {
+            var checked = form.querySelector("input[name='paymentMethod']:checked");
+            if (checked) {
+                syncRequired(panels, checked.value);
+            }
+        }
+
         methods.forEach(function (method) {
             var input = method.querySelector("input[type='radio']");
             if (!input) {
@@ -535,28 +587,129 @@
                 methods.forEach(function (item) {
                     item.classList.toggle("is-selected", item.querySelector("input") === input);
                 });
-                var cardSelected = input.value === "card";
-                cardPanel.classList.toggle("d-none", !cardSelected);
-                cashPanel.classList.toggle("d-none", cardSelected);
+                showPanelFor(input.value);
             });
         });
     }
 
+    /**
+     * Card form behaviour: digit grouping, a local checksum hint, and clearing the
+     * fields on submit.
+     *
+     * Nothing here is trusted. The checksum only nudges the customer while they
+     * type -- the server re-validates, and only the server decides. No card value
+     * is logged, stored, or sent anywhere by this code.
+     */
     function initCheckoutFormatting() {
         var cardNumber = document.getElementById("cardNumber");
         var expiry = document.getElementById("cardExpiry");
+        var cvv = document.getElementById("cardCvv");
+        var feedback = document.getElementById("cardNumberFeedback");
+
         if (cardNumber) {
             cardNumber.addEventListener("input", function () {
-                var value = cardNumber.value.replace(/\D/g, "").slice(0, 16);
-                cardNumber.value = value.replace(/(.{4})/g, "$1 ").trim();
+                var digits = cardNumber.value.replace(/\D/g, "").slice(0, 19);
+                cardNumber.value = digits.replace(/(.{4})/g, "$1 ").trim();
+                if (feedback) {
+                    renderCardNumberHint(feedback, digits);
+                }
             });
         }
+
         if (expiry) {
             expiry.addEventListener("input", function () {
-                var value = expiry.value.replace(/\D/g, "").slice(0, 4);
-                expiry.value = value.length > 2 ? value.slice(0, 2) + "/" + value.slice(2) : value;
+                var digits = expiry.value.replace(/\D/g, "").slice(0, 4);
+                expiry.value = digits.length > 2 ? digits.slice(0, 2) + "/" + digits.slice(2) : digits;
             });
         }
+
+        if (cvv) {
+            cvv.addEventListener("input", function () {
+                cvv.value = cvv.value.replace(/\D/g, "").slice(0, 4);
+            });
+        }
+
+        document.querySelectorAll("[data-toggle-cvv]").forEach(function (toggle) {
+            function flip() {
+                if (!cvv) {
+                    return;
+                }
+                var shown = cvv.type === "text";
+                cvv.type = shown ? "password" : "text";
+                var icon = toggle.querySelector("i");
+                if (icon) {
+                    icon.className = shown ? "bi bi-eye" : "bi bi-eye-slash";
+                }
+                toggle.setAttribute("aria-label", shown ? "Show security code" : "Hide security code");
+            }
+            toggle.addEventListener("click", flip);
+            toggle.addEventListener("keydown", function (event) {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    flip();
+                }
+            });
+        });
+
+        // Clears the card fields as the form leaves, so a demo box left open on a
+        // shared machine does not keep the last number sitting in the DOM.
+        var form = cardNumber ? cardNumber.form : null;
+        if (form) {
+            form.addEventListener("submit", function () {
+                if (cardNumber) {
+                    cardNumber.value = "";
+                }
+                if (cvv) {
+                    cvv.value = "";
+                }
+            });
+        }
+    }
+
+    /**
+     * A typing hint, worded so it cannot be mistaken for an acceptance. It says
+     * the number is incomplete or does not add up -- never that it is valid --
+     * because "looks right" here would be a claim this page cannot make.
+     */
+    function renderCardNumberHint(element, digits) {
+        if (digits.length === 0) {
+            element.textContent = "";
+            element.className = "form-text";
+            return;
+        }
+        if (digits.length < 12) {
+            element.textContent = "";
+            element.className = "form-text";
+            return;
+        }
+        if (luhnCheck(digits)) {
+            element.textContent = "This demo only accepts the test numbers listed below.";
+            element.className = "form-text text-warning-emphasis";
+        } else {
+            element.textContent = "That number does not add up. Check for a typo.";
+            element.className = "form-text text-danger";
+        }
+    }
+
+    /** The same Luhn algorithm the server uses. */
+    function luhnCheck(digits) {
+        var sum = 0;
+        var doubleDigit = false;
+        for (var i = digits.length - 1; i >= 0; i--) {
+            var value = parseInt(digits.charAt(i), 10);
+            if (isNaN(value)) {
+                return false;
+            }
+            if (doubleDigit) {
+                value *= 2;
+                if (value > 9) {
+                    value -= 9;
+                }
+            }
+            sum += value;
+            doubleDigit = !doubleDigit;
+        }
+        return sum % 10 === 0;
     }
 
     function initImageUploads() {
@@ -638,7 +791,7 @@
         initCheckoutFormatting();
         initImageUploads();
         initPasswordConfirmation();
-        // Cart / mail badges are server-rendered by CountFilters (Caffeine +
+        // Cart / review badges are server-rendered by CountFilters (Caffeine +
         // CountCache). Live updates come from SSE (realtime.js); refreshCartCount
         // is only used after AJAX add-to-cart — no per-page /cart/count XHR.
     }

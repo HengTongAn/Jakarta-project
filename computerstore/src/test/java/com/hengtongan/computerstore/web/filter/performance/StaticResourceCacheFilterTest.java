@@ -51,11 +51,36 @@ class StaticResourceCacheFilterTest {
 
     @Test
     void testSetsImmutableForQueryVersionedCss() throws IOException, ServletException {
-        when(request.getRequestURI()).thenReturn("/computerstore/assets/css/style.css?v=1a2b3c");
+        // getRequestURI() never contains the query string in a real container,
+        // so the filter has to read the version from getQueryString().
+        when(request.getRequestURI()).thenReturn("/computerstore/assets/css/app/pages.css");
+        when(request.getQueryString()).thenReturn("v=1790335092000");
 
         filter.doFilter(request, response, chain);
 
         verify(response).setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        verify(chain).doFilter(request, response);
+    }
+
+    @Test
+    void testUnversionedAssetKeepsRevalidatingPolicy() throws IOException, ServletException {
+        when(request.getRequestURI()).thenReturn("/computerstore/assets/js/app.js");
+        when(request.getQueryString()).thenReturn(null);
+
+        filter.doFilter(request, response, chain);
+
+        verify(response).setHeader("Cache-Control", "public, max-age=604800, must-revalidate");
+        verify(chain).doFilter(request, response);
+    }
+
+    @Test
+    void testUnrelatedQueryStringIsNotTreatedAsVersioned() throws IOException, ServletException {
+        when(request.getRequestURI()).thenReturn("/computerstore/assets/css/app/pages.css");
+        when(request.getQueryString()).thenReturn("cachebust=1");
+
+        filter.doFilter(request, response, chain);
+
+        verify(response).setHeader("Cache-Control", "public, max-age=604800, must-revalidate");
         verify(chain).doFilter(request, response);
     }
 

@@ -187,23 +187,6 @@ CREATE TABLE inventory_logs (
 ) ENGINE = InnoDB;
 
 -- ------------------------------------------------------------
--- In-app mail (Gmail-style) between customers and admin
--- ------------------------------------------------------------
-CREATE TABLE mail_messages (
-    message_id   INT AUTO_INCREMENT PRIMARY KEY,
-    sender_id    INT NOT NULL,
-    recipient_id INT NOT NULL,
-    subject      VARCHAR(200) NOT NULL,
-    body         TEXT NOT NULL,
-    read_flag    TINYINT(1) NOT NULL DEFAULT 0,
-    created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_mail_sender FOREIGN KEY (sender_id) REFERENCES users (user_id),
-    CONSTRAINT fk_mail_recipient FOREIGN KEY (recipient_id) REFERENCES users (user_id),
-    INDEX idx_mail_inbox (recipient_id, read_flag, created_at),
-    INDEX idx_mail_sent (sender_id, created_at)
-) ENGINE = InnoDB;
-
--- ------------------------------------------------------------
 -- Customer reviews (moderated; one review per user per product)
 -- ------------------------------------------------------------
 CREATE TABLE reviews (
@@ -224,22 +207,6 @@ CREATE TABLE reviews (
     INDEX idx_review_product_status (product_id, status),
     INDEX idx_review_status_created (status, created_at),
     INDEX idx_review_verified (is_verified)
-) ENGINE = InnoDB;
-
--- ------------------------------------------------------------
--- Password reset tokens (forgot-password flow)
--- Only the SHA-256 hash of the token is stored; the raw token is emailed.
--- ------------------------------------------------------------
-CREATE TABLE password_reset_tokens (
-    token_id   INT AUTO_INCREMENT PRIMARY KEY,
-    user_id    INT NOT NULL,
-    token_hash CHAR(64) NOT NULL UNIQUE,
-    expires_at TIMESTAMP NOT NULL,
-    used_at    TIMESTAMP NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_reset_token_user FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,
-    INDEX idx_reset_token_user (user_id),
-    INDEX idx_reset_token_expiry (expires_at)
 ) ENGINE = InnoDB;
 
 -- ------------------------------------------------------------

@@ -6,7 +6,7 @@
 --     plus category/brand/price filters, ORDER BY price/name/created_at)
 --   - Admin/order lookups (WHERE user_id = ? / status = ? ORDER BY order_date DESC)
 --  Note: products.sku, order_items.order_id, cart_items.user_id,
---  mail_messages inbox, audit_logs.created_at are already indexed
+--  audit_logs.created_at are already indexed
 --  by schema.sql / UNIQUE constraints, so they are skipped here.
 -- ============================================================
 

@@ -8,17 +8,35 @@
             </div>
             <div class="col-6 col-lg-2"><h2 class="footer-heading">Shop</h2><a href="${pageContext.request.contextPath}/products">Browse products</a><a href="${pageContext.request.contextPath}/products?sort=newest">New arrivals</a><a href="${pageContext.request.contextPath}/products?sort=price_asc">Best value</a></div>
             <div class="col-6 col-lg-2"><h2 class="footer-heading">Account</h2><a href="${pageContext.request.contextPath}/account">My account</a><a href="${pageContext.request.contextPath}/account/orders">My orders</a><a href="${pageContext.request.contextPath}/cart">Shopping cart</a></div>
-            <div class="col-lg-3"><h2 class="footer-heading">Need help?</h2><p class="footer-copy small">Our team can help you choose compatible components for your next build.</p><a class="footer-support" href="${pageContext.request.contextPath}${empty sessionScope.user ? '/login' : '/mail/compose'}">Contact support <i class="bi bi-arrow-right"></i></a></div>
+            <div class="col-lg-3"><h2 class="footer-heading">Contact support</h2><p class="footer-copy small">Our team can help you choose compatible components for your next build.</p>
+                <ul class="support-channels">
+                    <c:forEach var="ch" items="${supportChannels}">
+                        <li>
+                            <c:choose>
+                                <c:when test="${not empty ch.url}">
+                                    <a class="support-chan" href="<c:out value='${ch.url}'/>" target="_blank" rel="noopener noreferrer">
+                                        <img src="${pageContext.request.contextPath}/assets/images/${ch.icon}" alt="" width="22" height="22" loading="lazy" decoding="async"><span><c:out value="${ch.label}"/></span>
+                                    </a>
+                                </c:when>
+                                <c:otherwise>
+                                    <span class="support-chan is-unconfigured" role="link" aria-disabled="true" title="Set this channel at /admin/support">
+                                        <img src="${pageContext.request.contextPath}/assets/images/${ch.icon}" alt="" width="22" height="22" loading="lazy" decoding="async"><span><c:out value="${ch.label}"/></span>
+                                    </span>
+                                </c:otherwise>
+                            </c:choose>
+                        </li>
+                    </c:forEach>
+                </ul>
+            </div>
         </div>
         <div class="footer-bottom"><span>&copy; 2026 Apach_PC/STORE</span><span>Secure shopping &middot; Helpful support &middot; Quality technology</span></div>
     </div>
 </footer>
-<script src="${pageContext.request.contextPath}/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
-<script src="${pageContext.request.contextPath}/assets/js/mail-live.js"></script>
-<script src="${pageContext.request.contextPath}/assets/js/password-toggle.js"></script>
-<script src="${pageContext.request.contextPath}/assets/js/realtime.js"></script>
-<script src="${pageContext.request.contextPath}/assets/js/app.js"></script>
-<script src="${pageContext.request.contextPath}/assets/js/admin-help.js"></script>
+<script src="${pageContext.request.contextPath}/assets/vendor/bootstrap/bootstrap.bundle.min.js?v=${assetsVersion}"></script>
+<script src="${pageContext.request.contextPath}/assets/js/password-toggle.js?v=${assetsVersion}"></script>
+<script src="${pageContext.request.contextPath}/assets/js/realtime.js?v=${assetsVersion}"></script>
+<script src="${pageContext.request.contextPath}/assets/js/app.js?v=${assetsVersion}"></script>
+<script src="${pageContext.request.contextPath}/assets/js/admin-help.js?v=${assetsVersion}"></script>
 <button id="scrollTop" class="scroll-top" type="button" aria-label="Back to top">
     <i class="bi bi-arrow-up" aria-hidden="true"></i>
 </button>

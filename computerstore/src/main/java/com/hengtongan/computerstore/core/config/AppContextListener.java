@@ -6,7 +6,6 @@ import com.hengtongan.computerstore.infrastructure.security.TwoFactorAuthService
 import com.hengtongan.computerstore.util.web.AuditLogger;
 import com.hengtongan.computerstore.infrastructure.persistence.DBConnection;
 import com.hengtongan.computerstore.util.security.DefaultCredentialsChecker;
-import com.hengtongan.computerstore.infrastructure.messaging.EmailUtil;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import jakarta.servlet.annotation.WebListener;
@@ -125,7 +124,6 @@ public class AppContextListener implements ServletContextListener {
             }
         }
         EventHub.shutdown();
-        EmailUtil.shutdown();
         DBConnection.shutdown();
         sce.getServletContext().removeAttribute(ATTR_NAME);
 

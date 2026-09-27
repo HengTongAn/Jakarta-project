@@ -54,13 +54,18 @@ public class AuthenticationFilter implements Filter {
     private void trackActivity(HttpSession session, int userId) {
         long now = System.currentTimeMillis();
         Long lastTouch = (Long) session.getAttribute("lastActivityTouch");
-        if (lastTouch == null || now - lastTouch >= ACTIVITY_UPDATE_INTERVAL_MS) {
-            try {
-                AppContext.get().userService().updateLastActive(userId);
-                session.setAttribute("lastActivityTouch", now);
-            } catch (RuntimeException ignored) {
-                // presence tracking is best-effort; never block navigation on DB failure
-            }
+        if (lastTouch != null && now - lastTouch < ACTIVITY_UPDATE_INTERVAL_MS) {
+            return;
+        }
+        // Advance the stamp BEFORE the write. Setting it afterwards means a
+        // failed UPDATE leaves it stale, so every later request in the session
+        // retries - and each retry pays the connection pool's 3s timeout - which
+        // turns one transient DB blip into a multi-second stall on every click.
+        session.setAttribute("lastActivityTouch", now);
+        try {
+            AppContext.get().userService().updateLastActive(userId);
+        } catch (RuntimeException ignored) {
+            // presence tracking is best-effort; never block navigation on DB failure
         }
     }
 }

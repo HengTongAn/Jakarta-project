@@ -37,7 +37,7 @@
                         <td>
                             <c:choose>
                                 <c:when test="${p.hasImage()}">
-                                    <img src="${pageContext.request.contextPath}/${p.imageUrl}" alt="${p.name}" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
+                                    <img loading="lazy" decoding="async" src="${pageContext.request.contextPath}/${p.imageUrl}" alt="<c:out value='${p.name}'/>" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
                                 </c:when>
                                 <c:otherwise>
                                     <div class="bg-secondary d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; border-radius: 4px;">
@@ -51,7 +51,7 @@
                         </td>
                         <td><c:out value="${p.categoryName}"/></td>
                         <td><c:out value="${p.brandName}"/></td>
-                        <td class="small text-muted">${p.sku}</td>
+                        <td class="small text-muted"><c:out value="${p.sku}"/></td>
                         <td class="text-end money">$<fmt:formatNumber value="${p.price}" pattern="#,##0.00"/></td>
                         <td class="text-center">${p.stockQuantity}</td>
                         <td class="text-center">

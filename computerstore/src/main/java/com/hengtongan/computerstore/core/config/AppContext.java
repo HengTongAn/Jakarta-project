@@ -7,12 +7,12 @@ import com.hengtongan.computerstore.core.service.CartService;
 import com.hengtongan.computerstore.core.service.CategoryService;
 import com.hengtongan.computerstore.core.service.DashboardService;
 import com.hengtongan.computerstore.core.service.InventoryService;
-import com.hengtongan.computerstore.core.service.MailService;
 import com.hengtongan.computerstore.core.service.OrderService;
-import com.hengtongan.computerstore.core.service.PasswordResetService;
 import com.hengtongan.computerstore.core.service.ProductService;
 import com.hengtongan.computerstore.core.service.ReportService;
 import com.hengtongan.computerstore.core.service.ReviewService;
+import com.hengtongan.computerstore.core.service.PaymentService;
+import com.hengtongan.computerstore.core.service.SupportChannelService;
 import com.hengtongan.computerstore.core.service.UserService;
 
 /**
@@ -31,13 +31,13 @@ public final class AppContext {
     private final CategoryService categoryService;
     private final BrandService brandService;
     private final UserService userService;
-    private final MailService mailService;
     private final DashboardService dashboardService;
     private final InventoryService inventoryService;
     private final AuditLogService auditLogService;
     private final ReportService reportService;
-    private final PasswordResetService passwordResetService;
     private final ReviewService reviewService;
+    private final SupportChannelService supportChannelService;
+    private final PaymentService paymentService;
 
     private AppContext() {
         this.productService = new ProductService();
@@ -47,13 +47,13 @@ public final class AppContext {
         this.categoryService = new CategoryService();
         this.brandService = new BrandService();
         this.userService = new UserService();
-        this.mailService = new MailService();
         this.dashboardService = new DashboardService();
         this.inventoryService = new InventoryService();
         this.auditLogService = new AuditLogService();
         this.reportService = new ReportService();
-        this.passwordResetService = new PasswordResetService();
         this.reviewService = new ReviewService();
+        this.supportChannelService = new SupportChannelService();
+        this.paymentService = new PaymentService();
     }
 
     public static synchronized void init() {
@@ -103,10 +103,6 @@ public final class AppContext {
         return userService;
     }
 
-    public MailService mailService() {
-        return mailService;
-    }
-
     public DashboardService dashboardService() {
         return dashboardService;
     }
@@ -123,11 +119,15 @@ public final class AppContext {
         return reportService;
     }
 
-    public PasswordResetService passwordResetService() {
-        return passwordResetService;
-    }
-
     public ReviewService reviewService() {
         return reviewService;
+    }
+
+    public SupportChannelService supportChannelService() {
+        return supportChannelService;
+    }
+
+    public PaymentService paymentService() {
+        return paymentService;
     }
 }

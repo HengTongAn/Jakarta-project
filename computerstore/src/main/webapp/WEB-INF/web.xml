@@ -36,14 +36,24 @@
     <!-- Filter order matters: encoding -> audit context -> security headers
          -> session refresh -> rate limiting -> authentication -> count filters
          -> admin authorization -> CSRF. -->
+    <!-- Every filter-mapping below declares <async-supported>true</async-supported>.
+         That is what the specification consults, and it is required for the
+         /realtime SSE stream: if any filter in the chain is not async-capable
+         the container refuses startAsync() and the endpoint returns 500 with
+         "Servlet output streaming is not supported".
+
+         async-supported on <filter> is ignored, so declaring it there is a
+         silent no-op. It used to be declared there for exactly that reason and
+         /realtime was broken. Keep it on the mapping. -->
     <filter>
         <filter-name>EncodingFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.web.EncodingFilter</filter-class>
-        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>EncodingFilter</filter-name>
         <url-pattern>/*</url-pattern>
+    
+        <async-supported>true</async-supported>
     </filter-mapping>
 
     <!-- Long-lived Cache-Control for static assets (CSS/JS/images/fonts). -->
@@ -52,11 +62,12 @@
         <filter-class>com.hengtongan.computerstore.web.filter.performance.StaticResourceCacheFilter</filter-class>
         <!-- Required so the /realtime SSE stream (an async request) passes
              through this chain filter; without it startAsync() throws. -->
-        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>StaticResourceCacheFilter</filter-name>
         <url-pattern>/*</url-pattern>
+    
+        <async-supported>true</async-supported>
     </filter-mapping>
 
     <!-- Dynamic text compression. CompressionFilter buffers only eligible
@@ -64,21 +75,23 @@
     <filter>
         <filter-name>CompressionFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.performance.CompressionFilter</filter-class>
-        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>CompressionFilter</filter-name>
         <url-pattern>/*</url-pattern>
+    
+        <async-supported>true</async-supported>
     </filter-mapping>
 
     <filter>
         <filter-name>RequestAuditContextFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.monitoring.RequestAuditContextFilter</filter-class>
-        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>RequestAuditContextFilter</filter-name>
         <url-pattern>/*</url-pattern>
+    
+        <async-supported>true</async-supported>
     </filter-mapping>
 
     <!-- Marks Set-Cookie headers "Secure" over TLS (or when forced via
@@ -87,21 +100,23 @@
     <filter>
         <filter-name>SecureCookieFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.security.SecureCookieFilter</filter-class>
-        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>SecureCookieFilter</filter-name>
         <url-pattern>/*</url-pattern>
+    
+        <async-supported>true</async-supported>
     </filter-mapping>
 
     <filter>
         <filter-name>SecurityHeadersFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.security.SecurityHeadersFilter</filter-class>
-        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>SecurityHeadersFilter</filter-name>
         <url-pattern>/*</url-pattern>
+    
+        <async-supported>true</async-supported>
     </filter-mapping>
 
     <!-- Re-reads the session user from the DB (~every 15s, skipped for static
@@ -113,11 +128,12 @@
     <filter>
         <filter-name>SessionUserRefreshFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.security.SessionUserRefreshFilter</filter-class>
-        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>SessionUserRefreshFilter</filter-name>
         <url-pattern>/*</url-pattern>
+    
+        <async-supported>true</async-supported>
     </filter-mapping>
 
     <filter>
@@ -129,13 +145,13 @@
         <url-pattern>/forgot</url-pattern>
         <url-pattern>/login</url-pattern>
         <url-pattern>/register</url-pattern>
-        <url-pattern>/reset</url-pattern>
+    
+        <async-supported>true</async-supported>
     </filter-mapping>
 
     <filter>
         <filter-name>UserRateLimitingFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.security.UserRateLimitingFilter</filter-class>
-        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>UserRateLimitingFilter</filter-name>
@@ -146,6 +162,8 @@
         <url-pattern>/account/*</url-pattern>
         <url-pattern>/admin</url-pattern>
         <url-pattern>/admin/*</url-pattern>
+    
+        <async-supported>true</async-supported>
     </filter-mapping>
 
     <filter>
@@ -159,33 +177,30 @@
         <url-pattern>/cart</url-pattern>
         <url-pattern>/cart/*</url-pattern>
         <url-pattern>/checkout</url-pattern>
+        <!-- The payment pages expose an order amount, a transaction id and a QR
+             code, so they are customer-scoped and must never be anonymous. -->
+        <url-pattern>/payment/aba</url-pattern>
+        <url-pattern>/payment/aba/*</url-pattern>
+        <url-pattern>/payment/card</url-pattern>
+        <url-pattern>/payment/card/*</url-pattern>
         <url-pattern>/account</url-pattern>
         <url-pattern>/account/*</url-pattern>
-        <url-pattern>/mail</url-pattern>
-        <url-pattern>/mail/*</url-pattern>
+    
+        <async-supported>true</async-supported>
     </filter-mapping>
 
-    <!-- Badge counts: Caffeine-backed in CartService/MailService/ReviewService
+    <!-- Badge counts: Caffeine-backed in CartService/ReviewService
          (single-flight) plus CountCache (30s, single-flight per session) so a
          click burst cannot exhaust the pool the way the old uncached filters did. -->
     <filter>
         <filter-name>CartCountFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.web.CartCountFilter</filter-class>
-        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>CartCountFilter</filter-name>
         <url-pattern>/*</url-pattern>
-    </filter-mapping>
-
-    <filter>
-        <filter-name>MailCountFilter</filter-name>
-        <filter-class>com.hengtongan.computerstore.web.filter.web.MailCountFilter</filter-class>
+    
         <async-supported>true</async-supported>
-    </filter>
-    <filter-mapping>
-        <filter-name>MailCountFilter</filter-name>
-        <url-pattern>/*</url-pattern>
     </filter-mapping>
 
     <filter>
@@ -196,6 +211,21 @@
         <filter-name>ReviewCountFilter</filter-name>
         <url-pattern>/admin</url-pattern>
         <url-pattern>/admin/*</url-pattern>
+    
+        <async-supported>true</async-supported>
+    </filter-mapping>
+
+    <!-- Footer contact-support channels. On /* because the site footer is on
+         every page; SupportChannelService caches the app_settings rows. -->
+    <filter>
+        <filter-name>SupportChannelFilter</filter-name>
+        <filter-class>com.hengtongan.computerstore.web.filter.web.SupportChannelFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>SupportChannelFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    
+        <async-supported>true</async-supported>
     </filter-mapping>
 
     <filter>
@@ -206,16 +236,19 @@
         <filter-name>AdminAuthorizationFilter</filter-name>
         <url-pattern>/admin</url-pattern>
         <url-pattern>/admin/*</url-pattern>
+    
+        <async-supported>true</async-supported>
     </filter-mapping>
 
     <filter>
         <filter-name>CSRFProtectionFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.security.CSRFProtectionFilter</filter-class>
-        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>CSRFProtectionFilter</filter-name>
         <url-pattern>/*</url-pattern>
+    
+        <async-supported>true</async-supported>
     </filter-mapping>
 
     <!-- Explicit mapping keeps the account-security route available after deployment. -->

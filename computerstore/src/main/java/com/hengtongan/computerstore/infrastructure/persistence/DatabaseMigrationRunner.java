@@ -121,7 +121,6 @@ public final class DatabaseMigrationRunner implements ServletContextListener {
                 "migration_add_image_url.sql",
                 "migration_add_audit_archive.sql",
                 "migration_add_audit_correlation.sql",
-                "migration_add_password_reset_tokens.sql",
                 "migration_add_super_admin_role.sql",
                 "migration_add_2fa.sql",
                 "migration_add_order_lifecycle.sql",
@@ -130,7 +129,10 @@ public final class DatabaseMigrationRunner implements ServletContextListener {
                 "migration_performance_indexes.sql",
                 "migration_add_reviews.sql",
                 "migration_add_trending_index.sql",
-                "migration_advanced_performance_indexes.sql"
+                "migration_advanced_performance_indexes.sql",
+                "migration_add_app_settings.sql",
+                "migration_add_payments.sql",
+                "migration_add_card_payments.sql"
         );
     }
 
@@ -150,14 +152,27 @@ public final class DatabaseMigrationRunner implements ServletContextListener {
                         try {
                             stmt.execute(trimmed);
                         } catch (SQLException e) {
-                            // Handle common "already exists" errors gracefully
+                            // Handle common "already exists" errors gracefully.
+                            // Every code here means "this DDL is already in place",
+                            // never "this DDL is wrong", so tolerating them keeps a
+                            // re-run or a hand-applied migration from bricking
+                            // startup. Anything else propagates, because a migration
+                            // that genuinely failed must stop the boot rather than
+                            // leave the schema half-applied.
                             String msg = e.getMessage().toLowerCase();
                             int errorCode = e.getErrorCode();
-                            // MySQL error codes: 1060 = Duplicate column name, 1061 = Duplicate key, 
-                            // 1050 = Table already exists, 1062 = Duplicate entry
-                            if (errorCode == 1060 || errorCode == 1061 || errorCode == 1050 || errorCode == 1062
-                                    || msg.contains("duplicate column") || msg.contains("already exists") 
-                                    || msg.contains("duplicate key") || msg.contains("duplicate entry")) {
+                            // MySQL error codes: 1060 = Duplicate column name,
+                            // 1061 = Duplicate key, 1050 = Table already exists,
+                            // 1062 = Duplicate entry, 3822 = Duplicate check
+                            // constraint name. 3822 was found the hard way: a
+                            // migration whose second statement adds a CHECK
+                            // constraint aborted startup on an already-applied
+                            // database, with no recovery short of manual SQL.
+                            if (errorCode == 1060 || errorCode == 1061 || errorCode == 1050
+                                    || errorCode == 1062 || errorCode == 3822
+                                    || msg.contains("duplicate column") || msg.contains("already exists")
+                                    || msg.contains("duplicate key") || msg.contains("duplicate entry")
+                                    || msg.contains("duplicate check constraint")) {
                                 LOGGER.warn("Migration {} skipped (already applied): {}", migrationName, e.getMessage());
                             } else {
                                 throw e;

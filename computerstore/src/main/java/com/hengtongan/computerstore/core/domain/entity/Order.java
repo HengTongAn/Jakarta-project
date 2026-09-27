@@ -17,6 +17,15 @@ public class Order {
     private BigDecimal totalAmount;
     private Status status;
 
+    // Payment. Method and status are VARCHAR columns rather than an enum so an
+    // unmapped provider shows up as data to fix instead of a constraint failure;
+    // the allowed values are enforced in PaymentService.
+    private String paymentMethod;
+    private String paymentProvider;
+    private String paymentStatus;
+    private String paymentTransaction;
+    private Timestamp paidAt;
+
     // Denormalised fields for display
     private String customerName;
     private String customerUsername;
@@ -25,6 +34,46 @@ public class Order {
     private List<OrderStatusEvent> statusEvents = new ArrayList<>();
 
     public Order() {
+    }
+
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
+    }
+
+    public String getPaymentProvider() {
+        return paymentProvider;
+    }
+
+    public void setPaymentProvider(String paymentProvider) {
+        this.paymentProvider = paymentProvider;
+    }
+
+    public String getPaymentStatus() {
+        return paymentStatus;
+    }
+
+    public void setPaymentStatus(String paymentStatus) {
+        this.paymentStatus = paymentStatus;
+    }
+
+    public String getPaymentTransaction() {
+        return paymentTransaction;
+    }
+
+    public void setPaymentTransaction(String paymentTransaction) {
+        this.paymentTransaction = paymentTransaction;
+    }
+
+    public Timestamp getPaidAt() {
+        return paidAt;
+    }
+
+    public void setPaidAt(Timestamp paidAt) {
+        this.paidAt = paidAt;
     }
 
     public int getOrderId() {

@@ -80,10 +80,6 @@ CREATE INDEX idx_audit_search ON audit_logs (action_type, created_at DESC, actor
 -- Used by: InventoryRepository.listRecent
 CREATE INDEX idx_inventory_feed ON inventory_logs (product_id, created_at DESC, action);
 
--- Password reset token lookup
--- Used by: PasswordResetRepository.findByToken
-CREATE INDEX idx_password_reset_token ON password_reset_tokens (token_hash, used_at, expires_at);
-
 -- ------------------------------------------------------------
 -- FULL-TEXT SEARCH INDEXES (for enhanced search)
 -- ------------------------------------------------===========

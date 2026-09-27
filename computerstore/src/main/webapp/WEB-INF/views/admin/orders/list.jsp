@@ -33,6 +33,7 @@
                     <th data-sort="number">Order #</th><th>Customer</th><th>Date</th>
                     <th class="text-center" data-sort="number">Items</th>
                     <th class="text-end" data-sort="price">Total</th>
+                    <th class="text-center">Payment</th>
                     <th class="text-center">Status</th>
                     <th class="text-end" data-nosort>Actions</th>
                 </tr>
@@ -48,6 +49,26 @@
                         <td><fmt:formatDate value="${order.orderDate}" pattern="dd MMM yyyy HH:mm"/></td>
                         <td class="text-center">${order.itemCount}</td>
                         <td class="text-end money">$<fmt:formatNumber value="${order.totalAmount}" pattern="#,##0.00"/></td>
+                        <td class="text-center">
+                            <c:set var="_pay" value="${order.paymentStatus}"/>
+                            <c:choose>
+                            <c:when test="${_pay == 'PAID'}">
+                                <span class="badge bg-success"><i class="bi bi-check-lg me-1"></i>Paid</span>
+                            </c:when>
+                            <c:when test="${_pay == 'PENDING'}">
+                                <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Pending</span>
+                            </c:when>
+                            <c:when test="${_pay == 'CANCELLED'}">
+                                <span class="badge bg-secondary">Cancelled</span>
+                            </c:when>
+                            <c:when test="${_pay == 'FAILED' or _pay == 'EXPIRED'}">
+                                <span class="badge bg-danger"><c:out value="${_pay}"/></span>
+                            </c:when>
+                            <c:otherwise>
+                                <span class="badge bg-light text-muted">Cash on delivery</span>
+                            </c:otherwise>
+                            </c:choose>
+                        </td>
                         <td class="text-center">
                             <span data-order-status="${order.orderId}">
                                 <c:set var="_statusLabel" value="${order.status}"/>
