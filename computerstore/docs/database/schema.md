@@ -1,7 +1,16 @@
 # Schema
 
-19 tables. This is the schema as it exists in the live database, not the schema
-a migration file would create — the two differ because migrations accumulate.
+19 tables in the live database, 15 of them in `schema.sql`. The two lists differ
+because migrations accumulate: `payments`, `app_settings`,
+`password_reset_tokens` and `schema_migrations` exist only because a migration
+creates them, and `user_preferences` exists in the live database but in neither
+`schema.sql` nor any migration.
+
+The live database is also **not** a reliable record of what has run. At least
+one migration is listed in `schema_migrations` whose table was subsequently
+dropped, which the runner cannot detect: it skips anything already recorded.
+If a table is missing, check `schema_migrations` before assuming the migration
+has not run, and re-apply the file by hand if it has.
 
 ## Entity relationships
 
@@ -173,6 +182,15 @@ mark-all-read only ever ask "is this unread". Both foreign keys are `NO ACTION`,
 not `CASCADE`: every query inner-joins both users, so a message whose sender or
 recipient was hard-deleted is already invisible, and users are soft-deleted in
 practice. Added by `migration_add_mail_messages.sql`.
+
+### `user_preferences` — vestigial, not in `schema.sql`
+`user_id` PK/FK · `notify_order_placed` · `notify_order_status` · `updated_at`
+
+Present in the live database but created by no migration and read by no code —
+a leftover from an earlier notification design that in-app mail replaced. It is
+listed here because the table really exists and a `SHOW TABLES` will show it,
+but a fresh install from `schema.sql` will not have it, and nothing will miss
+it. Safe to `DROP TABLE user_preferences;` if you want the two in sync.
 
 ### `product_specs`
 `spec_id` PK · `product_id` FK `CASCADE` · `spec_key` · `spec_value` · `sort_order` · `created_at`

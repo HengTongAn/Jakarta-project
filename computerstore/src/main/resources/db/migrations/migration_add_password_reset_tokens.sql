@@ -1,7 +1,7 @@
 -- Run once against an existing computer_store database before deploying
 -- Forgot-password flow (Pattern A: expiring single-use reset link emailed to the customer).
 -- Only the SHA-256 hash of the token is stored; the raw token is sent by email only.
-CREATE TABLE password_reset_tokens (
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
     token_id   INT AUTO_INCREMENT PRIMARY KEY,
     user_id    INT NOT NULL,
     token_hash CHAR(64) NOT NULL UNIQUE,
