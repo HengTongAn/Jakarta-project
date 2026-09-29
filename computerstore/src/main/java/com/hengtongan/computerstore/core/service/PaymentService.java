@@ -55,6 +55,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository = new PaymentRepository();
     private final OrderRepository orderRepository = new OrderRepository();
     private final AbaPaywayClient gateway = new AbaPaywayClient();
+    private final TransactionService transactionService = new TransactionService();
 
     /** What the checkout page needs to render the payment options. */
     public boolean isAbaAvailable() {
@@ -108,17 +109,49 @@ public class PaymentService {
             throw new ValidationException("This order is already paid.");
         }
 
+        // Create transaction record for payment tracking
+        long transactionId = 0;
+        try {
+            transactionId = transactionService.createPaymentTransaction(
+                orderId, order.getUserId(), order.getTotalAmount(), METHOD_ABA);
+        } catch (SQLException e) {
+            // Log but don't fail payment if transaction tracking fails
+            System.err.println("Failed to create transaction record: " + e.getMessage());
+        }
+
         AbaPaywayClient.PrecreateResult result = gateway.precreate(
                 orderId, order.getTotalAmount(), "Order #" + orderId + " - " + PaymentConfig.shopName(), baseUrl);
         if (!result.ok()) {
             recordAttempt(orderId, null, Payment.Status.FAILED, result.message(), null, null);
             markOrder(orderId, STATUS_FAILED, null, PROVIDER_ABA);
+            
+            // Update transaction status to failed
+            if (transactionId > 0) {
+                try {
+                    transactionService.recordFailedPayment(transactionId, null, "GATEWAY_ERROR", result.message());
+                } catch (SQLException e) {
+                    System.err.println("Failed to update transaction status: " + e.getMessage());
+                }
+            }
+            
             throw new ValidationException("Could not start the payment: " + result.message());
         }
 
         Payment payment = recordAttempt(orderId, result.transactionId(), Payment.Status.PENDING,
                 result.message(), result.qrImage(), result.abaPhone());
         markOrder(orderId, STATUS_PENDING, result.transactionId(), PROVIDER_ABA);
+        
+        // Update transaction status with gateway transaction ID
+        if (transactionId > 0) {
+            try {
+                transactionService.updateTransactionStatus(transactionId, 
+                    com.hengtongan.computerstore.core.domain.entity.Transaction.TransactionStatus.PROCESSING,
+                    result.transactionId(), "INITIATED", result.message());
+            } catch (SQLException e) {
+                System.err.println("Failed to update transaction status: " + e.getMessage());
+            }
+        }
+        
         audit("PAYMENT_STARTED", orderId, "ABA Payway transaction " + result.transactionId());
         return payment;
     }
@@ -157,6 +190,16 @@ public class PaymentService {
             throw new ValidationException("Card payments are not available in this configuration.");
         }
 
+        // Create transaction record for payment tracking
+        long transactionId = 0;
+        try {
+            transactionId = transactionService.createPaymentTransaction(
+                orderId, order.getUserId(), order.getTotalAmount(), METHOD_CARD);
+        } catch (SQLException e) {
+            // Log but don't fail payment if transaction tracking fails
+            System.err.println("Failed to create transaction record: " + e.getMessage());
+        }
+
         String reference = simulatedReference(orderId, card);
         if (card.approved()) {
             // Recorded PENDING first, then promoted by markPaid inside the same
@@ -167,6 +210,16 @@ public class PaymentService {
             recordCardAttempt(orderId, reference, Payment.Status.PENDING, card, card.message());
             markOrder(orderId, STATUS_PENDING, reference, PROVIDER_CARD);
             markPaid(orderId, reference, "card " + card.masked());
+            
+            // Update transaction status to completed
+            if (transactionId > 0) {
+                try {
+                    transactionService.recordSuccessfulPayment(transactionId, reference, "APPROVED", card.message());
+                } catch (SQLException e) {
+                    System.err.println("Failed to update transaction status: " + e.getMessage());
+                }
+            }
+            
             audit("PAYMENT_CONFIRMED", orderId, "Card " + card.masked() + " (demo authorisation)");
             // Re-read rather than returning the pre-settlement object: the caller
             // branches on the status, and the row just promoted to PAID is the
@@ -178,6 +231,16 @@ public class PaymentService {
         // order failed here would strand stock behind an order nobody can pay for.
         Payment payment = recordCardAttempt(orderId, reference, Payment.Status.FAILED, card, card.message());
         markOrder(orderId, STATUS_PENDING, reference, PROVIDER_CARD);
+        
+        // Update transaction status to failed
+        if (transactionId > 0) {
+            try {
+                transactionService.recordFailedPayment(transactionId, reference, "DECLINED", card.message());
+            } catch (SQLException e) {
+                System.err.println("Failed to update transaction status: " + e.getMessage());
+            }
+        }
+        
         audit("PAYMENT_DECLINED", orderId, "Card " + card.masked() + " declined (demo)");
         return payment;
     }
@@ -235,9 +298,31 @@ public class PaymentService {
         }
 
         Payment.Status confirmed = Payment.Status.fromWire(result.status());
+        
+        // Find and update the corresponding transaction
+        com.hengtongan.computerstore.core.domain.entity.Transaction transaction = null;
+        try {
+            List<com.hengtongan.computerstore.core.domain.entity.Transaction> transactions = 
+                transactionService.getTransactionsByOrder(orderId);
+            transaction = transactions.stream().filter(t -> t.getGatewayTransactionId() != null && 
+                t.getGatewayTransactionId().equals(transactionId)).findFirst().orElse(null);
+        } catch (SQLException e) {
+            System.err.println("Failed to fetch transactions: " + e.getMessage());
+        }
+        
         if (confirmed == Payment.Status.PAID) {
             markPaid(orderId, transactionId, "ABA Payway (" + transactionId + ")");
             audit("PAYMENT_CONFIRMED", orderId, "ABA Payway transaction " + transactionId);
+            
+            // Update transaction status to completed
+            if (transaction != null) {
+                try {
+                    transactionService.recordSuccessfulPayment(transaction.getTransactionId(), 
+                        transactionId, result.status(), result.message());
+                } catch (SQLException e) {
+                    System.err.println("Failed to update transaction status: " + e.getMessage());
+                }
+            }
         } else {
             String orderStatus = switch (confirmed) {
                 case CANCELLED -> STATUS_CANCELLED;
@@ -248,6 +333,23 @@ public class PaymentService {
             updateAttempt(orderId, transactionId, confirmed, result.message());
             markOrder(orderId, orderStatus, transactionId, PROVIDER_ABA);
             audit("PAYMENT_" + confirmed, orderId, "transaction " + transactionId);
+            
+            // Update transaction status to failed/cancelled
+            if (transaction != null) {
+                try {
+                    com.hengtongan.computerstore.core.domain.entity.Transaction.TransactionStatus txStatus = 
+                        switch (confirmed) {
+                            case CANCELLED -> com.hengtongan.computerstore.core.domain.entity.Transaction.TransactionStatus.REFUNDED;
+                            case FAILED -> com.hengtongan.computerstore.core.domain.entity.Transaction.TransactionStatus.FAILED;
+                            case EXPIRED -> com.hengtongan.computerstore.core.domain.entity.Transaction.TransactionStatus.FAILED;
+                            default -> com.hengtongan.computerstore.core.domain.entity.Transaction.TransactionStatus.PENDING;
+                        };
+                    transactionService.updateTransactionStatus(transaction.getTransactionId(), 
+                        txStatus, transactionId, result.status(), result.message());
+                } catch (SQLException e) {
+                    System.err.println("Failed to update transaction status: " + e.getMessage());
+                }
+            }
         }
         return confirmed;
     }

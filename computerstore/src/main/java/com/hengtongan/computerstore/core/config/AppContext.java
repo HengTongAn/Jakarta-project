@@ -14,6 +14,7 @@ import com.hengtongan.computerstore.core.service.ReportService;
 import com.hengtongan.computerstore.core.service.ReviewService;
 import com.hengtongan.computerstore.core.service.PaymentService;
 import com.hengtongan.computerstore.core.service.SupportChannelService;
+import com.hengtongan.computerstore.core.service.TransactionService;
 import com.hengtongan.computerstore.core.service.UserService;
 
 /**
@@ -39,6 +40,7 @@ public final class AppContext {
     private final ReviewService reviewService;
     private final SupportChannelService supportChannelService;
     private final PaymentService paymentService;
+    private final TransactionService transactionService;
     private final PasswordResetService passwordResetService;
 
     private AppContext() {
@@ -56,6 +58,7 @@ public final class AppContext {
         this.reviewService = new ReviewService();
         this.supportChannelService = new SupportChannelService();
         this.paymentService = new PaymentService();
+        this.transactionService = new TransactionService();
         this.passwordResetService = new PasswordResetService();
     }
 
@@ -132,6 +135,10 @@ public final class AppContext {
 
     public PaymentService paymentService() {
         return paymentService;
+    }
+
+    public TransactionService transactionService() {
+        return transactionService;
     }
 
     public PasswordResetService passwordResetService() {
