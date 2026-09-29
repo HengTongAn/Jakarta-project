@@ -6,18 +6,22 @@
 
     <display-name>Apach_PC/STORE</display-name>
 
-    <!-- TEMPORARY (uncommitted): the DefaultServlet sendfile override below
-         collides with the embedded Cargo Tomcat's built-in 'default'
-         servlet ("Child name [default] is not unique"), so it is commented
-         out for this e2e verification run only and will be restored. -->
-    <!--servlet>
-        <servlet-name>default</servlet-name>
-        <servlet-class>org.apache.catalina.servlets.DefaultServlet</servlet-class>
-        <init-param>
-            <param-name>sendfileSize</param-name>
-            <param-value>-1</param-value>
-        </init-param>
-    </servlet-->
+    <!-- No per-app DefaultServlet override.
+
+         A `<servlet-name>default</servlet-name>` override is the usual way to
+         tune DefaultServlet per application, and it works on a standalone
+         Tomcat because the parent's `default` is merged by name. It does NOT
+         work on the embedded Tomcat used by `mvn cargo:run` (pom.xml
+         tomcat11x): that container registers its own `default` in the same
+         context, and redeclaring the name fails startup with "Child name
+         [default] is not unique".
+
+         The only thing it was tuning was sendfileSize=-1 (serve small files
+         from the app rather than via sendfile). Tomcat's default of 48KB just
+         means sub-48KB assets are not sendfile-accelerated, which is not
+         worth a deployment that cannot boot on one of the two supported
+         runtimes. Static caching is handled by StaticResourceCacheFilter
+         below, which is independent of sendfile. -->
 
     <!-- JSP Performance Configuration
          (fork/xpoweredBy are Jasper servlet init-params, not context params,
@@ -194,11 +198,6 @@
         <url-pattern>/payment/aba/*</url-pattern>
         <url-pattern>/payment/card</url-pattern>
         <url-pattern>/payment/card/*</url-pattern>
-        <!-- The in-app mailbox is customer-scoped too: the servlet reads the
-             session user and dereferences it, so an anonymous /mail would 500
-             instead of redirecting to the login page. -->
-        <url-pattern>/mail</url-pattern>
-        <url-pattern>/mail/*</url-pattern>
         <url-pattern>/account</url-pattern>
         <url-pattern>/account/*</url-pattern>
         <async-supported>true</async-supported>
@@ -214,17 +213,6 @@
     </filter>
     <filter-mapping>
         <filter-name>CartCountFilter</filter-name>
-        <url-pattern>/*</url-pattern>
-        <async-supported>true</async-supported>
-    </filter-mapping>
-
-    <filter>
-        <filter-name>MailCountFilter</filter-name>
-        <filter-class>com.hengtongan.computerstore.web.filter.web.MailCountFilter</filter-class>
-        <async-supported>true</async-supported>
-    </filter>
-    <filter-mapping>
-        <filter-name>MailCountFilter</filter-name>
         <url-pattern>/*</url-pattern>
         <async-supported>true</async-supported>
     </filter-mapping>

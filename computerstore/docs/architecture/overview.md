@@ -8,26 +8,26 @@ users, and the payment configuration. There is no SPA, no build-time code
 generation, and no second runtime process.
 
 ```
-                      ┌──────────────────────────────┐
-   HTTP  ────────────▶│  Tomcat, context /computerstore│
-                      └───────────────┬──────────────┘
+                       ┌──────────────────────────────┐
+   HTTP  ─────────▶    │Tomcat, context /computerstore│
+                       └───────────────┬──────────────┘
                                       │
                        15 filters, in web.xml order
                                       │
                       ┌───────────────▼──────────────┐
-                      │  Servlet (auth, admin, …)     │
+                      │ Servlet (auth, admin, …)     │
                       └───────────────┬──────────────┘
                                       │
                       ┌───────────────▼──────────────┐
-                      │  Service  (business rules)    │
+                      │ Service  (business rules)    │
                       └───────────────┬──────────────┘
                                       │
                       ┌───────────────▼──────────────┐
-                      │  Repository  (JDBC)           │
+                      │ Repository  (JDBC)           │
                       └───────────────┬──────────────┘
                                       │
                       ┌───────────────▼──────────────┐
-                      │  MySQL 8.4                    │
+                      │          MySQL 8.4           │
                       └──────────────────────────────┘
 ```
 
@@ -71,9 +71,11 @@ column list a repository names still exists in the database.
 
 ## Schema evolution is file-based
 
-`DatabaseMigrationRunner` discovers `src/main/resources/db/migrations/*.sql`,
-applies anything not recorded in `schema_migrations`, and records it. There are
-16 migration files. The runner is partially idempotent: it tolerates per-statement
+`DatabaseMigrationRunner` applies the file names hard-coded in its
+`discoverMigrations()` method, in that order, skipping anything recorded in
+`schema_migrations`. There are 18 migration files, and they are not a
+directory scan — a new file is inert until it is added to that list. The runner
+is partially idempotent: it tolerates per-statement
 "already applied" errors and then records the migration, so a migration that was
 applied by hand but never recorded is survivable. See
 [../database/migrations.md](../database/migrations.md).
@@ -82,7 +84,7 @@ applied by hand but never recorded is survivable. See
 
 Most configuration is resolved by `AppConfig` with the precedence
 **environment variable → system property → bundled properties file → default**.
-The bundled files (`config/db.properties`, `config/mail.properties`) are
+The bundled files (`config/db.properties`) are
 git-ignored local secrets.
 
 Feature switches that an administrator should be able to change without a

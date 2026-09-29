@@ -20,8 +20,8 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Best-effort SMTP email sender for mail-message notifications.
- * Settings are resolved via {@link AppConfig} from {@code config/mail.properties}
- * (Gmail SMTP by default), overridable by {@code -Dmail.*} system properties.
+ * Settings are resolved via {@link AppConfig} from system properties
+ * (Gmail SMTP by default).
  * Never throws: when no credentials are configured, sending is skipped.
  *
  * <p>{@link #send} queues work on a background thread so checkout / status

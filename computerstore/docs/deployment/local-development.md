@@ -14,8 +14,23 @@ Target environment as actually configured on this machine: **Java 17**,
 
 ## Database
 
-Create the database and a user, then let the migration runner create the schema
-on first boot:
+The schema comes from **two** places, and the app needs both. This is the single
+most common way to get a broken install, so it is spelled out in full.
+
+1. `src/main/resources/db/schema.sql` creates the 15 base tables
+   (`users`, `products`, `orders`, `cart_items`, `brands`, `categories`,
+   `inventory_logs`, `audit_logs`, …).
+2. The 18 files in `src/main/resources/db/migrations/` add the rest
+   (`payments`, `app_settings`, `password_reset_tokens`, `mail_messages`,
+   `two_factor_secrets`, `product_specs`, `reviews`, `order_status_events`,
+   `audit_logs_archive`) and `ALTER` the base tables.
+
+**Migrations alone will not work.** No migration creates `users`,
+`products`, `orders` or `cart_items` — they exist only in `schema.sql`. Loading
+the migrations without it produces a context that boots and then fails on its
+first query.
+
+### 1. Create the database and a user
 
 ```sql
 CREATE DATABASE computer_store CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -23,9 +38,49 @@ CREATE USER 'store_user'@'localhost' IDENTIFIED BY '<password>';
 GRANT ALL PRIVILEGES ON computer_store.* TO 'store_user'@'localhost';
 ```
 
-The runner needs DDL rights on first start. If the user has only DML rights the
-app boots and then fails on the first query — `store_user` in this environment
-cannot create a scratch database, which is why every test run uses the real one.
+`store_user` needs DDL rights, not just DML. `schema.sql` and the migrations
+both issue `CREATE`/`ALTER`. If the user has only DML rights the app boots and
+then fails on the first query — `store_user` in this environment cannot create a
+scratch database, which is why every test run uses the real one.
+
+### 2. Load `schema.sql`
+
+```bash
+mysql -h localhost -u "$DB_USERNAME" -p computer_store \
+  < src/main/resources/db/schema.sql
+```
+
+Read the database name off the schema file rather than off `DB_URL` — `DB_URL`
+is a full JDBC URL, not a database name.
+
+### 3. Apply the migrations
+
+The runner is **off by default** — `computerstore.migration.autoRun` defaults to
+`false`, so starting Tomcat normally applies nothing. Enable it for the first
+boot:
+
+```bash
+# in the Tomcat / IDE launch configuration, alongside DB_* :
+#   -Dcomputerstore.migration.autoRun=true
+/opt/tomcat/bin/startup.sh
+```
+
+The runner creates `schema_migrations`, then applies each pending file in the
+order hard-coded in `DatabaseMigrationRunner.discoverMigrations()` and records
+it. That order is not the alphabetical file order and it is not optional; the
+runner enforces it, so do not try to sort the files yourself.
+
+To apply them without starting the app, run each file by hand in that same
+order — the full list is in
+[../database/migrations.md](../database/migrations.md#the-eighteen-migrations).
+The runner tolerates per-statement "already applied" errors, so a partial run
+is recoverable.
+
+### 4. Seed (optional but recommended)
+
+Migrations create the schema; they do not put anything in it. A fresh database
+has an empty `products` table and the storefront shows an empty catalogue.
+See [Seeding a usable catalogue](#seeding-a-usable-catalogue) below.
 
 ## Credentials
 

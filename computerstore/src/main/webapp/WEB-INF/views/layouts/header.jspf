@@ -37,7 +37,7 @@
                     "/assets/vendor/chart.js/chart.umd.min.js",
                     "/assets/js/admin-help.js", "/assets/js/admin-nav.js",
                     "/assets/js/app.js", "/assets/js/dashboard-live.js",
-                    "/assets/js/mail-live.js", "/assets/js/password-toggle.js",
+                    "/assets/js/password-toggle.js",
                     "/assets/js/performance-live.js",
                     "/assets/js/product-spec-editor.js", "/assets/js/pwa.js",
                     "/assets/js/realtime.js", "/assets/js/reports-live.js",
@@ -185,12 +185,6 @@
                                     <li><a class="dropdown-item${_sp == '/account/settings' ? ' active' : ''}" href="${pageContext.request.contextPath}/account/settings"><i class="bi bi-shield-lock me-2" aria-hidden="true"></i>Security</a></li>
                                 </c:if>
                                 <li><a class="dropdown-item${fn:startsWith(_sp, '/account/profile') ? ' active' : ''}" href="${pageContext.request.contextPath}/account/profile"><i class="bi bi-person-vcard me-2" aria-hidden="true"></i>Profile</a></li>
-                                <li>
-                                    <a class="dropdown-item${fn:startsWith(_sp, '/mail') || fn:startsWith(_sp, '/admin/mail') ? ' active' : ''}" href="${pageContext.request.contextPath}${sessionScope.user.isAdmin() ? '/admin/mail' : '/mail'}">
-                                        <i class="bi bi-headset me-2" aria-hidden="true"></i>Contact support
-                                        <span class="badge bg-danger rounded-pill mail-live-count<c:if test="${empty mailCount || mailCount == 0}"> d-none</c:if>">${mailCount}</span>
-                                    </a>
-                                </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <form method="post" action="${pageContext.request.contextPath}/logout">

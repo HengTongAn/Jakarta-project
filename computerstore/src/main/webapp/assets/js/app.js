@@ -56,15 +56,36 @@
 
         var progress = document.getElementById("scrollProgress");
         var navbar = document.querySelector(".navbar");
+        var lastScrollY = 0;
+        var scrollThreshold = 100;
+        
         var updateScrollUI = function () {
+            var currentScrollY = window.scrollY;
             var documentHeight = document.documentElement.scrollHeight - window.innerHeight;
-            var percent = documentHeight > 0 ? Math.round((window.scrollY / documentHeight) * 100) : 0;
+            var percent = documentHeight > 0 ? Math.round((currentScrollY / documentHeight) * 100) : 0;
+            
             if (progress) {
                 progress.style.width = Math.min(100, Math.max(0, percent)) + "%";
                 progress.setAttribute("aria-valuenow", String(percent));
             }
+            
             if (navbar) {
-                navbar.classList.toggle("is-scrolled", window.scrollY > 18);
+                // Always show navbar at the top of the page
+                if (currentScrollY <= 0) {
+                    navbar.classList.remove("is-hidden");
+                    navbar.classList.add("is-scrolled");
+                } 
+                // Hide when scrolling down, show when scrolling up (common UX pattern)
+                else if (currentScrollY > lastScrollY && currentScrollY > scrollThreshold) {
+                    navbar.classList.add("is-hidden");
+                    navbar.classList.add("is-scrolled");
+                } 
+                else if (currentScrollY < lastScrollY && currentScrollY > scrollThreshold) {
+                    navbar.classList.remove("is-hidden");
+                    navbar.classList.add("is-scrolled");
+                }
+                
+                lastScrollY = currentScrollY;
             }
         };
         window.addEventListener("scroll", updateScrollUI, { passive: true });

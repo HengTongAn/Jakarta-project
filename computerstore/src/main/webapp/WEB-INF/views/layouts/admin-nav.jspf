@@ -20,10 +20,6 @@
                 <span class="badge bg-warning text-dark rounded-pill<c:if test="${empty pendingReviewCount || pendingReviewCount == 0}"> d-none</c:if>" data-live-review-count>${pendingReviewCount}</span>
             </a>
             <a class="nav-link${fn:startsWith(_sp, '/admin/users') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/users') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/users"><i class="bi bi-people" aria-hidden="true"></i> Users</a>
-            <a class="nav-link position-relative${fn:startsWith(_sp, '/admin/mail') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/mail') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/mail">
-                <i class="bi bi-headset" aria-hidden="true"></i> Contact support
-                <span class="badge bg-danger rounded-pill mail-live-count<c:if test="${empty mailCount || mailCount == 0}"> d-none</c:if>">${mailCount}</span>
-            </a>
             <a class="nav-link${fn:startsWith(_sp, '/admin/history') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/history') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/history"><i class="bi bi-clock-history" aria-hidden="true"></i> History</a>
             <a class="nav-link${fn:startsWith(_sp, '/admin/reports') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/reports') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/reports"><i class="bi bi-graph-up" aria-hidden="true"></i> Reports</a>
             <a class="nav-link${fn:startsWith(_sp, '/admin/payments') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/payments') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/payments"><i class="bi bi-credit-card-2-front" aria-hidden="true"></i> Payments</a>

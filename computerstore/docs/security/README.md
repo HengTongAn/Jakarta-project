@@ -37,7 +37,6 @@ Implemented and verified:
 Known gaps, all recorded in [known-issues.md](known-issues.md) — ten open
 items, plus a **Fixed** section at the end carrying the post-mortems:
 
-- `/realtime` (SSE) returns 500.
 - Four footer social URLs are placeholders.
 - No acquirer integration, so card payment is simulation only.
 - The live ABA path has never been executed against the real gateway.

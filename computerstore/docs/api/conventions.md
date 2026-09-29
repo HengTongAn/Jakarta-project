@@ -33,7 +33,7 @@ than showing it twice.
 | 302 | After a successful `POST`, after login, and when `AuthenticationFilter` bounces an anonymous user to `/login`. |
 | 400 | Validation failure the servlet chooses to surface as such. |
 | 403 | `AdminAuthorizationFilter` — logged in, wrong role. Also the dedicated `/WEB-INF/views/errors/403.jsp`. |
-| 401 | A JSON endpoint reached without a session user. `/cart/count` still answers `{"count":0}` so the badge has something to render; `/mail/json` returns the status with an empty body. |
+| 401 | A JSON endpoint reached without a session user. `/cart/count` still answers `{"count":0}` so the badge has something to render. |
 | 404 | Unknown path, or an entity id that does not resolve. |
 | 500 | Unhandled exception, forwarded to `/error`, which renders `500.jsp`. |
 | 429 | Rate limit exceeded, from `RateLimitingFilter` or `UserRateLimitingFilter`. |

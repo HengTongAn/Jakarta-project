@@ -6,7 +6,6 @@ target/
 .env
 .env.*
 !.env.example
-src/main/resources/config/mail.properties
 src/main/resources/config/db.properties
 
 # --- IDE / OS clutter ---

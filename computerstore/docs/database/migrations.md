@@ -1,27 +1,36 @@
 # Migrations
 
-`infrastructure/persistence/DatabaseMigrationRunner.java` discovers
-`src/main/resources/db/migrations/*.sql`, applies anything whose name is not in
-`schema_migrations`, and records it.
+`infrastructure/persistence/DatabaseMigrationRunner.java` applies, in a fixed
+order, the file names listed in its `discoverMigrations()` method, skipping any
+already recorded in `schema_migrations`.
+
+**The list is hard-coded, not a directory scan.** Dropping a new file into
+`db/migrations/` does nothing until it is also added to `discoverMigrations()`.
+That is deliberate: the list is the execution order, and directory order is not
+a dependency order. `DatabaseMigrationRunnerTest` fails if the list and the
+files on disk disagree.
 
 Controlled by:
 
 | Property | Default | Effect |
 |---|---|---|
-| `computerstore.migration.autoRun` | `true` | Run migrations at context startup. |
-| `computerstore.migration.failOnError` | — | Abort startup on a migration error rather than logging. |
+| `computerstore.migration.autoRun` | `false` | Run migrations at context startup. Off by default; enabling it still will not create the base tables, which come only from `schema.sql`. |
+| — | — | A migration that fails always aborts startup. The runner rethrows anything that is not an "already applied" error (`DatabaseMigrationRunner.executeMigration`), so there is no flag to turn this off. |
 
 ## Writing one
 
 1. Name it `migration_<what_it_does>.sql`. There is no numbering, so the name is
    the only ordering hint; prefix related files so they sort together.
-2. Make it **idempotent** where you can: `IF NOT EXISTS`, `IF EXISTS`,
+2. Add it to `DatabaseMigrationRunner.discoverMigrations()` at the position its
+   dependencies allow. `DatabaseMigrationRunnerTest` fails if the list and the
+   files on disk disagree, so this is not optional.
+3. Make it **idempotent** where you can: `IF NOT EXISTS`, `IF EXISTS`,
    `information_schema` guards. The runner tolerates per-statement "already
    applied" errors, but relying on that is worse than writing the guard.
-3. Put a comment at the top saying what it does and, if it must be run by hand
+4. Put a comment at the top saying what it does and, if it must be run by hand
    against an existing database, say so explicitly. Several of the older
    migrations do exactly that in their header.
-4. Never edit a migration that has already been applied. Add a new one. The
+5. Never edit a migration that has already been applied. Add a new one. The
    runner keys on the file name, so an edited file will not re-run and the
    change will be silently absent.
 

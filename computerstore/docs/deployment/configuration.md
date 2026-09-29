@@ -7,7 +7,7 @@ setting lives in tells you what changing it costs.
 |---|---|---|---|
 | Environment variable | process environment | a restart | `AppConfig` |
 | System property | `-D` on the JVM | a restart | `AppConfig`, some filters directly |
-| Bundled properties file | `config/db.properties`, `config/mail.properties` | a restart, and a rebuild to repackage | `AppConfig` |
+| Bundled properties file | `config/db.properties` | a restart, and a rebuild to repackage | `AppConfig` |
 | `app_settings` table | MySQL | **nothing** — takes effect within the cache TTL | `PaymentConfig`, `SupportChannelService` |
 
 ## Giving Tomcat the environment
@@ -62,8 +62,7 @@ Not through `AppConfig` — read with `System.getProperty` at their own call sit
 | `computerstore.session.cookie.secure` | `false` | Forces `Secure` on cookies even on a plain-HTTP connector. Set `true` behind a TLS-terminating proxy. |
 | `security.hsts.enabled` | `false` | Adds `Strict-Transport-Security`. |
 | `computerstore.compression.enabled` | `true` | Disables the gzip filter. |
-| `computerstore.migration.autoRun` | `true` | Runs migrations at startup. |
-| `computerstore.migration.failOnError` | `false` | Aborts startup on a migration error. |
+| `computerstore.migration.autoRun` | `false` | Runs migrations at startup. **Off by default** — the first boot must be given this explicitly, and it will not create the base tables (only `schema.sql` does). See [local-development.md](local-development.md#3-apply-the-migrations). |
 | `computerstore.cache.enabled` | `true` | Disables the cache layer. |
 | `computerstore.monitoring.enabled` | `true` | Disables query monitoring. |
 | `computerstore.trust-forwarded-headers` | `false` | **Security-relevant.** Trusts `X-Forwarded-For` for rate limiting and audit IPs. Only enable behind a proxy you control. |

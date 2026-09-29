@@ -7,7 +7,6 @@ import com.hengtongan.computerstore.core.service.CartService;
 import com.hengtongan.computerstore.core.service.CategoryService;
 import com.hengtongan.computerstore.core.service.DashboardService;
 import com.hengtongan.computerstore.core.service.InventoryService;
-import com.hengtongan.computerstore.core.service.MailService;
 import com.hengtongan.computerstore.core.service.OrderService;
 import com.hengtongan.computerstore.core.service.PasswordResetService;
 import com.hengtongan.computerstore.core.service.ProductService;
@@ -40,7 +39,6 @@ public final class AppContext {
     private final ReviewService reviewService;
     private final SupportChannelService supportChannelService;
     private final PaymentService paymentService;
-    private final MailService mailService;
     private final PasswordResetService passwordResetService;
 
     private AppContext() {
@@ -58,7 +56,6 @@ public final class AppContext {
         this.reviewService = new ReviewService();
         this.supportChannelService = new SupportChannelService();
         this.paymentService = new PaymentService();
-        this.mailService = new MailService();
         this.passwordResetService = new PasswordResetService();
     }
 
@@ -135,10 +132,6 @@ public final class AppContext {
 
     public PaymentService paymentService() {
         return paymentService;
-    }
-
-    public MailService mailService() {
-        return mailService;
     }
 
     public PasswordResetService passwordResetService() {

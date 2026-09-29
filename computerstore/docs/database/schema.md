@@ -1,16 +1,26 @@
 # Schema
 
-19 tables in the live database, 15 of them in `schema.sql`. The two lists differ
-because migrations accumulate: `payments`, `app_settings`,
-`password_reset_tokens` and `schema_migrations` exist only because a migration
-creates them, and `user_preferences` exists in the live database but in neither
-`schema.sql` nor any migration.
+20 tables in the live database, 15 of them in `schema.sql`. The two lists differ
+because migrations accumulate. `payments`, `app_settings` and
+`password_reset_tokens` are created by a migration and by nothing else;
+`schema_migrations` is the runner's own bookkeeping table, created by
+`DatabaseMigrationRunner` rather than by a migration file. `user_preferences` is
+the odd one out: it exists in the live database but in neither `schema.sql` nor
+any migration, and no code reads it (see its entry below).
 
-The live database is also **not** a reliable record of what has run. At least
-one migration is listed in `schema_migrations` whose table was subsequently
-dropped, which the runner cannot detect: it skips anything already recorded.
-If a table is missing, check `schema_migrations` before assuming the migration
-has not run, and re-apply the file by hand if it has.
+The live database is also **not** a reproducible record of what has run. Two
+names in its `schema_migrations` table have no file in
+`src/main/resources/db/migrations/` at all:
+`migration_drop_broken_review_pending_index.sql` and
+`migration_add_settings.sql`. The runner keys on the file name and skips
+anything already recorded, so it can neither re-apply them nor notice they are
+gone. A fresh install built from `schema.sql` + the 18 files on disk therefore
+does not match the live database, and the difference is invisible from the repo.
+
+When a table is missing, check `schema_migrations` before assuming the migration
+has not run. See
+[local-development.md](../deployment/local-development.md#database) for the
+load order a fresh install needs.
 
 ## Entity relationships
 
@@ -63,7 +73,7 @@ audit_logs + audit_logs_archive (append-only history).
 ### `users`
 `user_id` PK · `username` · `password_hash` · `full_name` · `email` ·
 `avatar_url` · `role ENUM('SUPER_ADMIN','ADMIN','CUSTOMER')` · `last_active_at` ·
-`created_at` · `updated_at` · `deleted_at` · `deleted_by` · `delete_reason`
+`created_at` · `deleted_at` · `deleted_by` · `delete_reason`
 
 Keyed on `user_id`, `username`, `email`, `role`, `last_active_at`, `deleted_at`.
 `password_hash` is BCrypt at cost 12 (`PasswordUtil.BCRYPT_COST`) — a hash, never

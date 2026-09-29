@@ -94,7 +94,7 @@ public class NotificationService {
             LOGGER.debug("Email notification skipped for \"{}\" to {} {}", subject, to,
                     EmailUtil.isConfigured()
                             ? "(notifications disabled by computerstore.mail.notifications.enabled)"
-                            : "(SMTP not configured; fill config/mail.properties)");
+                            : "(SMTP not configured; set mail.* system properties)");
             return;
         }
         if (to == null || to.isBlank()) {

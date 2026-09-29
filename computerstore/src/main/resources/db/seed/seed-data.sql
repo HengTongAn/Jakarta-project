@@ -234,15 +234,3 @@ UPDATE products SET status = 'OUT_OF_STOCK' WHERE stock_quantity = 0 AND status 
 UPDATE products SET status = 'LOW_STOCK'     WHERE stock_quantity BETWEEN 1 AND 5;
 UPDATE products SET status = 'IN_STOCK'      WHERE stock_quantity > 5;
 
--- ------------------------------------------------------------
--- In-app mail: one welcome thread so the admin inbox and the
--- customer mailbox are not both empty on a fresh install.
--- admin = user_id 1, customer = user_id 2.
--- ------------------------------------------------------------
-INSERT INTO mail_messages (sender_id, recipient_id, subject, body, read_flag) VALUES
-(1, 2, 'Welcome to Apach_PC/STORE',
- 'Hi Jane,\n\nYour account is ready. Every order you place shows up under My Orders, '
-|| 'and you can reach this team from Contact support in the top-right menu at any time.\n\n'
-|| 'Happy building,\nApach_PC/STORE', 0),
-(2, 1, 'Re: Welcome to Apach_PC/STORE',
- 'Thanks! Quick question - is the AMD Ryzen 7 9800X3D in stock with a matching AM5 board?', 1);

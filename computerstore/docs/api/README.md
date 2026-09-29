@@ -54,13 +54,6 @@ Behind `AuthenticationFilter`. Anonymous access redirects to
 | GET, POST | `/account/settings` | `SecuritySettingsServlet` | Declared in `web.xml`, not annotated. Mapped by `CSRFProtectionFilter` twice. |
 | GET | `/payment/aba/*` | `customer/AbaPaymentServlet` | Redirect-and-return status page. |
 | GET | `/payment/card/*` | `customer/CardPaymentServlet` | Synchronous card outcome page. |
-| GET, POST | `/mail` | `customer/MailServlet` | Inbox. |
-| GET, POST | `/mail/sent` | `customer/MailServlet` | Sent folder. |
-| GET, POST | `/mail/compose` | `customer/MailServlet` | `?replyTo=` prefills a reply. |
-| GET, POST | `/mail/view` | `customer/MailServlet` | `?id=`; marks the message read. |
-| POST | `/mail/toggle` | `customer/MailServlet` | Flips the read flag. |
-| POST | `/mail/read-all` | `customer/MailServlet` | |
-| GET | `/mail/json` | `customer/MailJsonServlet` | Unread count for the live badge. |
 
 ## Authenticated — admin
 
@@ -83,13 +76,6 @@ are simply not allowed.
 | GET, POST | `/admin/payments` | `admin/AdminPaymentsServlet` |
 | GET, POST | `/admin/support` | `admin/AdminSupportServlet` |
 | GET, POST | `/admin/performance` | `admin/PerformanceMonitoringServlet` |
-| GET, POST | `/admin/mail` | `admin/AdminMailServlet` | Admin inbox. |
-| GET, POST | `/admin/mail/sent` | `admin/AdminMailServlet` | |
-| GET, POST | `/admin/mail/compose` | `admin/AdminMailServlet` | |
-| GET, POST | `/admin/mail/view` | `admin/AdminMailServlet` | |
-| POST | `/admin/mail/toggle` | `admin/AdminMailServlet` | |
-| POST | `/admin/mail/read-all` | `admin/AdminMailServlet` | |
-| GET | `/admin/mail/json` | `admin/AdminMailServlet` | Unread count for the live badge. |
 
 ## How to read the list
 
