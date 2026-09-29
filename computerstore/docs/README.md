@@ -19,9 +19,11 @@ the code is the bug and the document should be fixed in the same change.
 | Know what payment data is stored | [database/payment-data.md](database/payment-data.md) |
 | Run it locally | [deployment/local-development.md](deployment/local-development.md) |
 | Deploy a WAR | [deployment/tomcat-deployment.md](deployment/tomcat-deployment.md) |
+| Host it free on Oracle Cloud | [deployment/oracle-cloud.md](deployment/oracle-cloud.md) |
 | Change a setting | [deployment/configuration.md](deployment/configuration.md) |
 | Build and test | [development/building-and-testing.md](development/building-and-testing.md) |
-| Understand the JSP lint tests | [development/view-linting.md](development/view-linting.md) |
+| Understand the JSP lint tests | [development/source-linting.md](development/source-linting.md) |
+| Install it on a phone / offline behaviour | [development/pwa.md](development/pwa.md) |
 | Audit the security posture | [security/README.md](security/README.md) |
 
 ## Scope
@@ -51,7 +53,7 @@ of those, that is a signal the document drifted — re-check the code first.
 | Persistence | Hand-written JDBC over a `HikariCP` pool |
 | Database | MySQL 8.4 |
 | Build | Maven (`computerstore`, `1.0-SNAPSHOT`) |
-| Tests | JUnit 5.10.2 — 194 tests in `mvn test` |
+| Tests | JUnit 5.10.2 — 233 tests in `mvn test` |
 | Runtime | Apache Tomcat 9 (exploded or WAR under `/computerstore`) |
 | Front end | Bootstrap 5 + Bootstrap Icons + Chart.js, vendored, no CDN |
 

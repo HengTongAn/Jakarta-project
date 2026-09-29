@@ -1,7 +1,5 @@
 package com.hengtongan.computerstore.core.service;
 
-import com.hengtongan.computerstore.core.service.OrderService;
-
 import com.hengtongan.computerstore.infrastructure.cache.CacheManager;
 import com.hengtongan.computerstore.core.repository.CartRepository;
 import com.hengtongan.computerstore.core.repository.InventoryRepository;

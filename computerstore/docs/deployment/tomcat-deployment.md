@@ -107,7 +107,7 @@ server-side test and fails completely for the customer.
 
 For anything touching a form, load the page in a real browser. That reasoning is
 written up in
-[../development/view-linting.md](../development/view-linting.md#the-required-in-a-hidden-panel-trap).
+[../development/source-linting.md](../development/source-linting.md#the-required-in-a-hidden-panel-trap).
 
 ## Related
 

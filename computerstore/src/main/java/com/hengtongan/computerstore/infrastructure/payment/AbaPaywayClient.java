@@ -14,6 +14,8 @@ import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Client for the ABA Payway merchant e-commerce API.
@@ -43,6 +45,8 @@ import java.util.UUID;
  * flow with no credentials and no risk of touching a live bank.
  */
 public class AbaPaywayClient {
+
+    private static final Logger LOGGER = Logger.getLogger(AbaPaywayClient.class.getName());
 
     /** Outcome of asking the gateway to create a payment. */
     public record PrecreateResult(boolean ok, String transactionId, String qrImage,
@@ -210,17 +214,26 @@ public class AbaPaywayClient {
                     .build();
             HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() / 100 != 2) {
+                // Log the status so a live-mode failure is diagnosable; the
+                // body is never logged (it may echo cardholder data).
+                LOGGER.log(Level.WARNING, "ABA Payway HTTP {0} calling {1}",
+                        new Object[]{response.statusCode(), path});
                 return null;
             }
             return MiniJson.parseObject(response.body());
         } catch (java.io.IOException e) {
+            LOGGER.log(Level.WARNING, "ABA Payway network failure calling {0}: {1}",
+                    new Object[]{path, e.getMessage()});
             return null;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            LOGGER.log(Level.WARNING, "ABA Payway request interrupted calling {0}", path);
             return null;
         } catch (RuntimeException e) {
             // Includes a malformed gateway body. Returning null keeps the caller
             // on its "could not reach the gateway" path instead of 500-ing checkout.
+            LOGGER.log(Level.WARNING, "ABA Payway request failed calling {0}: {1}",
+                    new Object[]{path, e.getMessage()});
             return null;
         }
     }

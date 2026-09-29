@@ -360,4 +360,34 @@
         }
     })();
 </script>
+<script>
+    // The mobile bottom nav's Search tab links here with ?focus=search, so that
+    // tapping it actually lands on the search box instead of the unfiltered
+    // catalogue it is already showing. Compared server-side and emitted as a
+    // boolean so no request parameter is ever echoed into the page.
+    (function () {
+        var wanted = ${param.focus == 'search'};
+        if (!wanted) {
+            return;
+        }
+        var input = document.querySelector('input[name="search"]');
+        if (!input) {
+            return;
+        }
+        var root = document.documentElement;
+        var prev = root.style.scrollBehavior;
+        root.style.scrollBehavior = 'auto';
+        try {
+            input.scrollIntoView({ block: 'center' });
+            input.focus({ preventScroll: true });
+            // Safari and Firefox ignore focus() on a freshly loaded page unless it
+            // happens after paint, so retry once on the next frame.
+            if (document.activeElement !== input) {
+                requestAnimationFrame(function () { input.focus({ preventScroll: true }); });
+            }
+        } finally {
+            root.style.scrollBehavior = prev;
+        }
+    })();
+</script>
 <%@ include file="../../layouts/footer.jspf" %>

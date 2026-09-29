@@ -11,8 +11,16 @@ public final class PasswordUtil {
     private PasswordUtil() {
     }
 
+    /**
+     * BCrypt cost factor for {@link #hash}: 2^12 rounds, matching the current
+     * OWASP recommendation (raised from the earlier hard-coded 10). Cost only
+     * affects NEW hashes -- {@code check} reads the cost embedded in each
+     * stored hash, so existing {@code $2a$10$} passwords verify unchanged.
+     */
+    private static final int BCRYPT_COST = 12;
+
     public static String hash(String plainPassword) {
-        return BCrypt.hashpw(plainPassword, BCrypt.gensalt(10));
+        return BCrypt.hashpw(plainPassword, BCrypt.gensalt(BCRYPT_COST));
     }
 
     public static boolean check(String plainPassword, String bcryptHash) {

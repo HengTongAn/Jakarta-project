@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Offline &middot; Apach_PC/STORE</title>
+    <style>
+        :root { color-scheme: light dark; }
+        body {
+            margin: 0; min-height: 100vh; display: flex; align-items: center;
+            justify-content: center; padding: 1.5rem; text-align: center;
+            font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            background: #f8fafc; color: #0f172a;
+        }
+        .card { max-width: 30rem; }
+        img { width: 84px; height: 84px; border-radius: 18px; }
+        h1 { font-size: 1.3rem; margin: 1rem 0 .4rem; }
+        p { margin: .4rem 0; color: #475569; }
+        a.btn {
+            display: inline-block; margin-top: 1.1rem; padding: .7rem 1.3rem;
+            min-height: 44px; border-radius: 10px; background: #2563eb;
+            color: #fff; text-decoration: none; font-weight: 600;
+        }
+        @media (prefers-color-scheme: dark) {
+            body { background: #0f172a; color: #e2e8f0; }
+            p { color: #94a3b8; }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <img src="./assets/images/icons/icon-192.png" alt="" width="84" height="84">
+        <h1>You are offline</h1>
+        <p>This page needs a connection &mdash; it is generated on the server
+           for your account, so it is never stored on the device.</p>
+        <p>The app icon and shell are cached, so once you reconnect everything
+           will load as normal.</p>
+        <a class="btn" href="./products">Try again</a>
+    </div>
+</body>
+</html>

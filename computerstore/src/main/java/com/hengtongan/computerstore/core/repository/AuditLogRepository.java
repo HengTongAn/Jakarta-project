@@ -229,7 +229,10 @@ public class AuditLogRepository {
         return alerts;
     }
 
-    private void appendFilters(StringBuilder sql, List<Object> params, String typeFilter,
+    /** Package-private so the test can assert the SQL and its params agree; see
+     *  AuditLogRepositoryFilterSqlTest, which guards the ESCAPE escaping that
+     *  silently broke /admin/history. */
+    void appendFilters(StringBuilder sql, List<Object> params, String typeFilter,
                                String actorFilter, String keyword, LocalDate from, LocalDate to) {
         if (notBlank(typeFilter)) { sql.append(" AND action_type = ?"); params.add(typeFilter); }
         if (notBlank(actorFilter)) { sql.append(" AND actor = ?"); params.add(actorFilter); }
@@ -237,8 +240,19 @@ public class AuditLogRepository {
             // The keyword is matched literally: escape LIKE wildcards AND the
             // escape character itself, so user input can never inject % or _
             // patterns (nor a forged escape char) into the search.
-            sql.append(" AND (action_name LIKE ? ESCAPE '\\' OR actor LIKE ? ESCAPE '\\' OR resource_type LIKE ? ESCAPE '\\'"
-                    + " OR resource_id LIKE ? ESCAPE '\\' OR details LIKE ? ESCAPE '\\' OR ip_address LIKE ? ESCAPE '\\')");
+            //
+            // ESCAPE is written '\\\\' -- four backslashes in Java source, two in
+            // the SQL that reaches the driver, one after MySQL unescapes the
+            // string literal. Writing ESCAPE '\' instead sends a literal that
+            // MySQL cannot even parse: backslash escapes the closing quote, so
+            // the string runs on and swallows the following ? markers. The driver
+            // then sees 3 parameters where the code binds 6 and throws
+            // "Parameter index out of range (4 > number of parameters, which is
+            // 3)", which surfaced as a 500 on /admin/history for every keyword
+            // search. ProductRepository.applyFilters already had it right; this
+            // was the same clause written two different ways in one codebase.
+            sql.append(" AND (action_name LIKE ? ESCAPE '\\\\' OR actor LIKE ? ESCAPE '\\\\' OR resource_type LIKE ? ESCAPE '\\\\'"
+                    + " OR resource_id LIKE ? ESCAPE '\\\\' OR details LIKE ? ESCAPE '\\\\' OR ip_address LIKE ? ESCAPE '\\\\')");
             String like = "%" + escapeLike(keyword.trim()) + "%";
             params.add(like); params.add(like); params.add(like);
             params.add(like); params.add(like); params.add(like);

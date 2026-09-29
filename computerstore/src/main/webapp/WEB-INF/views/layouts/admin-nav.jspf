@@ -28,3 +28,7 @@
         </div>
     </div>
 </nav>
+<%-- The admin row overflows at every width, so the active link has to be
+     scrolled into view or the highlight sits off-screen. Admin pages only:
+     this fragment is included by the 17 admin views and nowhere else. --%>
+<script defer src="${pageContext.request.contextPath}/assets/js/admin-nav.js?v=${assetsVersion}"></script>

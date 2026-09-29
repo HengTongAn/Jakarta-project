@@ -32,13 +32,59 @@
         <div class="footer-bottom"><span>&copy; 2026 Apach_PC/STORE</span><span>Secure shopping &middot; Helpful support &middot; Quality technology</span></div>
     </div>
 </footer>
+<%-- MUST stay before <script src="app.js">: that script reads #scrollTop at
+     load time, so the button has to exist in the DOM when it runs. It used to
+     sit after the scripts, which made the whole scroll-to-top block no-op.
+     Position:fixed, so its placement in the document does not affect layout. --%>
+<button id="scrollTop" class="scroll-top" type="button" aria-label="Back to top">
+    <i class="bi bi-arrow-up" aria-hidden="true"></i>
+</button>
 <script src="${pageContext.request.contextPath}/assets/vendor/bootstrap/bootstrap.bundle.min.js?v=${assetsVersion}"></script>
 <script src="${pageContext.request.contextPath}/assets/js/password-toggle.js?v=${assetsVersion}"></script>
 <script src="${pageContext.request.contextPath}/assets/js/realtime.js?v=${assetsVersion}"></script>
 <script src="${pageContext.request.contextPath}/assets/js/app.js?v=${assetsVersion}"></script>
 <script src="${pageContext.request.contextPath}/assets/js/admin-help.js?v=${assetsVersion}"></script>
-<button id="scrollTop" class="scroll-top" type="button" aria-label="Back to top">
-    <i class="bi bi-arrow-up" aria-hidden="true"></i>
-</button>
+
+<!-- Mobile Bottom Navigation (only on customer-facing pages) -->
+<c:set var="_cartAria" value="${cartCount gt 0 ? 'Cart, ' : 'Cart'}${cartCount gt 0 ? cartCount : ''}${cartCount gt 0 ? ' items' : ''}"/>
+<c:if test="${empty _sp or _sp.indexOf('/admin') != 0}">
+<nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+    <div class="mobile-bottom-nav-inner">
+        <a href="${pageContext.request.contextPath}/products" class="mobile-nav-item${_sp == '/products' ? ' active' : ''}" aria-label="Shop"${_sp == '/products' ? ' aria-current="page"' : ''}>
+            <i class="bi bi-bag-fill" aria-hidden="true"></i>
+            <span>Shop</span>
+        </a>
+        <%-- ?focus=search makes catalog.jsp scroll the search box into view and
+             focus it. Without it this tab navigated to the unfiltered catalogue
+             and, if you were already on /products, appeared to do nothing. --%>
+        <a href="${pageContext.request.contextPath}/products?focus=search" class="mobile-nav-item" aria-label="Search">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <span>Search</span>
+        </a>
+        <%-- aria-label overrides the badge's text for screen readers, so the
+             count has to be named explicitly here (and kept in sync by app.js),
+             matching the desktop nav badge. --%>
+        <a href="${pageContext.request.contextPath}/cart" class="mobile-nav-item${_sp == '/cart' ? ' active' : ''}" aria-label="${_cartAria}"${_sp == '/cart' ? ' aria-current="page"' : ''}>
+            <i class="bi bi-cart3" aria-hidden="true"></i>
+            <span>Cart</span>
+            <span id="mobileCartBadge" class="mobile-nav-badge">${not empty cartCount && cartCount > 0 ? cartCount : ''}</span>
+        </a>
+        <c:choose>
+            <c:when test="${not empty sessionScope.user}">
+                <a href="${pageContext.request.contextPath}/account" class="mobile-nav-item${not empty _sp and _sp.indexOf('/account') == 0 ? ' active' : ''}" aria-label="Account"${not empty _sp and _sp.indexOf('/account') == 0 ? ' aria-current="page"' : ''}>
+                    <i class="bi bi-person-circle" aria-hidden="true"></i>
+                    <span>Account</span>
+                </a>
+            </c:when>
+            <c:otherwise>
+                <a href="${pageContext.request.contextPath}/login" class="mobile-nav-item${_sp == '/login' ? ' active' : ''}" aria-label="Login"${_sp == '/login' ? ' aria-current="page"' : ''}>
+                    <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i>
+                    <span>Login</span>
+                </a>
+            </c:otherwise>
+        </c:choose>
+    </div>
+</nav>
+</c:if>
 </body>
 </html>

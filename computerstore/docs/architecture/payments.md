@@ -183,7 +183,7 @@ true:
    not a hard-coded list.
 
 One thing is **not** free: see
-[../development/view-linting.md](../development/view-linting.md#the-required-in-a-hidden-panel-trap)
+[../development/source-linting.md](../development/source-linting.md#the-required-in-a-hidden-panel-trap)
 for the trap that a statically `required` field inside a hidden panel puts the
 next provider's author in, and `PaymentPanelRequiredTest`, which fails the build
 if they fall into it.

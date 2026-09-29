@@ -41,23 +41,15 @@ public final class MetricsCollector {
         private final AtomicLong min = new AtomicLong(Long.MAX_VALUE);
         private final AtomicLong max = new AtomicLong(0);
         
-        synchronized void observe(long value) {
+        void observe(long value) {
             count.incrementAndGet();
             sum.addAndGet(value);
-            
-            // Update min
-            long currentMin;
-            do {
-                currentMin = min.get();
-                if (value >= currentMin) break;
-            } while (!min.compareAndSet(currentMin, value));
-            
-            // Update max
-            long currentMax;
-            do {
-                currentMax = max.get();
-                if (value <= currentMax) break;
-            } while (!max.compareAndSet(currentMax, value));
+            // Atomic combined ops do the whole job -- the old synchronized
+            // method plus a CAS pair per extremum were redundant with each
+            // other. Math::min/max are associative and commutative, so the
+            // running extrema stay exact under concurrent observes with no lock.
+            min.accumulateAndGet(value, Math::min);
+            max.accumulateAndGet(value, Math::max);
         }
         
         long getCount() { return count.get(); }
@@ -84,12 +76,26 @@ public final class MetricsCollector {
      * Increments a counter metric by a specific amount.
      */
     public static void incrementCounter(String name, long value) {
-        // Cardinality guard: once the map is at capacity, never create NEW
-        // names (aggregate metrics always exist, so they keep recording).
-        if (counters.size() >= MAX_METRIC_NAMES && !counters.containsKey(name)) {
+        AtomicLong counter = counters.get(name);
+        if (counter != null) {
+            counter.addAndGet(value);
             return;
         }
-        counters.computeIfAbsent(name, k -> new AtomicLong(0)).addAndGet(value);
+        // Cardinality guard for NEW names (aggregate metrics always exist, so
+        // they keep recording). The capacity check runs INSIDE the atomic
+        // compute, so the size() read and the insert can no longer race the
+        // way a check-then-computeIfAbsent could; the map stays bounded close
+        // to MAX_METRIC_NAMES even under heavy contention.
+        counters.compute(name, (k, existing) -> {
+            if (existing != null) {
+                existing.addAndGet(value);
+                return existing;
+            }
+            if (counters.size() >= MAX_METRIC_NAMES) {
+                return null; // at capacity: drop the new per-entity name
+            }
+            return new AtomicLong(value);
+        });
     }
     
     /**

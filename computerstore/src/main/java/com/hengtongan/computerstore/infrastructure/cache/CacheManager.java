@@ -61,8 +61,8 @@ public final class CacheManager {
 
     // Cart cache - cart counts and small cart payloads (single-flight)
     private static final Cache<String, Object> CART_CACHE = Caffeine.newBuilder()
-            .maximumSize(1000)
-            .expireAfterWrite(30, TimeUnit.MINUTES)
+            .maximumSize(CACHE_MAX_SIZE)
+            .expireAfterWrite(CACHE_EXPIRE_MINUTES, TimeUnit.MINUTES)
             .recordStats()
             .build();
 
@@ -472,12 +472,24 @@ public final class CacheManager {
         return all;
     }
 
-    private static void addStats(Map<String, Map<String, Object>> target, String name, Cache<?, ?> cache) {
+    /** Package-private so the test can drive it with a cache it controls; see
+     *  CacheStatsHitRateTest. The nine caches are static and shared across the whole
+     *  test JVM, so asserting through getCacheStats() would make the result depend on
+     *  which test classes happened to run first. */
+    static void addStats(Map<String, Map<String, Object>> target, String name, Cache<?, ?> cache) {
         CacheStats stats = cache.stats();
+        long requests = stats.hitCount() + stats.missCount();
         Map<String, Object> entry = new java.util.LinkedHashMap<>();
         entry.put("hits", stats.hitCount());
         entry.put("misses", stats.missCount());
-        entry.put("hitRate", Math.round(stats.hitRate() * 1000) / 10.0);
+        entry.put("requests", requests);
+        // Caffeine's CacheStats.hitRate() returns exactly 1.0 when requestCount()
+        // is 0, so an untouched cache used to be reported as a 100.0% hit rate.
+        // On the admin performance panel that reads as "this cache is working
+        // perfectly" when the truth is "this cache has never been asked anything",
+        // which is the opposite of what an admin is meant to infer. Report no rate
+        // at all until there is at least one request; the view renders an em dash.
+        entry.put("hitRate", requests == 0 ? null : Math.round(stats.hitRate() * 1000) / 10.0);
         entry.put("size", cache.estimatedSize());
         target.put(name, entry);
     }

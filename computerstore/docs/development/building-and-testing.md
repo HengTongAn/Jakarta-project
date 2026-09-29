@@ -20,7 +20,7 @@ mvn -o test -Dtest=CardValidatorTest # one class
 mvn -o test -Dtest='PaymentPanelRequiredTest#noPaymentPanelContainsAStaticallyRequiredControl'
 ```
 
-**194 tests, 34 test classes, zero failures.** Reports land in
+**233 tests, 40 test classes, zero failures.** Reports land in
 `target/surefire-reports/`.
 
 ## What the tests cover
@@ -60,7 +60,7 @@ control in a hidden panel — a checkout that silently accepts nothing.
 `RepositoryColumnCoverageTest` catches SQL naming a column the database does not
 have, which hand-written JDBC cannot catch at compile time.
 
-The lints are described in [view-linting.md](view-linting.md).
+The lints are described in [source-linting.md](source-linting.md).
 
 ## A lint is only useful if it fails on the real bug
 

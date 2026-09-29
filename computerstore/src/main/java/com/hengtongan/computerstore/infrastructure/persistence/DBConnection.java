@@ -192,11 +192,8 @@ public final class DBConnection {
         config.addDataSourceProperty("serverTimezone", "UTC");
         config.addDataSourceProperty("characterEncoding", "UTF-8");
 
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("Missing MySQL JDBC driver", e);
-        }
+        // The JDBC driver is loaded once in the static block above, which also
+        // registers it via SPI; Hikari does not need a second Class.forName here.
         return new HikariDataSource(config);
     }
 }

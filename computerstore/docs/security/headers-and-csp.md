@@ -54,6 +54,7 @@ style-src 'self' 'unsafe-inline';
 img-src 'self' data: https:;
 font-src 'self';
 connect-src 'self';
+worker-src 'self';
 frame-ancestors 'none';
 form-action 'self'
 ```
@@ -73,6 +74,12 @@ The parts doing real work:
   be compromised into running script in it.
 - **`connect-src 'self'`** — no outbound XHR/fetch to anywhere else, so
   exfiltration over `fetch` is blocked.
+- **`worker-src 'self'`** — allows the service worker at `/sw.js` and nothing
+  else. Technically redundant: `worker-src` falls back to `script-src`, and
+  `'self'` already permits a same-origin worker. It is stated explicitly so the
+  PWA keeps working if `script-src` is ever tightened — `'unsafe-inline'` is
+  there for the bootstrapping scripts, and if that is ever removed the implicit
+  fallback would take the worker down with it.
 
 `img-src 'self' data: https:` is the one permissive directive. `data:` is for
 inline images and `https:` is because product `image_url` and `source_url` may

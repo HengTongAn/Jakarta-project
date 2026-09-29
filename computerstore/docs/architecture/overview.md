@@ -109,7 +109,7 @@ mistake that would otherwise ship:
 - `RepositoryColumnCoverageTest` — repository SQL naming columns the database
   does not have.
 
-These are explained in [../development/view-linting.md](../development/view-linting.md).
+These are explained in [../development/source-linting.md](../development/source-linting.md).
 
 ## Payments
 

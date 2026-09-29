@@ -6,6 +6,7 @@ import com.hengtongan.computerstore.core.domain.entity.ProductSpec;
 import com.hengtongan.computerstore.infrastructure.monitoring.MetricsCollector;
 import com.hengtongan.computerstore.infrastructure.monitoring.QueryMonitor;
 import com.hengtongan.computerstore.infrastructure.persistence.DBConnection;
+import com.hengtongan.computerstore.util.sql.SqlUtil;
 import com.hengtongan.computerstore.util.web.ErrorHandler;
 import com.hengtongan.computerstore.infrastructure.persistence.SchemaUtil;
 
@@ -245,11 +246,11 @@ public class ProductRepository {
             params.add(like);
         }
         if (categoryIds != null && !categoryIds.isEmpty()) {
-            sql.append("AND p.category_id IN (").append(placeholders(categoryIds.size())).append(") ");
+            sql.append("AND p.category_id IN (").append(SqlUtil.placeholders(categoryIds.size())).append(") ");
             params.addAll(categoryIds);
         }
         if (brandIds != null && !brandIds.isEmpty()) {
-            sql.append("AND p.brand_id IN (").append(placeholders(brandIds.size())).append(") ");
+            sql.append("AND p.brand_id IN (").append(SqlUtil.placeholders(brandIds.size())).append(") ");
             params.addAll(brandIds);
         }
         if (minPrice != null) {
@@ -299,18 +300,6 @@ public class ProductRepository {
         return value.replace("\\", "\\\\")
                 .replace("%", "\\%")
                 .replace("_", "\\_");
-    }
-
-    // makes "?,?,?..." so we can put a whole list into an IN (...)
-    private static String placeholders(int count) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < count; i++) {
-            if (i > 0) {
-                sb.append(",");
-            }
-            sb.append("?");
-        }
-        return sb.toString();
     }
 
     private static String orderBy(String sort) {

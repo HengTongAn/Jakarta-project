@@ -81,18 +81,32 @@ twice.
   `/*`. Limiting `/*` would make a product-catalogue page view compete with a
   brute-force attempt for the same budget.
 
-## Known issue: `async-supported` is on the wrong element
+## Async support: declare it on *both* elements
 
-All fifteen filters set `<async-supported>true</async-supported>` on the
-`<filter>` element. Per the Servlet specification that attribute is only
-meaningful on `<filter-mapping>`; on `<filter>` it is ignored. Consequently
-**zero of the fifteen filter mappings declare `async-supported`**, and the SSE
-endpoint `/realtime` throws
-`IllegalStateException: Servlet output streaming is not supported` when it calls
-`startAsync()`.
+Every one of the fifteen `<filter>` elements **and** every one of the fifteen
+`<filter-mapping>` elements carries
+`<async-supported>true</async-supported>`. Both, deliberately — the two
+elements are not interchangeable:
 
-This is pre-existing and unrelated to payments. The fix is to add
-`<async-supported>true</async-supported>` to each `<filter-mapping>`. It is
-recorded in [../security/known-issues.md](../security/known-issues.md) rather
-than fixed here, because it changes behaviour for every route and deserves its
-own change with its own verification.
+- The **Servlet specification** puts the declaration on `<filter-mapping>`.
+  That is the normative location.
+- **Tomcat ignores it there.** Tomcat builds a `FilterDef` from the `<filter>`
+  element, and `ApplicationFilterChain.findNonAsyncFilters()` checks
+  `FilterDef.getAsyncSupportedBoolean()`. Verified by disassembling
+  `ApplicationFilterChain` out of Tomcat 11's `catalina.jar`, not assumed.
+  Tomcat's own `conf/web.xml` template likewise shows the element on
+  `<filter>`.
+
+So a descriptor that declares it on only one of the two declares it somewhere
+its container may not look.
+
+This was the cause of `/realtime` returning 500, and the real defect was
+narrower than it looked: `SupportChannelFilter` and `ReviewCountFilter` were
+simply never given the element, and both are mapped to `/*`, so both sit on
+the `/realtime` chain. One omission anywhere in that chain fails the whole
+request with
+`IllegalStateException: A filter or servlet of the current chain does not support asynchronous operations`.
+
+`AsyncSupportDescriptorTest` now enforces this, including the chain invariant
+for every `asyncSupported = true` servlet. See
+[../development/source-linting.md](../development/source-linting.md).

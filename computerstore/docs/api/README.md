@@ -18,7 +18,7 @@ No session required.
 | GET | `/product-images/*` | `customer/ProductImageServlet` | Serves product images from disk. |
 | GET | `/avatars/*` | `customer/AvatarImageServlet` | Serves user avatars from disk. |
 | GET | `/cart/count` | `customer/CartCountServlet` | JSON badge count. |
-| GET | `/realtime` | `infrastructure/realtime/RealtimeStreamServlet` | SSE stream. **Currently 500s** — see [../security/known-issues.md](../security/known-issues.md). |
+| GET | `/realtime` | `infrastructure/realtime/RealtimeStreamServlet` | SSE stream. Chain must be async-capable; enforced by `AsyncSupportDescriptorTest`. |
 | GET | `/health` | `monitoring/HealthCheckServlet` | Liveness/readiness probe. |
 | GET | `/metrics` | `monitoring/MetricsServlet` | Counters. |
 | GET | `/error` | `error/ErrorServlet` | Catch-all for unhandled exceptions. |

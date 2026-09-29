@@ -27,7 +27,8 @@ import java.util.Map;
  *
  * <p>Expiry and CVV are checked for shape and for a date that has not passed, so
  * the demo cannot be driven into an inconsistent state.
- */public final class CardValidator {
+ */
+public final class CardValidator {
 
     /**
      * Published test numbers and the outcome each one simulates. The keys are

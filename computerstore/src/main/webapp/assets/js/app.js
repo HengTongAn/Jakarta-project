@@ -176,10 +176,24 @@
             })
             .then(function (data) {
                 var badge = document.getElementById("cartCountBadge");
+                var mobileBadge = document.getElementById("mobileCartBadge");
+                var n = Number(data.count) || 0;
                 if (badge) {
-                    var n = Number(data.count) || 0;
                     badge.textContent = n;
                     badge.classList.toggle("d-none", n === 0);
+                    // Keep the accessible name in step with the visible number;
+                    // the desktop badge's aria-label is its count.
+                    badge.setAttribute("aria-label", n > 0 ? n + " items in cart" : "Cart is empty");
+                }
+                if (mobileBadge) {
+                    mobileBadge.textContent = n > 0 ? n : "";
+                    // The cart link's aria-label overrides the badge text for
+                    // screen readers, so name the count there (as footer.jspf
+                    // renders it initially) whenever the count changes.
+                    var cartLink = mobileBadge.closest("a[aria-label]");
+                    if (cartLink) {
+                        cartLink.setAttribute("aria-label", n > 0 ? "Cart, " + n + " items" : "Cart");
+                    }
                 }
                 if (done) { done(null, Number(data.count)); }
             })
@@ -197,6 +211,19 @@
         event.preventDefault();
         var addButton = form.querySelector("button[type=submit]");
         var originalHtml = addButton ? addButton.innerHTML : null;
+        var productCard = form.closest(".product-card");
+        
+        // Dim the card while the add is in flight. This is a translucent
+        // overlay + opacity on the card body, not a skeleton placeholder --
+        // the .skeleton* classes in components.css are not wired to anything yet.
+        if (productCard) {
+            productCard.classList.add("loading");
+            var cardInner = productCard.querySelector(".card-body");
+            if (cardInner) {
+                cardInner.style.opacity = "0.5";
+            }
+        }
+        
         if (addButton) {
             addButton.disabled = true;
             addButton.classList.add("btn-spinner");
@@ -240,6 +267,14 @@
                         addButton.innerHTML = originalHtml;
                     }
                 }
+                // Remove loading state
+                if (productCard) {
+                    productCard.classList.remove("loading");
+                    var cardInner = productCard.querySelector(".card-body");
+                    if (cardInner) {
+                        cardInner.style.opacity = "1";
+                    }
+                }
             })
             .catch(function (err) {
                 if (addButton) {
@@ -248,6 +283,14 @@
                     addButton.removeAttribute("aria-busy");
                     if (originalHtml !== null) {
                         addButton.innerHTML = originalHtml;
+                    }
+                }
+                // Remove loading state on error
+                if (productCard) {
+                    productCard.classList.remove("loading");
+                    var cardInner = productCard.querySelector(".card-body");
+                    if (cardInner) {
+                        cardInner.style.opacity = "1";
                     }
                 }
                 window.UX.toast(err.message || "Could not add item", "danger");
@@ -359,6 +402,78 @@
                 form.submit();
             }
         }
+    });
+
+    /* ---------- product image zoom ----------
+     * Sticky click-to-zoom (not hover): the hint says "Click to zoom" and a
+     * mouseleave that silently undid the zoom made that a lie -- click, then
+     * move the pointer outside the panel and it snapped back. Zoom stays until
+     * the user clicks again or presses Escape. pannable via mousemove while
+     * zoomed, keyboard-accessible (Enter/Space to zoom at the centre, Escape
+     * to leave). */
+    var imagePanels = document.querySelectorAll(".product-image-panel");
+    imagePanels.forEach(function (panel) {
+        var img = panel.querySelector("img");
+        if (!img) return;
+
+        // Add zoom hint
+        var hint = document.createElement("div");
+        hint.className = "zoom-hint";
+        hint.textContent = "Click to zoom";
+        panel.appendChild(hint);
+
+        // Keyboard/AT affordances. The panel replaces the in-page image for
+        // mouse users; without these the feature is mouse-only.
+        panel.setAttribute("tabindex", "0");
+        panel.setAttribute("role", "button");
+        panel.setAttribute("aria-label", "Zoom product image");
+        panel.setAttribute("aria-pressed", "false");
+
+        function zoomOriginAt(e) {
+            var rect = panel.getBoundingClientRect();
+            var x = ((e.clientX - rect.left) / rect.width) * 100;
+            var y = ((e.clientY - rect.top) / rect.height) * 100;
+            panel.style.setProperty("--zoom-origin-x", x + "%");
+            panel.style.setProperty("--zoom-origin-y", y + "%");
+        }
+
+        function setZoomed(on) {
+            panel.classList.toggle("zoomed", on);
+            panel.setAttribute("aria-pressed", String(on));
+        }
+
+        panel.addEventListener("click", function (e) {
+            if (window.innerWidth <= 767) return; // Disable zoom on mobile
+            setZoomed(!panel.classList.contains("zoomed"));
+            if (panel.classList.contains("zoomed")) {
+                zoomOriginAt(e);
+            }
+        });
+
+        // Enter/Space on the focused panel behaves like a centre click.
+        panel.addEventListener("keydown", function (e) {
+            if (window.innerWidth <= 767) return;
+            if (e.key === "Escape") {
+                if (panel.classList.contains("zoomed")) {
+                    e.preventDefault();
+                    setZoomed(false);
+                }
+                return;
+            }
+            if (e.key !== "Enter" && e.key !== " ") return;
+            e.preventDefault();
+            var willZoom = !panel.classList.contains("zoomed");
+            setZoomed(willZoom);
+            if (willZoom) {
+                panel.style.setProperty("--zoom-origin-x", "50%");
+                panel.style.setProperty("--zoom-origin-y", "50%");
+            }
+        });
+
+        panel.addEventListener("mousemove", function (e) {
+            if (!panel.classList.contains("zoomed")) return;
+            zoomOriginAt(e);
+        });
     });
 
     /* ---------- inline confirmation for dangerous actions ---------- */

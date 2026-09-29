@@ -135,6 +135,198 @@ a { transition: color .15s ease; }
     .footer-bottom { flex-direction: column; gap: .3rem; }
 }
 
+/* ---------- Mobile Bottom Navigation Bar ---------- */
+
+/*
+ * INVARIANT: .mobile-bottom-nav is position: fixed at the viewport bottom, so
+ * whatever is last in the body's flex column has to reserve its height or the
+ * nav sits on top of it. Two things follow, and both were wrong before.
+ *
+ * 1. The reservation belongs on the FOOTER, not on main.page-shell.
+ *    footer.jspf closes </main> before opening <footer class="site-footer">, so
+ *    the footer is a sibling of main, not a descendant. Padding main created a
+ *    phantom 70px gap between main's last child and the footer and reserved
+ *    nothing underneath the footer -- which is exactly where a fixed-to-bottom
+ *    element covers the page. The support-channel list and the copyright line
+ *    (footer.jspf:32) were under the nav on every phone-width page.
+ *
+ * 2. It has to include the safe-area inset. The nav pads itself with
+ *    `env(safe-area-inset-bottom)`, so on a notched phone it is taller by that
+ *    much (~34px on current iPhones). Safe-area appeared exactly once in the
+ *    whole stylesheet -- in the nav, never in the spacer.
+ *
+ * --mobile-nav-h is the nav's content-box height, used both as the nav's
+ * min-height and in the spacer below so the two cannot drift apart again. The
+ * inner box's natural height is ~82px (0.5rem*2 inner padding + 0.4rem*2 item
+ * padding + 1.4rem icon line box + 0.2rem icon margin + 0.7rem label line
+ * box); 5.25rem = 84px clears that, so the height is deterministic rather than
+ * font-dependent. 1rem = 16px here (nothing overrides html's font-size).
+ *
+ *    nav total height = 1px border-top + --mobile-nav-h + safe-area inset
+ *    spacer below     =     0    + --mobile-nav-h + safe-area inset
+ *
+ * If the item's font-size or padding grows past --mobile-nav-h, the nav gets
+ * taller than the spacer again -- bump --mobile-nav-h in that case.
+ */
+:root {
+    --mobile-nav-h: 5.25rem;
+}
+
+.mobile-bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1050;
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -4px 20px rgba(15, 23, 42, .12);
+    /* Safe-area inset goes on the BOTTOM: the nav hugs the viewport bottom, so
+     * this is what lifts the buttons above an iPhone's home indicator. On the
+     * top it was the opposite -- it pushed the buttons down into the indicator.
+     * Total nav height is unchanged by the swap, so the spacer still matches. */
+    padding: 0 0 env(safe-area-inset-bottom, 0px) 0;
+}
+
+.mobile-bottom-nav-inner {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0.5rem 0;
+    min-height: var(--mobile-nav-h);
+    max-width: 100%;
+}
+
+.mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-width: 0;
+    padding: 0.4rem 0.2rem;
+    color: var(--muted);
+    text-decoration: none;
+    border-radius: 8px;
+    transition: color 0.2s ease, background-color 0.2s ease, transform 0.15s ease;
+    position: relative;
+}
+
+.mobile-nav-item i {
+    font-size: 1.4rem;
+    margin-bottom: 0.2rem;
+    transition: transform 0.2s ease;
+}
+
+/* The label span only. The cart badge is also a <span> inside the item, and
+ * this selector (0,2,1) would otherwise outrank .mobile-nav-badge (0,1,0) and
+ * silently take over its font-size, font-weight and text-overflow. */
+.mobile-nav-item span:not(.mobile-nav-badge) {
+    font-size: 0.7rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* Behind a hover-capable pointer. Un-gated, :hover sticks after a tap on every
+ * touch screen, leaving a nav item tinted after the user has navigated away. */
+@media (hover: hover) {
+    .mobile-nav-item:hover {
+        color: var(--brand);
+        background: var(--soft-accent);
+    }
+}
+
+.mobile-nav-item:active {
+    transform: scale(0.95);
+}
+
+.mobile-nav-item.active {
+    color: var(--brand);
+}
+
+.mobile-nav-item.active i {
+    transform: scale(1.1);
+}
+
+.mobile-nav-item.active::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 24px;
+    height: 3px;
+    background: var(--brand);
+    border-radius: 0 0 4px 4px;
+}
+
+.mobile-nav-badge {
+    position: absolute;
+    top: 0.2rem;
+    right: 0.5rem;
+    background: #ef4444;
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 700;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.3rem;
+    line-height: 1;
+}
+
+.mobile-nav-badge:empty {
+    display: none;
+}
+
+@media (max-width: 767.98px) {
+    .mobile-bottom-nav {
+        display: block;
+    }
+
+    /*
+     * Reserve the nav's height at the END of the body column, on the footer.
+     * The +1px is the nav's border-top; the env() term is the same inset the nav
+     * pads itself with, so the two always sum to the nav's real height. See the
+     * INVARIANT comment above.
+     */
+    .site-footer {
+        padding-bottom: calc(var(--mobile-nav-h) + 1px + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* Hide cart button from top nav on mobile since it's in bottom nav */
+    .navbar .nav-cart-btn {
+        display: none;
+    }
+
+    /*
+     * The scroll-to-top button floats at the viewport bottom, which the bottom
+     * nav now covers entirely (nav z-index 1050 > button 1040, and at full
+     * scroll the button's 780-824 band sat inside the nav's 759-844 band --
+     * elementFromPoint found the nav's icon, not the button). Raise it above
+     * the nav and park it above the nav's band, reusing the same height
+     * variable as the footer reservation so the two stay in step.
+     */
+    .scroll-top {
+        z-index: 1051;
+        bottom: calc(var(--mobile-nav-h) + 1px + env(safe-area-inset-bottom, 0px) + 1rem);
+    }
+}
+
+/* Dark mode for mobile bottom nav */
+[data-bs-theme="dark"] .mobile-bottom-nav {
+    background: var(--surface);
+    border-top-color: var(--line);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, .3);
+}
+
 /* ---------- Respect reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
     html {
@@ -159,10 +351,32 @@ a { transition: color .15s ease; }
 }
 
 /* ---------- Responsive comfort pass ---------- */
+
+/*
+ * INVARIANT: a Bootstrap row pulls itself outside its container by half its
+ * gutter, and the container's horizontal padding is what absorbs that pull.
+ * Shrinking the container's --bs-gutter-x shrinks that padding, so every
+ * `g-*` row inside has to shrink with it or it bleeds off the page.
+ *
+ * Without the `.container .row` clause below, the container padding drops to
+ * 8px at <=767.98px while a `g-4` row still pulls 12px, so the row overflows
+ * by 4px on every page -- measured as scrollWidth 394 against a 390px
+ * viewport. It is a small overflow, but it makes the whole page scroll
+ * sideways, which is the most obvious possible "this site is not built for
+ * my phone" signal.
+ *
+ * The clamp only rows that would actually overflow: `.g-0`/`.g-2`/`.g-3`
+ * (0/.5/1rem) all fit inside the shrunken container, so their authored gaps
+ * are left alone -- the product-detail `.g-0` split stays flush, and `.g-3`
+ * rows are not silently widened. Default `.row` value and `.g-4` (1.5rem)
+ * exceed the cap, so those are clamped. `:not()` outranks the gutter classes
+ * it keeps; the excluded classes never conflict because they are not matched.
+ */
 @media (max-width: 1199.98px) {
     .hero-layout { gap: 2.25rem; }
     .hero-showcase { transform: scale(.94); transform-origin: center right; }
     .container { --bs-gutter-x: 1.35rem; }
+    .container .row:not(.g-0):not(.g-2):not(.g-3) { --bs-gutter-x: 1.35rem; }
 }
 
 @media (max-width: 991.98px) {
@@ -179,6 +393,7 @@ a { transition: color .15s ease; }
 
 @media (max-width: 767.98px) {
     .container { --bs-gutter-x: 1rem; }
+    .container .row:not(.g-0):not(.g-2):not(.g-3) { --bs-gutter-x: 1rem; }
     .hero { padding: 3rem 0 3.5rem; }
     .hero h1 { font-size: clamp(2.15rem, 10vw, 3.25rem); }
     .hero .lead { font-size: 1rem; }
@@ -218,7 +433,11 @@ a { transition: color .15s ease; }
 }
 
 @media (max-width: 575.98px) {
-    .navbar .container { --bs-gutter-x: .9rem; }
+    /* No container gutter narrowing here: the navbar containers hold only
+     * flex rows (brand, toggler, collapse / flex .navbar-nav), never a
+     * Bootstrap grid .row, so no clamp is required. The default gutter
+     * (0.75rem padding per side) is what every other container uses and
+     * absorbs the widest g-* class in the views, so it is left untouched. */
     .nav-admin-btn { min-height: 40px; }
     .hero-showcase { min-height: 205px; }
     .hero-window-bar b { font-size: .48rem; }

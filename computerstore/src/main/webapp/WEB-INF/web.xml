@@ -36,23 +36,33 @@
     <!-- Filter order matters: encoding -> audit context -> security headers
          -> session refresh -> rate limiting -> authentication -> count filters
          -> admin authorization -> CSRF. -->
-    <!-- Every filter-mapping below declares <async-supported>true</async-supported>.
-         That is what the specification consults, and it is required for the
-         /realtime SSE stream: if any filter in the chain is not async-capable
-         the container refuses startAsync() and the endpoint returns 500 with
-         "Servlet output streaming is not supported".
+    <!-- Async support: declared on BOTH <filter> and <filter-mapping>.
 
-         async-supported on <filter> is ignored, so declaring it there is a
-         silent no-op. It used to be declared there for exactly that reason and
-         /realtime was broken. Keep it on the mapping. -->
+         The Servlet spec puts <async-supported> on the <filter-mapping>, so
+         that is where it belongs. Tomcat ignores it there. Tomcat builds a
+         FilterDef from the <filter> element and
+         ApplicationFilterChain.findNonAsyncFilters() checks
+         FilterDef.getAsyncSupportedBoolean(), so a filter also needs the
+         element on <filter> for Tomcat to let startAsync() through.
+
+         Declare it on both: the mapping for spec compliance and other
+         containers, the filter for Tomcat.
+
+         All fifteen filters need it, not just the ones that look
+         stream-related. /realtime matches /* , so it traverses every filter
+         mapped to /* , and one missing element anywhere in that chain fails
+         the whole request with "A filter or servlet of the current chain
+         does not support asynchronous operations". SupportChannelFilter and
+         ReviewCountFilter were the two that were missed, which is why
+         /realtime returned 500. -->
     <filter>
         <filter-name>EncodingFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.web.EncodingFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>EncodingFilter</filter-name>
         <url-pattern>/*</url-pattern>
-    
         <async-supported>true</async-supported>
     </filter-mapping>
 
@@ -62,11 +72,11 @@
         <filter-class>com.hengtongan.computerstore.web.filter.performance.StaticResourceCacheFilter</filter-class>
         <!-- Required so the /realtime SSE stream (an async request) passes
              through this chain filter; without it startAsync() throws. -->
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>StaticResourceCacheFilter</filter-name>
         <url-pattern>/*</url-pattern>
-    
         <async-supported>true</async-supported>
     </filter-mapping>
 
@@ -75,22 +85,22 @@
     <filter>
         <filter-name>CompressionFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.performance.CompressionFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>CompressionFilter</filter-name>
         <url-pattern>/*</url-pattern>
-    
         <async-supported>true</async-supported>
     </filter-mapping>
 
     <filter>
         <filter-name>RequestAuditContextFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.monitoring.RequestAuditContextFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>RequestAuditContextFilter</filter-name>
         <url-pattern>/*</url-pattern>
-    
         <async-supported>true</async-supported>
     </filter-mapping>
 
@@ -100,22 +110,22 @@
     <filter>
         <filter-name>SecureCookieFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.security.SecureCookieFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>SecureCookieFilter</filter-name>
         <url-pattern>/*</url-pattern>
-    
         <async-supported>true</async-supported>
     </filter-mapping>
 
     <filter>
         <filter-name>SecurityHeadersFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.security.SecurityHeadersFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>SecurityHeadersFilter</filter-name>
         <url-pattern>/*</url-pattern>
-    
         <async-supported>true</async-supported>
     </filter-mapping>
 
@@ -128,30 +138,31 @@
     <filter>
         <filter-name>SessionUserRefreshFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.security.SessionUserRefreshFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>SessionUserRefreshFilter</filter-name>
         <url-pattern>/*</url-pattern>
-    
         <async-supported>true</async-supported>
     </filter-mapping>
 
     <filter>
         <filter-name>RateLimitingFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.security.RateLimitingFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>RateLimitingFilter</filter-name>
         <url-pattern>/forgot</url-pattern>
         <url-pattern>/login</url-pattern>
         <url-pattern>/register</url-pattern>
-    
         <async-supported>true</async-supported>
     </filter-mapping>
 
     <filter>
         <filter-name>UserRateLimitingFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.security.UserRateLimitingFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>UserRateLimitingFilter</filter-name>
@@ -162,13 +173,13 @@
         <url-pattern>/account/*</url-pattern>
         <url-pattern>/admin</url-pattern>
         <url-pattern>/admin/*</url-pattern>
-    
         <async-supported>true</async-supported>
     </filter-mapping>
 
     <filter>
         <filter-name>AuthenticationFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.security.AuthenticationFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>AuthenticationFilter</filter-name>
@@ -185,7 +196,6 @@
         <url-pattern>/payment/card/*</url-pattern>
         <url-pattern>/account</url-pattern>
         <url-pattern>/account/*</url-pattern>
-    
         <async-supported>true</async-supported>
     </filter-mapping>
 
@@ -195,23 +205,23 @@
     <filter>
         <filter-name>CartCountFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.web.CartCountFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>CartCountFilter</filter-name>
         <url-pattern>/*</url-pattern>
-    
         <async-supported>true</async-supported>
     </filter-mapping>
 
     <filter>
         <filter-name>ReviewCountFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.web.ReviewCountFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>ReviewCountFilter</filter-name>
         <url-pattern>/admin</url-pattern>
         <url-pattern>/admin/*</url-pattern>
-    
         <async-supported>true</async-supported>
     </filter-mapping>
 
@@ -220,34 +230,34 @@
     <filter>
         <filter-name>SupportChannelFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.web.SupportChannelFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>SupportChannelFilter</filter-name>
         <url-pattern>/*</url-pattern>
-    
         <async-supported>true</async-supported>
     </filter-mapping>
 
     <filter>
         <filter-name>AdminAuthorizationFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.security.AdminAuthorizationFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>AdminAuthorizationFilter</filter-name>
         <url-pattern>/admin</url-pattern>
         <url-pattern>/admin/*</url-pattern>
-    
         <async-supported>true</async-supported>
     </filter-mapping>
 
     <filter>
         <filter-name>CSRFProtectionFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.security.CSRFProtectionFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>CSRFProtectionFilter</filter-name>
         <url-pattern>/*</url-pattern>
-    
         <async-supported>true</async-supported>
     </filter-mapping>
 
@@ -260,6 +270,11 @@
         <servlet-name>SecuritySettingsServlet</servlet-name>
         <url-pattern>/account/settings</url-pattern>
     </servlet-mapping>
+
+    <mime-mapping>
+        <extension>webmanifest</extension>
+        <mime-type>application/manifest+json</mime-type>
+    </mime-mapping>
 
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>

@@ -34,7 +34,8 @@ Implemented and verified:
 - **Card data**: a validator that accepts only six published sandbox numbers,
   returning a type with nowhere to put a real number.
 
-Known gaps, all recorded in [known-issues.md](known-issues.md):
+Known gaps, all recorded in [known-issues.md](known-issues.md) — ten open
+items, plus a **Fixed** section at the end carrying the post-mortems:
 
 - `/realtime` (SSE) returns 500.
 - Four footer social URLs are placeholders.

@@ -1,7 +1,5 @@
 package com.hengtongan.computerstore.core.service;
 
-import com.hengtongan.computerstore.core.service.ProductService;
-
 import com.hengtongan.computerstore.infrastructure.cache.CacheManager;
 import com.hengtongan.computerstore.core.repository.ProductRepository;
 import com.hengtongan.computerstore.core.exception.NotFoundException;
