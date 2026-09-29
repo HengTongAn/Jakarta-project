@@ -1,0 +1,21 @@
+/* ===== app/variables.css - design tokens/custom properties =====
+   Extracted from assets/css/style.css on 2026-09-24 (kept in
+   original section order; load order: variables -> base -> layout -> components -> pages -> theme).
+   Edit here, then bump assetsVersion (auto - lastModified wins). */
+
+:root {
+    --brand: #2563eb;
+    --brand-dark: #1d4ed8;
+    --accent: #0ea5e9;
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --surface-muted: #f1f5f9;
+    --ink: #0f172a;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --soft: #f8fafc;
+    --soft-accent: #eff6ff;
+    --brand-bg-strong: #eff6ff;
+    --accent-soft-border: #bfdbfe;
+    --table-hover: #f1f5f9;
+}
