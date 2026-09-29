@@ -177,7 +177,49 @@
     if (me) {
         topics.push('cart');
     }
-    var es = new EventSource(CTX + '/realtime?topics=' + encodeURIComponent(topics.join(',')));
+    var es = null;
+
+    /* Opens the stream and wires every listener. Split out so a bfcache
+       restore can bring the page back to life (see the pagehide handler). */
+    function connect() {
+        if (es) {
+            return;
+        }
+        es = new EventSource(CTX + '/realtime?topics=' + encodeURIComponent(topics.join(',')));
+        es.addEventListener('open', function () {
+            setLiveIndicator(true);
+        });
+        es.addEventListener('error', function () {
+            setLiveIndicator(false);
+        });
+        es.addEventListener('stock', function (e) {
+            var d = parse(e);
+            if (d) {
+                applyStock(d);
+                notifyDashboard();
+                notifyReports();
+            }
+        });
+        es.addEventListener('orders', function (e) {
+            var d = parse(e);
+            if (d) {
+                applyOrder(d);
+            }
+        });
+        es.addEventListener('cart', function (e) {
+            var d = parse(e);
+            if (d) {
+                applyCart(d);
+            }
+        });
+        es.addEventListener('reviews', function (e) {
+            var d = parse(e);
+            if (d) {
+                patchReviewBadges(d.pending);
+            }
+            notifyDashboard();
+        });
+    }
 
     /* The dashboard's "Live" badge reflects the true stream state: green
        when connected, amber while the browser is reconnecting. */
@@ -204,13 +246,6 @@
         });
     }
 
-    es.addEventListener('open', function () {
-        setLiveIndicator(true);
-    });
-    es.addEventListener('error', function () {
-        setLiveIndicator(false);
-    });
-
     function patchReviewBadges(pending) {
         if (typeof pending !== 'number') {
             return;
@@ -223,31 +258,25 @@
         });
     }
 
-    es.addEventListener('stock', function (e) {
-        var d = parse(e);
-        if (d) {
-            applyStock(d);
-            notifyDashboard();
-            notifyReports();
+    connect();
+
+    /* Release the stream when the page is discarded. An EventSource that is
+       never closed keeps its socket - and one of the browser's six HTTP/1.1
+       connections per origin - for the life of the document, so a handful of
+       stale streams starves the assets a new page needs to load.
+
+       pagehide covers both a real unload and a bfcache eviction. A bfcache
+       restore does NOT reload the page, so the stream has to be reopened
+       there or the restored page would sit permanently disconnected. */
+    window.addEventListener('pagehide', function () {
+        if (es) {
+            es.close();
+            es = null;
         }
     });
-    es.addEventListener('orders', function (e) {
-        var d = parse(e);
-        if (d) {
-            applyOrder(d);
+    window.addEventListener('pageshow', function (e) {
+        if (e.persisted) {
+            connect();
         }
-    });
-    es.addEventListener('cart', function (e) {
-        var d = parse(e);
-        if (d) {
-            applyCart(d);
-        }
-    });
-    es.addEventListener('reviews', function (e) {
-        var d = parse(e);
-        if (d) {
-            patchReviewBadges(d.pending);
-        }
-        notifyDashboard();
     });
 })();

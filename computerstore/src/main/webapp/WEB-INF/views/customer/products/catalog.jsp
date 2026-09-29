@@ -102,14 +102,7 @@
         </div>
     </section>
 
-    <section class="store-section container" aria-labelledby="featured-title">
-        <div class="section-heading"><div><span class="eyebrow">Popular with our customers</span><h2 id="featured-title">Featured products</h2></div><a href="#catalog" class="section-link">Browse the collection <i class="bi bi-arrow-right"></i></a></div>
-        <div class="row g-4">
-            <c:forEach var="p" items="${trending}" end="3"><div class="col-6 col-sm-6 col-lg-3"><%@ include file="../../components/product-card.jspf" %></div></c:forEach>
-        </div>
-    </section>
-
-    <section class="store-section container pt-3" aria-labelledby="trending-title">
+    <section class="store-section container" aria-labelledby="trending-title">
         <div class="section-heading"><div><span class="eyebrow">Based on real orders</span><h2 id="trending-title"><i class="bi bi-fire text-warning"></i> Trending now</h2></div><a href="#catalog" class="section-link">Shop all products <i class="bi bi-arrow-right"></i></a></div>
         <div class="trending-row">
             <c:forEach var="p" items="${trending}"><div class="trending-col"><%@ include file="../../components/product-card.jspf" %></div></c:forEach>
@@ -197,7 +190,7 @@
         <c:otherwise>
             <div class="row g-4">
                 <c:forEach var="p" items="${products}">
-                    <div class="col-6 col-md-4">
+                    <div class="col-6 col-sm-4 col-lg-3">
                         <%@ include file="../../components/product-card.jspf" %>
                     </div>
                 </c:forEach>
@@ -208,6 +201,24 @@
     <c:if test="${totalPages > 1}">
         <nav class="mt-4 d-flex justify-content-center" aria-label="Product pages">
             <ul class="pagination pagination-sm">
+                <%-- The numbered window below only spans page-2..page+2, so once the
+                     catalogue grew past a handful of pages there was no way to jump
+                     back to page 1 or forward to the last page. These two links
+                     appear only when the window cannot already reach that end. --%>
+                <c:if test="${page > 3}">
+                    <li class="page-item">
+                        <c:url var="firstUrl" value="/products">
+                            <c:if test="${not empty param.search}"><c:param name="search" value="${param.search}"/></c:if>
+                            <c:forEach var="cat" items="${selectedCategoryIds}"><c:param name="category" value="${cat}"/></c:forEach>
+                            <c:forEach var="br" items="${selectedBrandIds}"><c:param name="brand" value="${br}"/></c:forEach>
+                            <c:if test="${not empty param.minPrice}"><c:param name="minPrice" value="${param.minPrice}"/></c:if>
+                            <c:if test="${not empty param.maxPrice}"><c:param name="maxPrice" value="${param.maxPrice}"/></c:if>
+                            <c:if test="${not empty sort}"><c:param name="sort" value="${sort}"/></c:if>
+                            <c:param name="page" value="1"/>
+                        </c:url>
+                        <a class="page-link" href="<c:out value='${firstUrl}'/>" aria-label="First page">&laquo;&laquo;</a>
+                    </li>
+                </c:if>
                 <li class="page-item ${page <= 1 ? 'disabled' : ''}">
                     <c:url var="prevUrl" value="/products">
                         <c:if test="${not empty param.search}"><c:param name="search" value="${param.search}"/></c:if>
@@ -236,6 +247,20 @@
                         </li>
                     </c:if>
                 </c:forEach>
+                <c:if test="${page < totalPages - 2}">
+                    <li class="page-item">
+                        <c:url var="lastUrl" value="/products">
+                            <c:if test="${not empty param.search}"><c:param name="search" value="${param.search}"/></c:if>
+                            <c:forEach var="cat" items="${selectedCategoryIds}"><c:param name="category" value="${cat}"/></c:forEach>
+                            <c:forEach var="br" items="${selectedBrandIds}"><c:param name="brand" value="${br}"/></c:forEach>
+                            <c:if test="${not empty param.minPrice}"><c:param name="minPrice" value="${param.minPrice}"/></c:if>
+                            <c:if test="${not empty param.maxPrice}"><c:param name="maxPrice" value="${param.maxPrice}"/></c:if>
+                            <c:if test="${not empty sort}"><c:param name="sort" value="${sort}"/></c:if>
+                            <c:param name="page" value="${totalPages}"/>
+                        </c:url>
+                        <a class="page-link" href="<c:out value='${lastUrl}'/>" aria-label="Last page">&raquo;&raquo;</a>
+                    </li>
+                </c:if>
                 <li class="page-item ${page >= totalPages ? 'disabled' : ''}">
                     <c:url var="nextUrl" value="/products">
                         <c:if test="${not empty param.search}"><c:param name="search" value="${param.search}"/></c:if>
@@ -315,7 +340,7 @@
         <div class="accordion-item"><h3 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#faqThree">How do I know which parts are compatible?</button></h3><div id="faqThree" class="accordion-collapse collapse" data-bs-parent="#storeFaq"><div class="accordion-body">Check the product specifications or contact our support team for help selecting compatible components.</div></div></div>
     </div></div></section>
 
-    <section class="support-cta container" aria-labelledby="support-title"><div><span class="eyebrow">We are here to help</span><h2 id="support-title">Not sure what to buy?</h2><p>Tell us what you want to build and our team can help you choose the right setup.</p></div><a class="btn btn-brand" href="${pageContext.request.contextPath}${empty sessionScope.user ? '/login' : '/mail/compose'}">Talk to our team <i class="bi bi-arrow-right ms-1"></i></a></section>
+    <section class="support-cta container" aria-labelledby="support-title"><div><span class="eyebrow">We are here to help</span><h2 id="support-title">Not sure what to buy?</h2><p>Tell us what you want to build and our team can help you choose the right setup.</p></div></section>
 </c:if>
 <script>
     // When arriving with active search/filters, jump straight to the
@@ -330,6 +355,36 @@
         root.style.scrollBehavior = 'auto';
         try {
             catalog.scrollIntoView({ block: 'start' });
+        } finally {
+            root.style.scrollBehavior = prev;
+        }
+    })();
+</script>
+<script>
+    // The mobile bottom nav's Search tab links here with ?focus=search, so that
+    // tapping it actually lands on the search box instead of the unfiltered
+    // catalogue it is already showing. Compared server-side and emitted as a
+    // boolean so no request parameter is ever echoed into the page.
+    (function () {
+        var wanted = ${param.focus == 'search'};
+        if (!wanted) {
+            return;
+        }
+        var input = document.querySelector('input[name="search"]');
+        if (!input) {
+            return;
+        }
+        var root = document.documentElement;
+        var prev = root.style.scrollBehavior;
+        root.style.scrollBehavior = 'auto';
+        try {
+            input.scrollIntoView({ block: 'center' });
+            input.focus({ preventScroll: true });
+            // Safari and Firefox ignore focus() on a freshly loaded page unless it
+            // happens after paint, so retry once on the next frame.
+            if (document.activeElement !== input) {
+                requestAnimationFrame(function () { input.focus({ preventScroll: true }); });
+            }
         } finally {
             root.style.scrollBehavior = prev;
         }

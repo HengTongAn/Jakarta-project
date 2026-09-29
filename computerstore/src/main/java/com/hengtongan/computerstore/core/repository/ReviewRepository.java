@@ -3,6 +3,7 @@ package com.hengtongan.computerstore.core.repository;
 import com.hengtongan.computerstore.core.domain.entity.RatingSummary;
 import com.hengtongan.computerstore.core.domain.entity.Review;
 import com.hengtongan.computerstore.infrastructure.persistence.DBConnection;
+import com.hengtongan.computerstore.util.sql.SqlUtil;
 import com.hengtongan.computerstore.util.web.ErrorHandler;
 
 import java.sql.Connection;
@@ -155,11 +156,9 @@ public class ReviewRepository {
         }
         StringBuilder sql = new StringBuilder(
                 "SELECT product_id, ROUND(AVG(rating), 1) AS avg_rating, COUNT(*) AS review_count "
-                        + "FROM reviews WHERE status = 'APPROVED' AND product_id IN (");
-        for (int i = 0; i < productIds.size(); i++) {
-            sql.append(i == 0 ? "?" : ", ?");
-        }
-        sql.append(") GROUP BY product_id");
+                        + "FROM reviews WHERE status = 'APPROVED' AND product_id IN ("
+                        + SqlUtil.placeholders(productIds.size())
+                        + ") GROUP BY product_id");
 
         try (Connection c = conn(); PreparedStatement ps = c.prepareStatement(sql.toString())) {
             int i = 1;

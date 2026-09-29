@@ -58,10 +58,6 @@
                     </c:otherwise>
                     </c:choose>
 
-                    <p class="text-center mt-2 mb-0">
-                        <a href="${pageContext.request.contextPath}/forgot" class="small">Forgot password?</a>
-                    </p>
-
                     <p class="text-center mt-3 mb-0 small">
                         Don't have an account?
                         <a href="${pageContext.request.contextPath}/register">Register</a>

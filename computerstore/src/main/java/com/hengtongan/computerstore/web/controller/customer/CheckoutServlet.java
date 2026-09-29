@@ -5,7 +5,10 @@ import com.hengtongan.computerstore.core.exception.InsufficientStockException;
 import com.hengtongan.computerstore.core.exception.ValidationException;
 import com.hengtongan.computerstore.core.domain.entity.CartItem;
 import com.hengtongan.computerstore.core.domain.entity.Order;
+import com.hengtongan.computerstore.core.domain.entity.Payment;
 import com.hengtongan.computerstore.core.domain.entity.User;
+import com.hengtongan.computerstore.core.service.PaymentService;
+import com.hengtongan.computerstore.util.validation.CardValidator;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,6 +32,19 @@ public class CheckoutServlet extends BaseServlet {
         }
         request.setAttribute("items", items);
         request.setAttribute("total", app().cartService().getTotal(items));
+        // The ABA option only exists when an admin has switched it on, so an
+        // unconfigured store shows exactly the two methods it always did.
+        request.setAttribute("abaAvailable", app().paymentService().isAbaAvailable());
+        request.setAttribute("abaSimulated", app().paymentService().isSimulated());
+        // Independent of ABA: the card option has its own switch, so an admin can
+        // run either, both, or neither.
+        request.setAttribute("cardAvailable", app().paymentService().isCardAvailable());
+        request.setAttribute("cardSimulated", app().paymentService().isCardSimulated());
+        if (app().paymentService().isCardAvailable() && app().paymentService().isCardSimulated()) {
+            // Only useful while the method really is a demo. The list contains no
+            // real numbers, so showing it in a live configuration would be noise.
+            request.setAttribute("cardTestCards", CardValidator.demoCards());
+        }
         forward(request, response, "customer/checkout.jsp");
     }
 
@@ -36,13 +52,85 @@ public class CheckoutServlet extends BaseServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         User user = currentUser(request);
+        String method;
         try {
-            Order order = app().orderService().checkout(user);
+            // Validated before the order is created: a tampered or stale form
+            // must not reserve stock for a payment that can never be settled.
+            method = app().paymentService().normaliseMethod(request.getParameter("paymentMethod"));
+            if (PaymentService.METHOD_ABA.equals(method) && !app().paymentService().isAbaAvailable()) {
+                throw new ValidationException("ABA Payway is not available right now. Choose another method.");
+            }
+            if (PaymentService.METHOD_CARD.equals(method) && !app().paymentService().isCardAvailable()) {
+                throw new ValidationException("Card payment is not available right now. Choose another method.");
+            }
+        } catch (ValidationException e) {
+            flashError(request, e.getMessage());
+            redirect(request, response, "/cart");
+            return;
+        }
+
+        // Read and validated before the order exists, so a mistyped card does not
+        // reserve stock and then bounce the customer to an order they cannot pay.
+        CardValidator.CardDetails card = null;
+        if (PaymentService.METHOD_CARD.equals(method)) {
+            try {
+                card = CardValidator.validate(
+                        request.getParameter("cardNumber"),
+                        request.getParameter("cardExpiry"),
+                        request.getParameter("cardCvv"),
+                        request.getParameter("cardName"));
+            } catch (ValidationException e) {
+                flashError(request, e.getMessage());
+                redirect(request, response, "/checkout");
+                return;
+            }
+        }
+
+        try {
+            Order order = app().orderService().checkout(user, method);
+            if (PaymentService.METHOD_ABA.equals(method)) {
+                // The order and its stock reservation already exist and are
+                // committed. Opening the charge afterwards means a gateway
+                // outage leaves a pending order to retry, not a lost cart.
+                app().paymentService().startAbaPayment(order.getOrderId(), gatewayBaseUrl(request));
+                redirect(request, response, "/payment/aba?order=" + order.getOrderId());
+                return;
+            }
+            if (PaymentService.METHOD_CARD.equals(method)) {
+                // Authorised inline: there is no "go to the bank and come back"
+                // step for a card, so the answer is already known here. Only the
+                // brand and last four digits travel any further.
+                Payment payment = app().paymentService().startCardPayment(order.getOrderId(), card);
+                if (payment.getStatus() == Payment.Status.PAID) {
+                    flashSuccess(request, "Payment of " + card.masked() + " accepted. Order #"
+                            + order.getOrderId() + " is confirmed.");
+                    redirect(request, response, "/account/orders?id=" + order.getOrderId());
+                } else {
+                    // The order stays PENDING so the customer can try another card.
+                    flashError(request, payment.getMessage() + " Your order #" + order.getOrderId()
+                            + " is saved - you can try a different card.");
+                    redirect(request, response, "/payment/card?order=" + order.getOrderId());
+                }
+                return;
+            }
             flashSuccess(request, "Order #" + order.getOrderId() + " placed successfully.");
             redirect(request, response, "/account/orders?id=" + order.getOrderId());
         } catch (InsufficientStockException | ValidationException e) {
             flashError(request, e.getMessage());
             redirect(request, response, "/cart");
         }
+    }
+
+    /**
+     * Absolute origin of this deployment, which ABA needs for its return URLs.
+     * Derived from the request rather than configured, so it follows whatever
+     * host the store is actually reached on.
+     */
+    private String gatewayBaseUrl(HttpServletRequest request) {
+        String scheme = request.isSecure() ? "https" : "http";
+        return scheme + "://" + request.getServerName()
+                + (request.getServerPort() == 80 || request.getServerPort() == 443
+                        ? "" : ":" + request.getServerPort())
+                + request.getContextPath();
     }
 }

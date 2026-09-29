@@ -17,8 +17,8 @@ import java.io.IOException;
 
 /**
  * Puts the number of pending (unmoderated) reviews in request scope for admin
- * pages so the admin nav can surface the moderation queue. Follows the
- * MailCountFilter pattern but only fires for admins and only on /admin routes.
+ * pages so the admin nav can surface the moderation queue. Only fires for
+ * admins and only on /admin routes.
  */
 public class ReviewCountFilter implements Filter {
 

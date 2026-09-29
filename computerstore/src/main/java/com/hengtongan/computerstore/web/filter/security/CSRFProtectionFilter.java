@@ -17,7 +17,11 @@ import java.util.Set;
 /**
  * CSRF Protection Filter.
  * Validates CSRF tokens for all POST requests to prevent cross-site request forgery attacks.
- * Excludes login and register endpoints as they don't require authentication.
+ *
+ * <p>Login and registration are <em>not</em> exempt. Exempting them is the
+ * case worth protecting: a login-CSRF attack forces the victim's actions into
+ * an account the attacker controls. Both forms render a page first, so a
+ * per-session token is available at no cost.
  *
  * <p>Registered in web.xml (order is deterministic).</p>
  */

@@ -152,5 +152,5 @@
         </div>
     </div>
 </div>
-<script src="${pageContext.request.contextPath}/assets/js/product-spec-editor.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/product-spec-editor.js?v=${assetsVersion}"></script>
 <%@ include file="../../layouts/footer.jspf" %>

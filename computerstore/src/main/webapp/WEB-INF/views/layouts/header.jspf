@@ -19,14 +19,34 @@
     Long assetsVersion = (Long) application.getAttribute("assetsVersion");
     if (assetsVersion == null) {
         try {
-            String[] appCss = { "/assets/css/app/variables.css", "/assets/css/app/base.css",
+            // App JS is versioned too, not just CSS: without it a redeploy can
+            // leave the browser running a stale app.js, which is indistinguishable
+            // from a code bug. The same holds now that the service worker keys
+            // its cache on the full URL: a file missing from this list keeps the
+            // same ?v= value across deploys that change only that file, so both
+            // the HTTP cache and the worker keep serving the old bytes.
+            //
+            // Every asset referenced with ?v=${assetsVersion} must appear here.
+            // AssetsVersionCoverageTest fails when one does not.
+            String[] appAssets = { "/assets/css/app/variables.css", "/assets/css/app/base.css",
                     "/assets/css/app/layout.css", "/assets/css/app/components.css",
-                    "/assets/css/app/pages.css", "/assets/css/app/theme.css" };
+                    "/assets/css/app/pages.css", "/assets/css/app/theme.css",
+                    "/assets/vendor/bootstrap/bootstrap.min.css",
+                    "/assets/vendor/bootstrap/bootstrap.bundle.min.js",
+                    "/assets/vendor/bootstrap-icons/bootstrap-icons.min.css",
+                    "/assets/vendor/chart.js/chart.umd.min.js",
+                    "/assets/js/admin-help.js", "/assets/js/admin-nav.js",
+                    "/assets/js/app.js", "/assets/js/dashboard-live.js",
+                    "/assets/js/mail-live.js", "/assets/js/password-toggle.js",
+                    "/assets/js/performance-live.js",
+                    "/assets/js/product-spec-editor.js", "/assets/js/pwa.js",
+                    "/assets/js/realtime.js", "/assets/js/reports-live.js",
+                    "/assets/js/theme.js" };
             long v = 0;
-            for (String path : appCss) {
-                java.net.URL css = application.getResource(path);
-                if (css != null) {
-                    v = Math.max(v, css.openConnection().getLastModified());
+            for (String path : appAssets) {
+                java.net.URL asset = application.getResource(path);
+                if (asset != null) {
+                    v = Math.max(v, asset.openConnection().getLastModified());
                 }
             }
             assetsVersion = v > 0 ? v : System.currentTimeMillis();
@@ -59,10 +79,20 @@
             root.style.colorScheme = theme;
         })();
     </script>
+    <%-- PWA / install-to-home-screen. The manifest paths are relative so they
+         resolve against this app's context path, not the server root. --%>
+    <link rel="manifest" href="${pageContext.request.contextPath}/manifest.webmanifest">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Apach PC">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="icon" type="image/svg+xml" href="${pageContext.request.contextPath}/assets/images/apach-pc-store.svg">
-    <link rel="apple-touch-icon" type="image/svg+xml" href="${pageContext.request.contextPath}/assets/images/apach-pc-store.svg">
-    <link href="${pageContext.request.contextPath}/assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
-    <link href="${pageContext.request.contextPath}/assets/vendor/bootstrap-icons/bootstrap-icons.min.css" rel="stylesheet">
+    <%-- iOS ignores an SVG apple-touch-icon and falls back to a screenshot of
+         the page, so the installed icon must be a real PNG. --%>
+    <link rel="apple-touch-icon" type="image/png" sizes="180x180" href="${pageContext.request.contextPath}/assets/images/icons/apple-touch-icon.png">
+    <link href="${pageContext.request.contextPath}/assets/vendor/bootstrap/bootstrap.min.css?v=${assetsVersion}" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/vendor/bootstrap-icons/bootstrap-icons.min.css?v=${assetsVersion}" rel="stylesheet">
     <%-- App stylesheets - LAYER ORDER MATTERS: tokens -> base -> layout ->
          components -> pages -> theme. Each layer may only refine earlier
          layers; the theme layer (dark mode, responsive, motion) loads last so
@@ -75,7 +105,8 @@
     <link href="${pageContext.request.contextPath}/assets/css/app/theme.css?v=${assetsVersion}" rel="stylesheet">
     <script>window.CTXPATH = '${pageContext.request.contextPath}';</script>
     <script>window.CSRFTOKEN = '${csrfToken}';</script>
-    <script defer src="${pageContext.request.contextPath}/assets/js/theme.js"></script>
+    <script defer src="${pageContext.request.contextPath}/assets/js/theme.js?v=${assetsVersion}"></script>
+    <script defer src="${pageContext.request.contextPath}/assets/js/pwa.js?v=${assetsVersion}"></script>
 </head>
 <body class="d-flex flex-column min-vh-100 ${empty bodyClass ? '' : bodyClass}" data-userid="${sessionScope.user != null ? sessionScope.user.userId : ''}">
 <c:set var="_sp" value="${empty requestScope['jakarta.servlet.forward.servlet_path'] ? pageContext.request.servletPath : requestScope['jakarta.servlet.forward.servlet_path']}"/>

@@ -445,16 +445,38 @@
     box-shadow: 0 4px 12px -3px rgba(67, 56, 202, .5);
 }
 
-/* single scrollable row of admin nav items on narrow screens */
+/* Single scrollable row of admin nav items.
+ *
+ * This overflows at EVERY width, not just narrow ones: 13 items measure 1453px
+ * against an 823px port on a 1280px laptop. Hiding the scrollbar made that
+ * invisible, so 5 of the 13 links were simply not there to click with no hint
+ * that any more existed. Keep the bar visible -- thin, so it costs ~6px of the
+ * port. admin-nav.js also scrolls the active link into view on load, so the
+ * highlight is never the hidden one.
+ */
 .admin-nav .admin-nav-scroll {
     overflow-x: auto;
     overflow-y: hidden;
-    scrollbar-width: none;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
     -webkit-overflow-scrolling: touch;
 }
 
 .admin-nav .admin-nav-scroll::-webkit-scrollbar {
-    display: none;
+    height: 6px;
+}
+
+.admin-nav .admin-nav-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.admin-nav .admin-nav-scroll::-webkit-scrollbar-thumb {
+    background: var(--line);
+    border-radius: 3px;
+}
+
+.admin-nav .admin-nav-scroll::-webkit-scrollbar-thumb:hover {
+    background: var(--muted);
 }
 
 .dropdown-item.active {
@@ -672,7 +694,11 @@
         order: 2;
         flex: 1 1 auto;
         min-width: 140px;
+        height: 44px;
         padding: 0 .9rem;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
     }
 
     .search-input:focus,

@@ -11,7 +11,9 @@
 .checkout-number { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 28px; width: 28px; height: 28px; border-radius: 50%; background: var(--soft-accent); color: var(--brand); font-weight: 800; font-size: .85rem; }
 .payment-demo-note { display: flex; gap: .6rem; align-items: flex-start; padding: .75rem .85rem; margin-bottom: 1rem; color: #854d0e; background: #fefce8; border: 1px solid #fde68a; border-radius: 10px; font-size: .82rem; }
 .payment-demo-note i { color: #ca8a04; margin-top: .12rem; }
-.payment-methods { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+/* auto-fit rather than a fixed 2 columns: the number of payment methods is
+   configuration, so the row has to look right with one, two or three of them. */
+.payment-methods { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: .75rem; }
 .payment-method { position: relative; display: flex; align-items: center; gap: .7rem; min-height: 78px; padding: .8rem .9rem; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; transition: border-color .2s ease, box-shadow .2s ease, background .2s ease; }
 .payment-method:hover { border-color: var(--brand); background: var(--brand-bg-strong); }
 .payment-method.is-selected { border-color: var(--brand); background: var(--soft-accent); box-shadow: 0 0 0 2px rgba(37,99,235,.12); }
@@ -23,11 +25,20 @@
 .payment-method-copy small { color: var(--muted); font-size: .75rem; }
 .payment-method-check { margin-left: auto; color: var(--brand); opacity: 0; }
 .payment-method.is-selected .payment-method-check { opacity: 1; }
+/* ABA Payway panel: instructions only, no fields. */
+.aba-payment-panel { padding: 1rem; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-muted); }
+/* Card panel. The warning is deliberately louder than the rest of the form: the
+   one thing that must not happen here is a real card number being typed. */
+.payment-method-icon-visa { background: #1a1f71; }
 .card-payment-panel { padding: 1rem; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-muted); }
-.input-icon-wrap { position: relative; }
-.input-icon-wrap > i { position: absolute; left: .8rem; top: 50%; z-index: 1; color: var(--muted); transform: translateY(-50%); }
-.input-icon-wrap .form-control { padding-left: 2.35rem; padding-right: 4.7rem; }
-.card-brands { position: absolute; right: .75rem; top: 50%; color: var(--muted); font-size: .65rem; font-weight: 800; transform: translateY(-50%); }
+.card-demo-warning { display: flex; gap: .6rem; align-items: flex-start; padding: .75rem .85rem; margin-bottom: 1rem; color: #7f1d1d; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; font-size: .82rem; }
+.card-demo-warning i { color: #dc2626; margin-top: .12rem; }
+.card-demo-warning strong { display: block; }
+.card-payment-panel .input-group-text[data-toggle-cvv] { cursor: pointer; user-select: none; }
+.card-test-cards { margin-top: 1rem; font-size: .82rem; }
+.card-test-cards summary { cursor: pointer; color: var(--muted); }
+.card-test-cards ul { margin: .5rem 0 0; padding-left: 1.1rem; }
+.card-test-cards code { font-size: .95em; }
 .cash-payment-panel { padding: 1rem; border: 1px solid var(--accent-soft-border); border-radius: 12px; background: var(--soft-accent); }
 .cash-payment-copy { display: flex; align-items: center; gap: .75rem; }
 .cash-payment-copy > i { color: var(--brand); font-size: 1.5rem; }
@@ -36,12 +47,27 @@
 .checkout-submit { box-shadow: 0 8px 18px rgba(37,99,235,.2); }
 .checkout-demo-copy { margin: .65rem 0 0; color: var(--muted); text-align: center; font-size: .72rem; }
 
+/* ---- ABA Payway payment page ---- */
+.aba-card { overflow: hidden; }
+.aba-badge { padding: .3rem .6rem; border-radius: 999px; background: var(--brand); color: #fff; font-size: .72rem; font-weight: 700; white-space: nowrap; }
+.aba-amount-box { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: .9rem 1.1rem; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-muted); }
+.aba-amount-box span { color: var(--muted); font-size: .8rem; }
+.aba-amount-box strong { font-size: 1.5rem; }
+.aba-qr { max-width: 100%; height: auto; padding: .75rem; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.aba-txn { font-size: .78rem; color: var(--muted); }
+.aba-txn code { color: var(--ink); }
+.aba-amount { font-size: 2.4rem; font-weight: 800; letter-spacing: -.02em; }
+.aba-status-icon { width: 64px; height: 64px; margin-inline: auto; display: grid; place-items: center; border-radius: 50%; font-size: 2rem; }
+.aba-status-paid { background: #dcfce7; color: #15803d; }
+.aba-status-failed { background: #fee2e2; color: #b91c1c; }
+.aba-demo-controls { padding: 1rem; border: 1px dashed var(--line); border-radius: 12px; background: var(--surface-muted); }
+
 @media (max-width: 575px) {
     .checkout-heading { display: block !important; }
     .checkout-secure-badge { margin-top: .8rem; }
     .payment-methods { grid-template-columns: 1fr; }
-    .card-payment-panel { padding: .8rem; }
     .payment-trust-row { display: grid; gap: .45rem; }
+    .aba-amount { font-size: 1.9rem; }
 }
 
 /* ---- Clickable dashboard stat cards ---- */

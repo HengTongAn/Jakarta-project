@@ -899,3 +899,279 @@
 .review-form .star-option input:checked + .star-label { color: #f59e0b; }
 .review-trunc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 340px; }
 
+/* ===== Product Image Zoom ===== */
+.product-image-panel {
+    position: relative;
+    cursor: zoom-in;
+    overflow: hidden;
+}
+
+.product-image-panel.zoomed {
+    cursor: zoom-out;
+}
+
+/* Keyboard users can enter/leave the zoom with Enter/Space and Escape (see
+ * app.js), so the outline shows the panel is interactive. Mouse users never
+ * see it. */
+.product-image-panel:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+}
+
+.product-image-panel img {
+    transition: transform 0.3s ease;
+}
+
+.product-image-panel.zoomed img {
+    transform: scale(2);
+    transform-origin: var(--zoom-origin-x, 50%) var(--zoom-origin-y, 50%);
+}
+
+.zoom-hint {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    backdrop-filter: blur(4px);
+}
+
+/* Only hover-capable pointers get the hint. Un-gated, the hint sticks after a
+ * tap on a touch screen, and touch devices cannot zoom anyway (click is
+ * gated at <=767px and the transform is neutralised below). */
+@media (hover: hover) {
+    .product-image-panel:hover .zoom-hint {
+        opacity: 1;
+    }
+}
+
+.product-image-panel.zoomed .zoom-hint {
+    display: none;
+}
+
+@media (max-width: 767.98px) {
+    .product-image-panel {
+        cursor: default;
+    }
+    
+    .zoom-hint {
+        display: none;
+    }
+    
+    .product-image-panel.zoomed img {
+        transform: none;
+    }
+}
+
+/* ===== Skeleton Loading States ===== */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 4px;
+}
+
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+[data-bs-theme="dark"] .skeleton {
+    background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+    background-size: 200% 100%;
+}
+
+.skeleton-text {
+    height: 1em;
+    margin-bottom: 0.5em;
+}
+
+.skeleton-text-sm {
+    height: 0.8em;
+    width: 60%;
+}
+
+.skeleton-text-lg {
+    height: 1.2em;
+    width: 80%;
+}
+
+.skeleton-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.skeleton-card {
+    height: 200px;
+    border-radius: 14px;
+}
+
+.skeleton-image {
+    aspect-ratio: 4 / 3;
+    border-radius: 8px;
+}
+
+.skeleton-button {
+    height: 42px;
+    width: 120px;
+    border-radius: 10px;
+}
+
+/* Product card skeleton */
+.product-card-skeleton {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.product-card-skeleton .skeleton-image {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+}
+
+.product-card-skeleton .card-body {
+    padding: 0.8rem 0.9rem 0.25rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.product-card-skeleton .skeleton-brand {
+    height: 0.8em;
+    width: 30%;
+    margin-bottom: 0.4rem;
+}
+
+.product-card-skeleton .skeleton-title {
+    height: 1.2em;
+    width: 90%;
+    margin-bottom: 0.3rem;
+}
+
+.product-card-skeleton .skeleton-title-2 {
+    height: 1.2em;
+    width: 70%;
+    margin-bottom: 0.4rem;
+}
+
+.product-card-skeleton .skeleton-meta {
+    height: 0.9em;
+    width: 50%;
+    margin-bottom: 0.6rem;
+}
+
+.product-card-skeleton .skeleton-price {
+    height: 1.4em;
+    width: 40%;
+    margin-bottom: 0.6rem;
+}
+
+.product-card-skeleton .card-footer {
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    padding: 0.6rem 0.9rem 0.85rem;
+    margin-top: auto;
+}
+
+.product-card-skeleton .skeleton-button {
+    width: 100%;
+    height: 38px;
+}
+
+/* Table skeleton */
+.table-skeleton td {
+    padding: 0.75rem 0.5rem;
+}
+
+.table-skeleton .skeleton-text {
+    margin-bottom: 0;
+}
+
+/* Respect reduced motion for skeleton */
+@media (prefers-reduced-motion: reduce) {
+    .skeleton {
+        animation: none;
+        background: #e0e0e0;
+    }
+    
+    [data-bs-theme="dark"] .skeleton {
+        background: #334155;
+    }
+}
+
+/* Loading state for product cards */
+.product-card.loading {
+    pointer-events: none;
+    position: relative;
+}
+
+.product-card.loading::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+[data-bs-theme="dark"] .product-card.loading::after {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+/* Enhanced loading spinners */
+.btn-spinner {
+    position: relative;
+    pointer-events: none;
+}
+
+.form-loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.form-loading::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    border-radius: inherit;
+}
+
+[data-bs-theme="dark"] .form-loading::after {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.page-loading {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.page-loading .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.25em;
+}
+

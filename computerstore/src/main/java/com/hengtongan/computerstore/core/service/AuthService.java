@@ -1,11 +1,10 @@
 package com.hengtongan.computerstore.core.service;
 
-import com.hengtongan.computerstore.core.service.AuthService;
-
 import com.hengtongan.computerstore.core.repository.UserRepository;
 import com.hengtongan.computerstore.core.exception.ValidationException;
 import com.hengtongan.computerstore.core.domain.entity.User;
 import com.hengtongan.computerstore.util.web.AuditLogger;
+import com.hengtongan.computerstore.util.security.PasswordPolicy;
 import com.hengtongan.computerstore.util.security.PasswordUtil;
 import com.hengtongan.computerstore.util.validation.ValidationUtil;
 
@@ -90,7 +89,7 @@ public class AuthService {
         }
         
         // Enhanced password validation
-        validatePasswordStrength(plainPassword);
+        PasswordPolicy.validateStrength(plainPassword);
         
         if (userDAO.findByUsername(username.trim()) != null) {
             throw new ValidationException("Username is already taken.");
@@ -113,38 +112,5 @@ public class AuthService {
         user.setUserId(id);
         user.setPasswordHash(null);
         return user;
-    }
-
-    /**
-     * Validates password strength according to security requirements.
-     */
-    private void validatePasswordStrength(String password) {
-        if (password.length() < 8) {
-            throw new ValidationException("Password must be at least 8 characters long.");
-        }
-        if (password.length() > 128) {
-            throw new ValidationException("Password must not exceed 128 characters.");
-        }
-        if (!password.matches(".*[A-Z].*")) {
-            throw new ValidationException("Password must contain at least one uppercase letter.");
-        }
-        if (!password.matches(".*[a-z].*")) {
-            throw new ValidationException("Password must contain at least one lowercase letter.");
-        }
-        if (!password.matches(".*[0-9].*")) {
-            throw new ValidationException("Password must contain at least one digit.");
-        }
-        if (!password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?].*")) {
-            throw new ValidationException("Password must contain at least one special character (!@#$%^&*()_+-=[]{};':\"|,.<>/?).");
-        }
-        
-        // Check for common weak passwords
-        String[] commonPasswords = {"password", "12345678", "qwerty", "abc123", "letmein", "admin", "welcome"};
-        String lowerPassword = password.toLowerCase();
-        for (String common : commonPasswords) {
-            if (lowerPassword.contains(common)) {
-                throw new ValidationException("Password contains common weak patterns. Please choose a stronger password.");
-            }
-        }
     }
 }

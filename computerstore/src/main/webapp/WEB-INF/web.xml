@@ -36,6 +36,25 @@
     <!-- Filter order matters: encoding -> audit context -> security headers
          -> session refresh -> rate limiting -> authentication -> count filters
          -> admin authorization -> CSRF. -->
+    <!-- Async support: declared on BOTH <filter> and <filter-mapping>.
+
+         The Servlet spec puts <async-supported> on the <filter-mapping>, so
+         that is where it belongs. Tomcat ignores it there. Tomcat builds a
+         FilterDef from the <filter> element and
+         ApplicationFilterChain.findNonAsyncFilters() checks
+         FilterDef.getAsyncSupportedBoolean(), so a filter also needs the
+         element on <filter> for Tomcat to let startAsync() through.
+
+         Declare it on both: the mapping for spec compliance and other
+         containers, the filter for Tomcat.
+
+         All fifteen filters need it, not just the ones that look
+         stream-related. /realtime matches /* , so it traverses every filter
+         mapped to /* , and one missing element anywhere in that chain fails
+         the whole request with "A filter or servlet of the current chain
+         does not support asynchronous operations". SupportChannelFilter and
+         ReviewCountFilter were the two that were missed, which is why
+         /realtime returned 500. -->
     <filter>
         <filter-name>EncodingFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.web.EncodingFilter</filter-class>
@@ -44,6 +63,7 @@
     <filter-mapping>
         <filter-name>EncodingFilter</filter-name>
         <url-pattern>/*</url-pattern>
+        <async-supported>true</async-supported>
     </filter-mapping>
 
     <!-- Long-lived Cache-Control for static assets (CSS/JS/images/fonts). -->
@@ -57,6 +77,7 @@
     <filter-mapping>
         <filter-name>StaticResourceCacheFilter</filter-name>
         <url-pattern>/*</url-pattern>
+        <async-supported>true</async-supported>
     </filter-mapping>
 
     <!-- Dynamic text compression. CompressionFilter buffers only eligible
@@ -69,6 +90,7 @@
     <filter-mapping>
         <filter-name>CompressionFilter</filter-name>
         <url-pattern>/*</url-pattern>
+        <async-supported>true</async-supported>
     </filter-mapping>
 
     <filter>
@@ -79,6 +101,7 @@
     <filter-mapping>
         <filter-name>RequestAuditContextFilter</filter-name>
         <url-pattern>/*</url-pattern>
+        <async-supported>true</async-supported>
     </filter-mapping>
 
     <!-- Marks Set-Cookie headers "Secure" over TLS (or when forced via
@@ -92,6 +115,7 @@
     <filter-mapping>
         <filter-name>SecureCookieFilter</filter-name>
         <url-pattern>/*</url-pattern>
+        <async-supported>true</async-supported>
     </filter-mapping>
 
     <filter>
@@ -102,6 +126,7 @@
     <filter-mapping>
         <filter-name>SecurityHeadersFilter</filter-name>
         <url-pattern>/*</url-pattern>
+        <async-supported>true</async-supported>
     </filter-mapping>
 
     <!-- Re-reads the session user from the DB (~every 15s, skipped for static
@@ -118,18 +143,20 @@
     <filter-mapping>
         <filter-name>SessionUserRefreshFilter</filter-name>
         <url-pattern>/*</url-pattern>
+        <async-supported>true</async-supported>
     </filter-mapping>
 
     <filter>
         <filter-name>RateLimitingFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.security.RateLimitingFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>RateLimitingFilter</filter-name>
         <url-pattern>/forgot</url-pattern>
         <url-pattern>/login</url-pattern>
         <url-pattern>/register</url-pattern>
-        <url-pattern>/reset</url-pattern>
+        <async-supported>true</async-supported>
     </filter-mapping>
 
     <filter>
@@ -146,11 +173,13 @@
         <url-pattern>/account/*</url-pattern>
         <url-pattern>/admin</url-pattern>
         <url-pattern>/admin/*</url-pattern>
+        <async-supported>true</async-supported>
     </filter-mapping>
 
     <filter>
         <filter-name>AuthenticationFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.security.AuthenticationFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>AuthenticationFilter</filter-name>
@@ -159,13 +188,23 @@
         <url-pattern>/cart</url-pattern>
         <url-pattern>/cart/*</url-pattern>
         <url-pattern>/checkout</url-pattern>
-        <url-pattern>/account</url-pattern>
-        <url-pattern>/account/*</url-pattern>
+        <!-- The payment pages expose an order amount, a transaction id and a QR
+             code, so they are customer-scoped and must never be anonymous. -->
+        <url-pattern>/payment/aba</url-pattern>
+        <url-pattern>/payment/aba/*</url-pattern>
+        <url-pattern>/payment/card</url-pattern>
+        <url-pattern>/payment/card/*</url-pattern>
+        <!-- The in-app mailbox is customer-scoped too: the servlet reads the
+             session user and dereferences it, so an anonymous /mail would 500
+             instead of redirecting to the login page. -->
         <url-pattern>/mail</url-pattern>
         <url-pattern>/mail/*</url-pattern>
+        <url-pattern>/account</url-pattern>
+        <url-pattern>/account/*</url-pattern>
+        <async-supported>true</async-supported>
     </filter-mapping>
 
-    <!-- Badge counts: Caffeine-backed in CartService/MailService/ReviewService
+    <!-- Badge counts: Caffeine-backed in CartService/ReviewService
          (single-flight) plus CountCache (30s, single-flight per session) so a
          click burst cannot exhaust the pool the way the old uncached filters did. -->
     <filter>
@@ -176,6 +215,7 @@
     <filter-mapping>
         <filter-name>CartCountFilter</filter-name>
         <url-pattern>/*</url-pattern>
+        <async-supported>true</async-supported>
     </filter-mapping>
 
     <filter>
@@ -186,26 +226,44 @@
     <filter-mapping>
         <filter-name>MailCountFilter</filter-name>
         <url-pattern>/*</url-pattern>
+        <async-supported>true</async-supported>
     </filter-mapping>
 
     <filter>
         <filter-name>ReviewCountFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.web.ReviewCountFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>ReviewCountFilter</filter-name>
         <url-pattern>/admin</url-pattern>
         <url-pattern>/admin/*</url-pattern>
+        <async-supported>true</async-supported>
+    </filter-mapping>
+
+    <!-- Footer contact-support channels. On /* because the site footer is on
+         every page; SupportChannelService caches the app_settings rows. -->
+    <filter>
+        <filter-name>SupportChannelFilter</filter-name>
+        <filter-class>com.hengtongan.computerstore.web.filter.web.SupportChannelFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
+    <filter-mapping>
+        <filter-name>SupportChannelFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+        <async-supported>true</async-supported>
     </filter-mapping>
 
     <filter>
         <filter-name>AdminAuthorizationFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.security.AdminAuthorizationFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>AdminAuthorizationFilter</filter-name>
         <url-pattern>/admin</url-pattern>
         <url-pattern>/admin/*</url-pattern>
+        <async-supported>true</async-supported>
     </filter-mapping>
 
     <filter>
@@ -216,6 +274,7 @@
     <filter-mapping>
         <filter-name>CSRFProtectionFilter</filter-name>
         <url-pattern>/*</url-pattern>
+        <async-supported>true</async-supported>
     </filter-mapping>
 
     <!-- Explicit mapping keeps the account-security route available after deployment. -->
@@ -227,6 +286,11 @@
         <servlet-name>SecuritySettingsServlet</servlet-name>
         <url-pattern>/account/settings</url-pattern>
     </servlet-mapping>
+
+    <mime-mapping>
+        <extension>webmanifest</extension>
+        <mime-type>application/manifest+json</mime-type>
+    </mime-mapping>
 
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>

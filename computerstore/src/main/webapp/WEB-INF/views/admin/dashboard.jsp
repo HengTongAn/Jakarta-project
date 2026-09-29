@@ -184,7 +184,7 @@
     </div>
 </div>
 <c:set var="inStock" value="${stats.totalProducts - stats.lowStockCount - stats.outOfStockCount}"/>
-<script src="${pageContext.request.contextPath}/assets/vendor/chart.js/chart.umd.min.js"></script>
+<script src="${pageContext.request.contextPath}/assets/vendor/chart.js/chart.umd.min.js?v=${assetsVersion}"></script>
 <script>
 (() => {
     const orders = [<c:forEach var="o" items="${stats.recentOrders}" varStatus="s">{label:'Order #${o.orderId}', value:${o.totalAmount}, status:'${o.status}'}${s.last ? '' : ','}</c:forEach>];
@@ -206,5 +206,5 @@
     };
 })();
 </script>
-<script src="${pageContext.request.contextPath}/assets/js/dashboard-live.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/dashboard-live.js?v=${assetsVersion}"></script>
 <%@ include file="../layouts/footer.jspf" %>

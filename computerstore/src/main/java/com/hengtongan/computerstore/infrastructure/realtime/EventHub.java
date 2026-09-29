@@ -112,11 +112,12 @@ public final class EventHub {
                 if (stopping) {
                     return;
                 }
-                // The container fires onError (e.g. "Broken pipe" after a peer
-                // disconnect mid-write). If the async context is not completed
-                // here the errored request lands in the catch-all exception
-                // error-page, so every dropped SSE client becomes a fake 500 in
-                // the access log. Complete it exactly like onTimeout does.
+                // The container fires onError when the peer disconnects mid-write
+                // ("Broken pipe"). Nothing in publish()/heartbeat() lets a server
+                // fault escape - they catch and log everything - so an onError on
+                // this stream is a transport failure, not an application error.
+                // Completing here retires the request instead of leaving it
+                // dangling until the container times it out.
                 try {
                     event.getAsyncContext().complete();
                 } catch (IllegalStateException ignored) {
@@ -160,9 +161,7 @@ public final class EventHub {
                     dead.add(ac);
                 }
             }
-            if (!dead.isEmpty()) {
-                CLIENTS.removeAll(dead);
-            }
+            drop(dead);
         } catch (Throwable t) {
             LOGGER.debug("EventHub publish error (non-fatal): {}", t.getMessage());
         }
@@ -221,8 +220,36 @@ public final class EventHub {
                 dead.add(ac);
             }
         }
-        if (!dead.isEmpty()) {
-            CLIENTS.removeAll(dead);
+        drop(dead);
+    }
+
+    /**
+     * Retires clients whose write failed (the peer is already gone).
+     *
+     * <p>Completing the async context is what actually releases the request.
+     * Merely dropping the context from {@link #CLIENTS} leaves the container's
+     * async request open, so it lingers - holding its request state and
+     * connection - until the container notices the dead socket.</p>
+     *
+     * <p>Note this cannot change the status such a stream is logged with. When
+     * the connector finalises a request whose peer vanished, it stamps 500
+     * after every {@code AsyncListener} callback has already returned, so no
+     * application code can correct it. A browser that navigates away mid-handshake
+     * is therefore recorded as a 500 by Tomcat itself, and the response body the
+     * client did receive is correct. Those entries are connector bookkeeping,
+     * not server faults - do not read them as failed page loads.</p>
+     */
+    private static void drop(List<AsyncContext> dead) {
+        if (dead.isEmpty()) {
+            return;
+        }
+        CLIENTS.removeAll(dead);
+        for (AsyncContext ac : dead) {
+            try {
+                ac.complete();
+            } catch (IllegalStateException ignored) {
+                // Already completed or errored by the container; nothing to do.
+            }
         }
     }
 

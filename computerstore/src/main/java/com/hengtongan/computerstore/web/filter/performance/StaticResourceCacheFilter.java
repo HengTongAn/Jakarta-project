@@ -47,10 +47,20 @@ public class StaticResourceCacheFilter implements Filter {
         chain.doFilter(servletRequest, servletResponse);
     }
 
+    /**
+     * Matches the version hints against the URI <em>and</em> its query string.
+     *
+     * <p>{@code getRequestURI()} never contains the query string, so testing it
+     * alone makes every {@code ?v=} hint unreachable: versioned app CSS was
+     * silently demoted to the 7-day revalidating policy instead of
+     * {@code immutable}.</p>
+     */
     private boolean isVersioned(HttpServletRequest request) {
         String uri = request.getRequestURI();
+        String query = request.getQueryString();
+        String target = (query == null || query.isEmpty()) ? uri : uri + "?" + query;
         for (String hint : VERSIONED_HINTS) {
-            if (uri.contains(hint)) {
+            if (target.contains(hint)) {
                 return true;
             }
         }

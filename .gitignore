@@ -74,3 +74,4 @@ out/
 
 # NetBeans IDE user settings (machine-specific)
 nb-configuration.xml
+.aider*

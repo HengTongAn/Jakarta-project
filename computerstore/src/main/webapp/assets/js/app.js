@@ -26,7 +26,7 @@
     function initMotion() {
         var revealTargets = document.querySelectorAll(
             ".store-section, .benefits-strip, .promo-banner, .why-section, .faq-section, " +
-            ".support-cta, .product-card, .card-hover, .stats-card, .mail-row, .chat-conv, " +
+            ".support-cta, .product-card, .card-hover, .stats-card, " +
             ".category-tile, .build-card, .why-card, .review-card"
         );
 
@@ -45,7 +45,12 @@
                         currentObserver.unobserve(entry.target);
                     }
                 });
-            }, { threshold: 0.1, rootMargin: "0px 0px -36px 0px" });
+                // threshold MUST stay 0. A reveal target can be far taller than
+                // the viewport -- .card-hover wraps the admin products table, now
+                // 150 rows (~10000px). A fractional threshold is then impossible to
+                // satisfy, so is-visible is never added and the element stays at
+                // opacity 0 forever. Any overlap is enough to reveal.
+            }, { threshold: 0, rootMargin: "0px 0px -36px 0px" });
             revealTargets.forEach(function (element) { observer.observe(element); });
         }
 
@@ -171,10 +176,24 @@
             })
             .then(function (data) {
                 var badge = document.getElementById("cartCountBadge");
+                var mobileBadge = document.getElementById("mobileCartBadge");
+                var n = Number(data.count) || 0;
                 if (badge) {
-                    var n = Number(data.count) || 0;
                     badge.textContent = n;
                     badge.classList.toggle("d-none", n === 0);
+                    // Keep the accessible name in step with the visible number;
+                    // the desktop badge's aria-label is its count.
+                    badge.setAttribute("aria-label", n > 0 ? n + " items in cart" : "Cart is empty");
+                }
+                if (mobileBadge) {
+                    mobileBadge.textContent = n > 0 ? n : "";
+                    // The cart link's aria-label overrides the badge text for
+                    // screen readers, so name the count there (as footer.jspf
+                    // renders it initially) whenever the count changes.
+                    var cartLink = mobileBadge.closest("a[aria-label]");
+                    if (cartLink) {
+                        cartLink.setAttribute("aria-label", n > 0 ? "Cart, " + n + " items" : "Cart");
+                    }
                 }
                 if (done) { done(null, Number(data.count)); }
             })
@@ -192,6 +211,19 @@
         event.preventDefault();
         var addButton = form.querySelector("button[type=submit]");
         var originalHtml = addButton ? addButton.innerHTML : null;
+        var productCard = form.closest(".product-card");
+        
+        // Dim the card while the add is in flight. This is a translucent
+        // overlay + opacity on the card body, not a skeleton placeholder --
+        // the .skeleton* classes in components.css are not wired to anything yet.
+        if (productCard) {
+            productCard.classList.add("loading");
+            var cardInner = productCard.querySelector(".card-body");
+            if (cardInner) {
+                cardInner.style.opacity = "0.5";
+            }
+        }
+        
         if (addButton) {
             addButton.disabled = true;
             addButton.classList.add("btn-spinner");
@@ -235,6 +267,14 @@
                         addButton.innerHTML = originalHtml;
                     }
                 }
+                // Remove loading state
+                if (productCard) {
+                    productCard.classList.remove("loading");
+                    var cardInner = productCard.querySelector(".card-body");
+                    if (cardInner) {
+                        cardInner.style.opacity = "1";
+                    }
+                }
             })
             .catch(function (err) {
                 if (addButton) {
@@ -243,6 +283,14 @@
                     addButton.removeAttribute("aria-busy");
                     if (originalHtml !== null) {
                         addButton.innerHTML = originalHtml;
+                    }
+                }
+                // Remove loading state on error
+                if (productCard) {
+                    productCard.classList.remove("loading");
+                    var cardInner = productCard.querySelector(".card-body");
+                    if (cardInner) {
+                        cardInner.style.opacity = "1";
                     }
                 }
                 window.UX.toast(err.message || "Could not add item", "danger");
@@ -354,6 +402,78 @@
                 form.submit();
             }
         }
+    });
+
+    /* ---------- product image zoom ----------
+     * Sticky click-to-zoom (not hover): the hint says "Click to zoom" and a
+     * mouseleave that silently undid the zoom made that a lie -- click, then
+     * move the pointer outside the panel and it snapped back. Zoom stays until
+     * the user clicks again or presses Escape. pannable via mousemove while
+     * zoomed, keyboard-accessible (Enter/Space to zoom at the centre, Escape
+     * to leave). */
+    var imagePanels = document.querySelectorAll(".product-image-panel");
+    imagePanels.forEach(function (panel) {
+        var img = panel.querySelector("img");
+        if (!img) return;
+
+        // Add zoom hint
+        var hint = document.createElement("div");
+        hint.className = "zoom-hint";
+        hint.textContent = "Click to zoom";
+        panel.appendChild(hint);
+
+        // Keyboard/AT affordances. The panel replaces the in-page image for
+        // mouse users; without these the feature is mouse-only.
+        panel.setAttribute("tabindex", "0");
+        panel.setAttribute("role", "button");
+        panel.setAttribute("aria-label", "Zoom product image");
+        panel.setAttribute("aria-pressed", "false");
+
+        function zoomOriginAt(e) {
+            var rect = panel.getBoundingClientRect();
+            var x = ((e.clientX - rect.left) / rect.width) * 100;
+            var y = ((e.clientY - rect.top) / rect.height) * 100;
+            panel.style.setProperty("--zoom-origin-x", x + "%");
+            panel.style.setProperty("--zoom-origin-y", y + "%");
+        }
+
+        function setZoomed(on) {
+            panel.classList.toggle("zoomed", on);
+            panel.setAttribute("aria-pressed", String(on));
+        }
+
+        panel.addEventListener("click", function (e) {
+            if (window.innerWidth <= 767) return; // Disable zoom on mobile
+            setZoomed(!panel.classList.contains("zoomed"));
+            if (panel.classList.contains("zoomed")) {
+                zoomOriginAt(e);
+            }
+        });
+
+        // Enter/Space on the focused panel behaves like a centre click.
+        panel.addEventListener("keydown", function (e) {
+            if (window.innerWidth <= 767) return;
+            if (e.key === "Escape") {
+                if (panel.classList.contains("zoomed")) {
+                    e.preventDefault();
+                    setZoomed(false);
+                }
+                return;
+            }
+            if (e.key !== "Enter" && e.key !== " ") return;
+            e.preventDefault();
+            var willZoom = !panel.classList.contains("zoomed");
+            setZoomed(willZoom);
+            if (willZoom) {
+                panel.style.setProperty("--zoom-origin-x", "50%");
+                panel.style.setProperty("--zoom-origin-y", "50%");
+            }
+        });
+
+        panel.addEventListener("mousemove", function (e) {
+            if (!panel.classList.contains("zoomed")) return;
+            zoomOriginAt(e);
+        });
     });
 
     /* ---------- inline confirmation for dangerous actions ---------- */
@@ -519,13 +639,60 @@
         });
     }
 
+    /**
+     * Shows the explanatory panel matching the selected payment method. Panels are
+     * looked up by a data-payment-panel attribute rather than hard-coded ids, so
+     * adding a provider is a markup change instead of a JS change.
+     */
     function initCheckoutPayment() {
         var methods = document.querySelectorAll(".payment-method");
-        var cardPanel = document.getElementById("cardPaymentPanel");
-        var cashPanel = document.querySelector(".cash-payment-panel");
-        if (!methods.length || !cardPanel || !cashPanel) {
+        if (!methods.length) {
             return;
         }
+        var panels = document.querySelectorAll("[data-payment-panel]");
+        var form = document.getElementById("checkoutForm");
+
+        function showPanelFor(value) {
+            panels.forEach(function (panel) {
+                panel.classList.toggle("d-none", panel.dataset.paymentPanel !== value);
+            });
+            syncRequired(panels, value);
+        }
+
+        // Hiding a panel is not enough on its own. A control that carries
+        // "required" is validated by the browser even while it is display:none,
+        // and the browser then refuses to submit the form containing it. Because
+        // every payment method shares one form, a statically-required field in
+        // any hidden panel silently disables all the other methods: the customer
+        // presses Place order, nothing happens, and no message explains why
+        // (the offending control cannot be focused to show an error on).
+        //
+        // So required is owned by the active panel, applied only here and only
+        // to fields that opted in with data-active-required. Markup stays valid
+        // without it, and the server re-validates every field regardless, so
+        // this is a usability affordance and not a security control.
+        function syncRequired(allPanels, activeValue) {
+            allPanels.forEach(function (panel) {
+                var active = panel.dataset.paymentPanel === activeValue;
+                var fields = panel.querySelectorAll("[data-active-required]");
+                Array.prototype.forEach.call(fields, function (field) {
+                    field.required = active;
+                });
+            });
+        }
+
+        // The server-rendered default already has its panel visible, but the
+        // markup deliberately ships without required so the form still submits if
+        // this script never runs. Reconcile on load only when the active panel
+        // needs it, so a customer who arrives with cash selected and JS working
+        // gets the same treatment as one who clicks around.
+        if (form) {
+            var checked = form.querySelector("input[name='paymentMethod']:checked");
+            if (checked) {
+                syncRequired(panels, checked.value);
+            }
+        }
+
         methods.forEach(function (method) {
             var input = method.querySelector("input[type='radio']");
             if (!input) {
@@ -535,28 +702,129 @@
                 methods.forEach(function (item) {
                     item.classList.toggle("is-selected", item.querySelector("input") === input);
                 });
-                var cardSelected = input.value === "card";
-                cardPanel.classList.toggle("d-none", !cardSelected);
-                cashPanel.classList.toggle("d-none", cardSelected);
+                showPanelFor(input.value);
             });
         });
     }
 
+    /**
+     * Card form behaviour: digit grouping, a local checksum hint, and clearing the
+     * fields on submit.
+     *
+     * Nothing here is trusted. The checksum only nudges the customer while they
+     * type -- the server re-validates, and only the server decides. No card value
+     * is logged, stored, or sent anywhere by this code.
+     */
     function initCheckoutFormatting() {
         var cardNumber = document.getElementById("cardNumber");
         var expiry = document.getElementById("cardExpiry");
+        var cvv = document.getElementById("cardCvv");
+        var feedback = document.getElementById("cardNumberFeedback");
+
         if (cardNumber) {
             cardNumber.addEventListener("input", function () {
-                var value = cardNumber.value.replace(/\D/g, "").slice(0, 16);
-                cardNumber.value = value.replace(/(.{4})/g, "$1 ").trim();
+                var digits = cardNumber.value.replace(/\D/g, "").slice(0, 19);
+                cardNumber.value = digits.replace(/(.{4})/g, "$1 ").trim();
+                if (feedback) {
+                    renderCardNumberHint(feedback, digits);
+                }
             });
         }
+
         if (expiry) {
             expiry.addEventListener("input", function () {
-                var value = expiry.value.replace(/\D/g, "").slice(0, 4);
-                expiry.value = value.length > 2 ? value.slice(0, 2) + "/" + value.slice(2) : value;
+                var digits = expiry.value.replace(/\D/g, "").slice(0, 4);
+                expiry.value = digits.length > 2 ? digits.slice(0, 2) + "/" + digits.slice(2) : digits;
             });
         }
+
+        if (cvv) {
+            cvv.addEventListener("input", function () {
+                cvv.value = cvv.value.replace(/\D/g, "").slice(0, 4);
+            });
+        }
+
+        document.querySelectorAll("[data-toggle-cvv]").forEach(function (toggle) {
+            function flip() {
+                if (!cvv) {
+                    return;
+                }
+                var shown = cvv.type === "text";
+                cvv.type = shown ? "password" : "text";
+                var icon = toggle.querySelector("i");
+                if (icon) {
+                    icon.className = shown ? "bi bi-eye" : "bi bi-eye-slash";
+                }
+                toggle.setAttribute("aria-label", shown ? "Show security code" : "Hide security code");
+            }
+            toggle.addEventListener("click", flip);
+            toggle.addEventListener("keydown", function (event) {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    flip();
+                }
+            });
+        });
+
+        // Clears the card fields as the form leaves, so a demo box left open on a
+        // shared machine does not keep the last number sitting in the DOM.
+        var form = cardNumber ? cardNumber.form : null;
+        if (form) {
+            form.addEventListener("submit", function () {
+                if (cardNumber) {
+                    cardNumber.value = "";
+                }
+                if (cvv) {
+                    cvv.value = "";
+                }
+            });
+        }
+    }
+
+    /**
+     * A typing hint, worded so it cannot be mistaken for an acceptance. It says
+     * the number is incomplete or does not add up -- never that it is valid --
+     * because "looks right" here would be a claim this page cannot make.
+     */
+    function renderCardNumberHint(element, digits) {
+        if (digits.length === 0) {
+            element.textContent = "";
+            element.className = "form-text";
+            return;
+        }
+        if (digits.length < 12) {
+            element.textContent = "";
+            element.className = "form-text";
+            return;
+        }
+        if (luhnCheck(digits)) {
+            element.textContent = "This demo only accepts the test numbers listed below.";
+            element.className = "form-text text-warning-emphasis";
+        } else {
+            element.textContent = "That number does not add up. Check for a typo.";
+            element.className = "form-text text-danger";
+        }
+    }
+
+    /** The same Luhn algorithm the server uses. */
+    function luhnCheck(digits) {
+        var sum = 0;
+        var doubleDigit = false;
+        for (var i = digits.length - 1; i >= 0; i--) {
+            var value = parseInt(digits.charAt(i), 10);
+            if (isNaN(value)) {
+                return false;
+            }
+            if (doubleDigit) {
+                value *= 2;
+                if (value > 9) {
+                    value -= 9;
+                }
+            }
+            sum += value;
+            doubleDigit = !doubleDigit;
+        }
+        return sum % 10 === 0;
     }
 
     function initImageUploads() {
@@ -638,7 +906,7 @@
         initCheckoutFormatting();
         initImageUploads();
         initPasswordConfirmation();
-        // Cart / mail badges are server-rendered by CountFilters (Caffeine +
+        // Cart / review badges are server-rendered by CountFilters (Caffeine +
         // CountCache). Live updates come from SSE (realtime.js); refreshCartCount
         // is only used after AJAX add-to-cart — no per-page /cart/count XHR.
     }

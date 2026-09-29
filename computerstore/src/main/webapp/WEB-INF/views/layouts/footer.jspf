@@ -8,19 +8,84 @@
             </div>
             <div class="col-6 col-lg-2"><h2 class="footer-heading">Shop</h2><a href="${pageContext.request.contextPath}/products">Browse products</a><a href="${pageContext.request.contextPath}/products?sort=newest">New arrivals</a><a href="${pageContext.request.contextPath}/products?sort=price_asc">Best value</a></div>
             <div class="col-6 col-lg-2"><h2 class="footer-heading">Account</h2><a href="${pageContext.request.contextPath}/account">My account</a><a href="${pageContext.request.contextPath}/account/orders">My orders</a><a href="${pageContext.request.contextPath}/cart">Shopping cart</a></div>
-            <div class="col-lg-3"><h2 class="footer-heading">Need help?</h2><p class="footer-copy small">Our team can help you choose compatible components for your next build.</p><a class="footer-support" href="${pageContext.request.contextPath}${empty sessionScope.user ? '/login' : '/mail/compose'}">Contact support <i class="bi bi-arrow-right"></i></a></div>
+            <div class="col-lg-3"><h2 class="footer-heading">Contact support</h2><p class="footer-copy small">Our team can help you choose compatible components for your next build.</p>
+                <ul class="support-channels">
+                    <c:forEach var="ch" items="${supportChannels}">
+                        <li>
+                            <c:choose>
+                                <c:when test="${not empty ch.url}">
+                                    <a class="support-chan" href="<c:out value='${ch.url}'/>" target="_blank" rel="noopener noreferrer">
+                                        <img src="${pageContext.request.contextPath}/assets/images/${ch.icon}" alt="" width="22" height="22" loading="lazy" decoding="async"><span><c:out value="${ch.label}"/></span>
+                                    </a>
+                                </c:when>
+                                <c:otherwise>
+                                    <span class="support-chan is-unconfigured" role="link" aria-disabled="true" title="Set this channel at /admin/support">
+                                        <img src="${pageContext.request.contextPath}/assets/images/${ch.icon}" alt="" width="22" height="22" loading="lazy" decoding="async"><span><c:out value="${ch.label}"/></span>
+                                    </span>
+                                </c:otherwise>
+                            </c:choose>
+                        </li>
+                    </c:forEach>
+                </ul>
+            </div>
         </div>
         <div class="footer-bottom"><span>&copy; 2026 Apach_PC/STORE</span><span>Secure shopping &middot; Helpful support &middot; Quality technology</span></div>
     </div>
 </footer>
-<script src="${pageContext.request.contextPath}/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
-<script src="${pageContext.request.contextPath}/assets/js/mail-live.js"></script>
-<script src="${pageContext.request.contextPath}/assets/js/password-toggle.js"></script>
-<script src="${pageContext.request.contextPath}/assets/js/realtime.js"></script>
-<script src="${pageContext.request.contextPath}/assets/js/app.js"></script>
-<script src="${pageContext.request.contextPath}/assets/js/admin-help.js"></script>
+<%-- MUST stay before <script src="app.js">: that script reads #scrollTop at
+     load time, so the button has to exist in the DOM when it runs. It used to
+     sit after the scripts, which made the whole scroll-to-top block no-op.
+     Position:fixed, so its placement in the document does not affect layout. --%>
 <button id="scrollTop" class="scroll-top" type="button" aria-label="Back to top">
     <i class="bi bi-arrow-up" aria-hidden="true"></i>
 </button>
+<script src="${pageContext.request.contextPath}/assets/vendor/bootstrap/bootstrap.bundle.min.js?v=${assetsVersion}"></script>
+<script src="${pageContext.request.contextPath}/assets/js/password-toggle.js?v=${assetsVersion}"></script>
+<script src="${pageContext.request.contextPath}/assets/js/realtime.js?v=${assetsVersion}"></script>
+<script src="${pageContext.request.contextPath}/assets/js/app.js?v=${assetsVersion}"></script>
+<script src="${pageContext.request.contextPath}/assets/js/admin-help.js?v=${assetsVersion}"></script>
+<script src="${pageContext.request.contextPath}/assets/js/mail-live.js?v=${assetsVersion}"></script>
+
+<!-- Mobile Bottom Navigation (only on customer-facing pages) -->
+<c:set var="_cartAria" value="${cartCount gt 0 ? 'Cart, ' : 'Cart'}${cartCount gt 0 ? cartCount : ''}${cartCount gt 0 ? ' items' : ''}"/>
+<c:if test="${empty _sp or _sp.indexOf('/admin') != 0}">
+<nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+    <div class="mobile-bottom-nav-inner">
+        <a href="${pageContext.request.contextPath}/products" class="mobile-nav-item${_sp == '/products' ? ' active' : ''}" aria-label="Shop"${_sp == '/products' ? ' aria-current="page"' : ''}>
+            <i class="bi bi-bag-fill" aria-hidden="true"></i>
+            <span>Shop</span>
+        </a>
+        <%-- ?focus=search makes catalog.jsp scroll the search box into view and
+             focus it. Without it this tab navigated to the unfiltered catalogue
+             and, if you were already on /products, appeared to do nothing. --%>
+        <a href="${pageContext.request.contextPath}/products?focus=search" class="mobile-nav-item" aria-label="Search">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <span>Search</span>
+        </a>
+        <%-- aria-label overrides the badge's text for screen readers, so the
+             count has to be named explicitly here (and kept in sync by app.js),
+             matching the desktop nav badge. --%>
+        <a href="${pageContext.request.contextPath}/cart" class="mobile-nav-item${_sp == '/cart' ? ' active' : ''}" aria-label="${_cartAria}"${_sp == '/cart' ? ' aria-current="page"' : ''}>
+            <i class="bi bi-cart3" aria-hidden="true"></i>
+            <span>Cart</span>
+            <span id="mobileCartBadge" class="mobile-nav-badge">${not empty cartCount && cartCount > 0 ? cartCount : ''}</span>
+        </a>
+        <c:choose>
+            <c:when test="${not empty sessionScope.user}">
+                <a href="${pageContext.request.contextPath}/account" class="mobile-nav-item${not empty _sp and _sp.indexOf('/account') == 0 ? ' active' : ''}" aria-label="Account"${not empty _sp and _sp.indexOf('/account') == 0 ? ' aria-current="page"' : ''}>
+                    <i class="bi bi-person-circle" aria-hidden="true"></i>
+                    <span>Account</span>
+                </a>
+            </c:when>
+            <c:otherwise>
+                <a href="${pageContext.request.contextPath}/login" class="mobile-nav-item${_sp == '/login' ? ' active' : ''}" aria-label="Login"${_sp == '/login' ? ' aria-current="page"' : ''}>
+                    <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i>
+                    <span>Login</span>
+                </a>
+            </c:otherwise>
+        </c:choose>
+    </div>
+</nav>
+</c:if>
 </body>
 </html>

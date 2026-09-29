@@ -37,7 +37,15 @@
         return n === '\u2014' ? n : String(n.toLocaleString());
     }
 
+    /* A null hit rate means "no requests recorded yet", not zero percent.
+     * Number(null) is 0 and Number('') is 0, so the guard has to come before the
+     * numeric coercion -- otherwise an untouched cache renders as 0.0% here
+     * while the server-rendered first paint shows an em dash, and the same row
+     * changes meaning once the 15s refresh lands. */
     function rate(v) {
+        if (v === null || v === undefined || v === '') {
+            return '\u2014';
+        }
         var n = Number(v);
         return isFinite(n) ? n.toFixed(1) + '%' : '\u2014';
     }

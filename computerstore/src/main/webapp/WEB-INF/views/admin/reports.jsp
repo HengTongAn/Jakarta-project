@@ -187,11 +187,11 @@
     </div>
 </div>
 
-<script src="${pageContext.request.contextPath}/assets/vendor/chart.js/chart.umd.min.js"></script>
+<script src="${pageContext.request.contextPath}/assets/vendor/chart.js/chart.umd.min.js?v=${assetsVersion}"></script>
 <script>
     // Initial series data for reports-live.js. Chart creation lives there so
     // a later refresh can also build the chart when data first arrives.
     window.__reportSeries = [<c:forEach var="pt" items="${series}" varStatus="s">{label:'${pt.label}', value:${pt.value}}${s.last ? '' : ','}</c:forEach>];
 </script>
-<script src="${pageContext.request.contextPath}/assets/js/reports-live.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/reports-live.js?v=${assetsVersion}"></script>
 <%@ include file="../layouts/footer.jspf" %>

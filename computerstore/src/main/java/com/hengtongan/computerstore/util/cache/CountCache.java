@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.IntSupplier;
 
 /**
- * Tiny session-scoped cache used by the header count filters. The unread-mail
+ * Tiny session-scoped cache used by the header count filters. The unread-review
  * and cart counters sit in the navigation on every page, but there is no need
  * to re-run their SQL on each of the ten CSS/JS/image requests that a single
  * page view causes. Values are cached for a short window; the real-time SSE

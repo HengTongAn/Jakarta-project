@@ -118,8 +118,6 @@ public class AdminHistoryServlet extends BaseServlet {
                 return id == null ? null : contextPath + "/admin/products?edit=" + id;
             case "ORDER":
                 return id == null ? null : contextPath + "/admin/orders?id=" + id;
-            case "MESSAGE":
-                return id == null ? null : contextPath + "/admin/mail/view?id=" + id;
             case "CATEGORY":
                 return contextPath + "/admin/categories";
             case "BRAND":

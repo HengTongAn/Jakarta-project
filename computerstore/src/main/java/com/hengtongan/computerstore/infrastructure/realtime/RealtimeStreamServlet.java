@@ -81,7 +81,16 @@ public class RealtimeStreamServlet extends HttpServlet {
             ac.getResponse().getWriter().write("retry: 3000\n\n");
             ac.getResponse().getWriter().flush();
         } catch (IOException ignored) {
-            // Client vanished during the handshake; the listener cleans up.
+            // Only getWriter() itself can throw here: PrintWriter swallows
+            // IOException from write()/flush(), so an aborted handshake is NOT
+            // reported through this catch - the connector notices the dead
+            // socket and finalises the request itself. Completing keeps the
+            // request from lingering when the writer could not be obtained.
+            try {
+                ac.complete();
+            } catch (IllegalStateException ignoredToo) {
+                // The container already finished this request; nothing to do.
+            }
         }
     }
 

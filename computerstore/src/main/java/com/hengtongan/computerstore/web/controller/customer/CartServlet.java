@@ -4,6 +4,7 @@ import com.hengtongan.computerstore.core.exception.NotFoundException;
 import com.hengtongan.computerstore.core.exception.ValidationException;
 import com.hengtongan.computerstore.core.domain.entity.User;
 import com.hengtongan.computerstore.util.cache.CountCache;
+import com.hengtongan.computerstore.util.json.MiniJson;
 import com.hengtongan.computerstore.util.web.Flash;
 import com.hengtongan.computerstore.util.validation.ValidationUtil;
 import jakarta.servlet.ServletException;
@@ -14,7 +15,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import com.hengtongan.computerstore.core.domain.entity.CartItem;
 
 @WebServlet({"/cart", "/cart/add", "/cart/update", "/cart/remove"})
@@ -78,13 +81,11 @@ public class CartServlet extends BaseServlet {
         response.setStatus(status);
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
-        response.getWriter().print("{\"ok\":" + ok
-                + ",\"message\":\"" + (message == null ? "" : escape(message)) + "\""
-                + ",\"count\":" + count + "}");
-    }
-
-    private String escape(String value) {
-        return value.replace("\\", "\\\\").replace("\"", "\\\"");
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("ok", ok);
+        payload.put("message", message == null ? "" : message);
+        payload.put("count", count);
+        response.getWriter().print(MiniJson.write(payload));
     }
 
     private User sessionUser(HttpServletRequest request) {

@@ -18,6 +18,7 @@ public class OrderRepository {
 
     private static final String COLUMNS =
             "o.order_id, o.user_id, o.order_date, o.total_amount, o.status, "
+            + "o.payment_method, o.payment_provider, o.payment_status, o.payment_transaction, o.paid_at, "
             + "u.full_name AS customer_name, u.username AS customer_username, "
             + "(SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.order_id) AS item_count";
 
@@ -31,6 +32,11 @@ public class OrderRepository {
         o.setOrderDate(rs.getTimestamp("order_date"));
         o.setTotalAmount(rs.getBigDecimal("total_amount"));
         o.setStatus(Order.Status.valueOf(rs.getString("status")));
+        o.setPaymentMethod(rs.getString("payment_method"));
+        o.setPaymentProvider(rs.getString("payment_provider"));
+        o.setPaymentStatus(rs.getString("payment_status"));
+        o.setPaymentTransaction(rs.getString("payment_transaction"));
+        o.setPaidAt(rs.getTimestamp("paid_at"));
         o.setCustomerName(rs.getString("customer_name"));
         o.setCustomerUsername(rs.getString("customer_username"));
         o.setItemCount(rs.getInt("item_count"));
@@ -43,11 +49,12 @@ public class OrderRepository {
 
     /** Creates an order inside the given transaction and returns the new id. */
     public int createOrder(Connection c, Order order) throws SQLException {
-        String sql = "INSERT INTO orders (user_id, total_amount, status) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO orders (user_id, total_amount, status, payment_method) VALUES (?, ?, ?, ?)";
         try (PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, order.getUserId());
             ps.setBigDecimal(2, order.getTotalAmount());
             ps.setString(3, order.getStatus().name());
+            ps.setString(4, order.getPaymentMethod());
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) {
@@ -192,6 +199,41 @@ public class OrderRepository {
             ps.executeUpdate();
         } catch (SQLException e) {
             throw ErrorHandler.handleDatabaseError("updating order status", e);
+        }
+    }
+
+    /** Records the payment state without touching the order status. */
+    public void updatePayment(int orderId, String paymentStatus, String transactionId, String provider) {
+        String sql = "UPDATE orders SET payment_status = ?, payment_transaction = ?, payment_provider = ? "
+                + "WHERE order_id = ?";
+        try (Connection c = conn(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, paymentStatus);
+            ps.setString(2, transactionId);
+            ps.setString(3, provider);
+            ps.setInt(4, orderId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw ErrorHandler.handleDatabaseError("updating order payment", e);
+        }
+    }
+
+    /**
+     * Marks an order paid and moves it PENDING -> PROCESSING, atomically.
+     * <p>
+     * The {@code AND payment_status <> 'PAID'} guard is the idempotency hinge: a
+     * replayed gateway callback returns {@code false} and the caller rolls back
+     * rather than recording a second transition or a second status event.
+     *
+     * @return true when this call is the one that marked it paid
+     */
+    public boolean markPaid(Connection c, int orderId, String transactionId) throws SQLException {
+        String sql = "UPDATE orders SET payment_status = 'PAID', payment_transaction = ?, paid_at = NOW(), "
+                + "status = 'PROCESSING' "
+                + "WHERE order_id = ? AND status = 'PENDING' AND payment_status <> 'PAID'";
+        try (PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, transactionId);
+            ps.setInt(2, orderId);
+            return ps.executeUpdate() == 1;
         }
     }
 

@@ -14,8 +14,41 @@
             <h4 class="fw-bold mb-1 d-flex align-items-center gap-2">Performance Monitor
                 <button type="button" class="admin-help-toggle" data-help-toggle aria-label="Why does this page exist?"><i class="bi bi-question-lg" aria-hidden="true"></i></button>
             </h4>
-            <p class="text-muted mb-0">Live cache, connection pool and JVM statistics. Updates in place every 15s &middot; last updated <span data-live-updated>&mdash;</span></p>
+            <p class="text-muted mb-0">Updates in place every 15s &middot; last updated <span data-live-updated>&mdash;</span></p>
         </div>
+    </div>
+
+    <%-- A plain-language orientation, visible without clicking anything. Every
+         other explanation on this page is behind one of ten "?" buttons, and
+         admin-help.js is deliberately opt-in, so an admin who does not go
+         looking for help sees only numbers. --%>
+    <p class="text-muted small mb-3">
+        Everything below refreshes by itself. <strong>Start with
+        &ldquo;What this means&rdquo; below</strong> &mdash; it says in plain words whether
+        anything needs your attention. If it is empty, the numbers underneath are all
+        normal. The two things to watch are <strong>Threads waiting</strong> (requests
+        queuing for a database connection &mdash; should be 0) and <strong>Hit rate</strong>
+        (how often the app answers from memory instead of asking the database &mdash; a
+        dash means that cache has not been used yet, not that it is perfect).
+    </p>
+
+    <%-- Read this first. It is the only card that says whether anything needs
+         your attention, and it used to be the LAST thing on the page -- below
+         four tables of jargon, which is the wrong order for the one thing an
+         admin actually needs. This list is patched in place by
+         performance-live.js, so its identifying attribute must stay on the
+         <ul> below -- and must appear only there, which is why the attribute
+         name is deliberately not spelled out in this comment. --%>
+    <div class="card mb-3"
+         data-help="Plain-language tips, generated automatically from the numbers below."
+         data-help-title="What this means"
+         data-help-why="Read this first. Each line is something the app noticed about itself, in plain words, with what to do about it. If nothing is listed, the numbers underneath are all in their normal range.">
+        <div class="card-header bg-body fw-semibold d-flex justify-content-between align-items-center"><span><i class="bi bi-lightbulb me-1" aria-hidden="true"></i> What this means</span><button type="button" class="admin-help-toggle" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></button></div>
+        <ul class="list-group list-group-flush" data-live-recommendations>
+            <c:forEach items="${recommendations}" var="tip">
+                <li class="list-group-item"><i class="bi bi-arrow-right-circle me-2 text-primary" aria-hidden="true"></i><c:out value="${tip}"/></li>
+            </c:forEach>
+        </ul>
     </div>
 
     <div class="row g-3 mb-3">
@@ -100,7 +133,19 @@
                                     <td class="text-end"><fmt:formatNumber value="${entry.value.size}"/></td>
                                     <td class="text-end"><fmt:formatNumber value="${entry.value.hits}"/></td>
                                     <td class="text-end"><fmt:formatNumber value="${entry.value.misses}"/></td>
-                                    <td class="text-end"><fmt:formatNumber value="${entry.value.hitRate}" pattern="#0.0"/>%</td>
+                                    <%-- No rate until there is a request to divide. An untouched
+                                         cache has no meaningful hit rate, and printing 100%
+                                         would claim it is working perfectly. --%>
+                                    <td class="text-end">
+                                        <c:choose>
+                                            <c:when test="${empty entry.value.hitRate}">
+                                                <span class="text-muted" title="No requests recorded yet">&mdash;</span>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <fmt:formatNumber value="${entry.value.hitRate}" pattern="#0.0"/>%
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </td>
                                 </tr>
                             </c:forEach>
                         </tbody>
@@ -114,7 +159,7 @@
                  data-help="Ready-made database connections the app keeps open and reuses."
                  data-help-title="Connection pool"
                  data-help-why="Opening a connection is slow; the pool removes that wait. Watch 'waiting' for overload signs.">
-                <div class="card-header bg-body fw-semibold d-flex justify-content-between align-items-center"><span><i class="bi bi-database-gear me-1" aria-hidden="true"></i> Connection pool (HikariCP)</span><button type="button" class="admin-help-toggle" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></button></div>
+                <div class="card-header bg-body fw-semibold d-flex justify-content-between align-items-center"><span><i class="bi bi-database-gear me-1" aria-hidden="true"></i> Connection pool <span class="text-muted small fw-normal">(HikariCP)</span></span><button type="button" class="admin-help-toggle" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></button></div>
                 <div class="card-body">
                     <c:choose>
                         <c:when test="${empty poolStats.total}">
@@ -135,9 +180,9 @@
             </div>
             <div class="card mb-3"
                  data-help="The app's memory, CPU and whether HTTP compression is on."
-                 data-help-title="JVM"
+                 data-help-title="App memory &amp; CPU"
                  data-help-why="Steady memory is healthy. Compression shrinks pages so they load faster on slow connections.">
-                <div class="card-header bg-body fw-semibold d-flex justify-content-between align-items-center"><span><i class="bi bi-cpu me-1" aria-hidden="true"></i> JVM</span><button type="button" class="admin-help-toggle" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></button></div>
+                <div class="card-header bg-body fw-semibold d-flex justify-content-between align-items-center"><span><i class="bi bi-cpu me-1" aria-hidden="true"></i> App memory &amp; CPU <span class="text-muted small fw-normal">(JVM)</span></span><button type="button" class="admin-help-toggle" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></button></div>
                 <div class="card-body small">
                     <div class="d-flex justify-content-between"><span class="text-muted">Heap used / committed</span><span><span data-live-jvm="heapUsed"><fmt:formatNumber value="${jvm.heapUsedMb}" pattern="#,##0"/></span> / <span data-live-jvm="heapCommitted"><fmt:formatNumber value="${jvm.heapCommittedMb}" pattern="#,##0"/></span> MB</span></div>
                     <div class="d-flex justify-content-between mt-1"><span class="text-muted">Heap max</span><span><span data-live-jvm="heapMax"><fmt:formatNumber value="${jvm.heapMaxMb}" pattern="#,##0"/></span> MB</span></div>
@@ -154,6 +199,13 @@
          data-help-title="Database queries"
          data-help-why="Anything marked 'slow' is worth caching or optimizing - the same query asked again is a hit, not a new trip to the database.">
         <div class="card-header bg-body fw-semibold d-flex justify-content-between align-items-center"><span><i class="bi bi-activity me-1" aria-hidden="true"></i> Database queries <span class="badge bg-secondary align-middle">storefront hot path</span></span><button type="button" class="admin-help-toggle" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></button></div>
+        <p class="text-muted small px-3 pt-2 mb-0">
+            The database work behind one visit to the shop. <strong>Avg (ms)</strong> is
+            the average time each query took; <strong>Slow (&gt;1s)</strong> counts how
+            often one took over a second. Only the queries that took longest are listed,
+            and the SQL is shown so you can hand it to whoever maintains the code &mdash;
+            you do not need to read SQL to use this table.
+        </p>
         <div class="card-body table-responsive p-0">
             <table class="table table-sm align-middle mb-0">
                 <thead class="table-light">
@@ -180,19 +232,7 @@
             </table>
         </div>
     </div>
-
-    <div class="card"
-         data-help="Plain-language tips generated automatically from the numbers above."
-         data-help-title="Recommendations"
-         data-help-why="Start here when something looks off - it tells you the likely cause and the fix.">
-        <div class="card-header bg-body fw-semibold d-flex justify-content-between align-items-center"><span><i class="bi bi-lightbulb me-1" aria-hidden="true"></i> Recommendations</span><button type="button" class="admin-help-toggle" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></button></div>
-        <ul class="list-group list-group-flush" data-live-recommendations>
-            <c:forEach items="${recommendations}" var="tip">
-                <li class="list-group-item"><i class="bi bi-arrow-right-circle me-2 text-primary" aria-hidden="true"></i><c:out value="${tip}"/></li>
-            </c:forEach>
-        </ul>
-    </div>
 </div>
 
-<script src="${pageContext.request.contextPath}/assets/js/performance-live.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/performance-live.js?v=${assetsVersion}"></script>
 <%@ include file="../layouts/footer.jspf" %>

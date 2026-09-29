@@ -1,7 +1,5 @@
 package com.hengtongan.computerstore.core.service;
 
-import com.hengtongan.computerstore.core.service.OrderService;
-
 import com.hengtongan.computerstore.infrastructure.cache.CacheManager;
 import com.hengtongan.computerstore.core.repository.CartRepository;
 import com.hengtongan.computerstore.core.repository.InventoryRepository;
@@ -18,7 +16,6 @@ import com.hengtongan.computerstore.core.domain.entity.OrderStatusEvent;
 import com.hengtongan.computerstore.core.domain.entity.Product;
 import com.hengtongan.computerstore.core.domain.entity.User;
 import com.hengtongan.computerstore.infrastructure.realtime.EventHub;
-import com.hengtongan.computerstore.core.service.NotificationService;
 import com.hengtongan.computerstore.util.web.AuditLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +38,6 @@ public class OrderService {
     private final OrderRepository orderDAO;
     private final InventoryRepository inventoryDAO;
     private final ConnectionProvider connectionProvider;
-    private final NotificationService notificationService;
 
     public OrderService() {
         this(new CartRepository(), new ProductRepository(), new OrderRepository(), new InventoryRepository());
@@ -55,20 +51,11 @@ public class OrderService {
     public OrderService(CartRepository cartDAO, ProductRepository productDAO,
                             OrderRepository orderDAO, InventoryRepository inventoryDAO,
                             ConnectionProvider connectionProvider) {
-        this(cartDAO, productDAO, orderDAO, inventoryDAO, connectionProvider,
-                new NotificationService());
-    }
-
-    public OrderService(CartRepository cartDAO, ProductRepository productDAO,
-                            OrderRepository orderDAO, InventoryRepository inventoryDAO,
-                            ConnectionProvider connectionProvider,
-                            NotificationService notificationService) {
         this.cartDAO = cartDAO;
         this.productDAO = productDAO;
         this.orderDAO = orderDAO;
         this.inventoryDAO = inventoryDAO;
         this.connectionProvider = connectionProvider;
-        this.notificationService = notificationService;
     }
 
     /**
@@ -78,6 +65,18 @@ public class OrderService {
      * never becomes inconsistent.
      */
     public Order checkout(User user) {
+        return checkout(user, PaymentService.METHOD_COD);
+    }
+
+    /**
+     * @param paymentMethod stored method for the order; see
+     *                      {@link PaymentService#normaliseMethod(String)} for the
+     *                      accepted values. The charge itself is opened by
+     *                      {@link PaymentService} afterwards, not here, so a
+     *                      gateway failure cannot roll back stock that is
+     *                      already correctly reserved.
+     */
+    public Order checkout(User user, String paymentMethod) {
         int userId = user.getUserId();
         List<CartItem> items = cartDAO.findItemsByUser(userId);
         if (items.isEmpty()) {
@@ -117,6 +116,10 @@ public class OrderService {
             order.setUserId(userId);
             order.setTotalAmount(total);
             order.setStatus(Order.Status.PENDING);
+            order.setPaymentMethod(paymentMethod);
+            // Cash on delivery is settled on hand; a gateway order stays UNPAID
+            // until PaymentService.confirm() hears so from the gateway itself.
+            order.setPaymentStatus(PaymentService.STATUS_UNPAID);
             int orderId = orderDAO.createOrder(conn, order);
 
             OrderStatusEvent createdEvent = new OrderStatusEvent();
@@ -183,10 +186,6 @@ public class OrderService {
         } finally {
             closeQuietly(conn);
         }
-
-        // Notification happens strictly after the commit succeeds, so a
-        // rolled-back order can never produce an email.
-        notificationService.sendOrderPlaced(order);
 
         // Push the lowered stock to every connected browser, then announce
         // the new order so admin views and the customer's order pages update.
@@ -342,9 +341,6 @@ public class OrderService {
         } finally {
             closeQuietly(conn);
         }
-
-        // Real-time notification after the transition is committed.
-        notificationService.sendOrderStatusChanged(order, event);
 
         // Broadcast the new status and any returned stock to all live users.
         for (Map.Entry<Integer, Integer> restored : restoredQuantities.entrySet()) {

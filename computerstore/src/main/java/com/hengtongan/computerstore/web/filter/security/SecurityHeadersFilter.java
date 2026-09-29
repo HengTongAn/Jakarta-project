@@ -49,6 +49,11 @@ public class SecurityHeadersFilter implements Filter {
                 "img-src 'self' data: https:; " +
                 "font-src 'self'; " +
                 "connect-src 'self'; " +
+                // Service worker (/sw.js). Without this, worker-src falls back
+                // to script-src and a same-origin worker is allowed anyway --
+                // stating it keeps the PWA working if script-src is ever
+                // tightened, and documents that the worker is intentional.
+                "worker-src 'self'; " +
                 "frame-ancestors 'none'; " +
                 "form-action 'self';");
 
