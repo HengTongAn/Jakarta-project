@@ -38,6 +38,7 @@ public class OrderService {
     private final OrderRepository orderDAO;
     private final InventoryRepository inventoryDAO;
     private final ConnectionProvider connectionProvider;
+    private final NotificationService notifications;
 
     public OrderService() {
         this(new CartRepository(), new ProductRepository(), new OrderRepository(), new InventoryRepository());
@@ -56,6 +57,23 @@ public class OrderService {
         this.orderDAO = orderDAO;
         this.inventoryDAO = inventoryDAO;
         this.connectionProvider = connectionProvider;
+        // NotificationService swallows its own failures and EmailUtil queues on a
+        // background thread, so a mail problem can never fail an order. Built
+        // here rather than fetched from AppContext so it stays injectable and so
+        // a unit test can observe it without standing up the whole registry.
+        this.notifications = new NotificationService();
+    }
+
+    /** Overload used by tests that need to assert on what was sent. */
+    OrderService(CartRepository cartDAO, ProductRepository productDAO,
+                 OrderRepository orderDAO, InventoryRepository inventoryDAO,
+                 ConnectionProvider connectionProvider, NotificationService notifications) {
+        this.cartDAO = cartDAO;
+        this.productDAO = productDAO;
+        this.orderDAO = orderDAO;
+        this.inventoryDAO = inventoryDAO;
+        this.connectionProvider = connectionProvider;
+        this.notifications = notifications;
     }
 
     /**
@@ -144,8 +162,15 @@ public class OrderService {
 
                 InventoryLog log = new InventoryLog();
                 log.setProductId(item.getProductId());
-                log.setOldQuantity(product.getStockQuantity());
-                log.setNewQuantity(soldRemaining.get(item.getProductId()));
+                // Derive the "before" figure from the "after" figure, which was
+                // read on this transaction's own connection, instead of reusing
+                // product.getStockQuantity() from the cart row. The cart was read
+                // before the stock was reserved, so any concurrent adjustment in
+                // between made the two disagree and the log recorded a transition
+                // that never happened on the row.
+                int remaining = soldRemaining.get(item.getProductId());
+                log.setOldQuantity(remaining + item.getQuantity());
+                log.setNewQuantity(remaining);
                 log.setAction("ORDER_CREATED");
                 log.setUserId(null);
                 inventoryDAO.addLog(conn, log);
@@ -195,6 +220,9 @@ public class OrderService {
                     Product.computeStatus(remaining).name());
         }
         EventHub.publishOrder(order.getOrderId(), userId, order.getStatus().name());
+        // After the commit, so the mail cannot be sent for an order that rolled
+        // back. sendOrderPlaced never throws.
+        notifications.sendOrderPlaced(order);
         return order;
     }
 
@@ -350,6 +378,10 @@ public class OrderService {
                             Product.computeStatus(quantity).name()));
         }
         EventHub.publishOrder(order.getOrderId(), order.getUserId(), newStatus.name());
+        // Post-commit, and never on the early return above for a no-op
+        // transition -- the customer should not be told about a status they are
+        // already in. event carries the from/to pair written to the timeline.
+        notifications.sendOrderStatusChanged(order, event);
     }
 
     public void cancelByCustomer(int orderId, int userId) {

@@ -1,0 +1,18 @@
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%--
+    Payment method badge for a Transaction. The caller sets the raw column first:
+
+        <c:set var="_txMethod" value="${tx.paymentMethod}"/>
+        <%@ include file="../../components/transaction-method-badge.jspf" %>
+
+    _txMethod is a plain VARCHAR(50), not an enum, because the column is written by
+    whichever gateway handled the attempt. An unrecognised value falls through to a
+    neutral badge that still shows the text -- the alternative is hiding a method the
+    ledger does have a record of.
+--%>
+<c:choose>
+    <c:when test="${_txMethod == 'ABA'}"><span class="badge bg-success"><i class="bi bi-phone me-1" aria-hidden="true"></i>ABA Payway</span></c:when>
+    <c:when test="${_txMethod == 'CARD'}"><span class="badge bg-warning text-dark"><i class="bi bi-credit-card me-1" aria-hidden="true"></i>Card</span></c:when>
+    <c:when test="${_txMethod == 'CASH'}"><span class="badge bg-secondary"><i class="bi bi-cash-coin me-1" aria-hidden="true"></i>Cash</span></c:when>
+    <c:otherwise><span class="badge bg-light text-muted"><c:out value="${_txMethod}"/></span></c:otherwise>
+</c:choose>

@@ -2,34 +2,93 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="_sp" value="${empty requestScope['jakarta.servlet.forward.servlet_path'] ? pageContext.request.servletPath : requestScope['jakarta.servlet.forward.servlet_path']}"/>
+<c:set var="_ctx" value="${pageContext.request.contextPath}"/>
+<%-- Group membership, one flag per top-level dropdown.
+     Every section lives under the group it belongs to, so the trigger is
+     highlighted whenever ANY of its children is the current page and not just
+     the one the link points at. That is the whole reason these flags exist:
+     a dropdown trigger points at "#", so the plain "is this the active link"
+     test that worked on a flat row would never fire for it.
+
+     All four are read below and all four are defined above -- EL renders an
+     undefined variable as false rather than erroring, so a flag that is used
+     before it is set (or misspelled) silently collapses the nav back to
+     "nothing is ever highlighted" with no failing test. AdminNavGroupingTest
+     guards the ordering. --%>
+<c:set var="_inCatalog" value="${fn:startsWith(_sp, '/admin/products') or fn:startsWith(_sp, '/admin/categories') or fn:startsWith(_sp, '/admin/brands') or fn:startsWith(_sp, '/admin/inventory')}"/>
+<c:set var="_inSales" value="${fn:startsWith(_sp, '/admin/orders') or fn:startsWith(_sp, '/admin/transactions') or fn:startsWith(_sp, '/admin/payments')}"/>
+<c:set var="_inCustomers" value="${fn:startsWith(_sp, '/admin/users') or fn:startsWith(_sp, '/admin/reviews') or fn:startsWith(_sp, '/admin/support')}"/>
+<c:set var="_inInsights" value="${fn:startsWith(_sp, '/admin/reports') or fn:startsWith(_sp, '/admin/performance')}"/>
 <nav class="navbar navbar-expand-lg border-bottom py-1 admin-nav" data-bs-theme="auto">
     <div class="container d-flex align-items-center gap-2">
         <span class="admin-brand d-flex align-items-center gap-2 me-1" aria-label="Apach_PC/STORE admin panel">
-            <img src="${pageContext.request.contextPath}/assets/images/apach-pc-store.svg" alt="Apach_PC/STORE" style="height:22px;width:auto">
+            <img src="${_ctx}/assets/images/apach-pc-store.svg" alt="Apach_PC/STORE" style="height:22px;width:auto">
             <span class="fw-semibold">Admin Panel</span>
         </span>
         <span class="admin-nav-label d-none d-xl-inline">Manage your store</span>
-        <div class="navbar-nav flex-row flex-nowrap gap-1 ms-1 admin-nav-scroll">
-            <a class="nav-link${_sp == '/admin' ? ' active' : ''}"${_sp == '/admin' ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin"><i class="bi bi-speedometer2" aria-hidden="true"></i> Dashboard</a>
-            <a class="nav-link${fn:startsWith(_sp, '/admin/products') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/products') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/products"><i class="bi bi-box" aria-hidden="true"></i> Products</a>
-            <a class="nav-link${fn:startsWith(_sp, '/admin/categories') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/categories') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/categories"><i class="bi bi-tags" aria-hidden="true"></i> Categories</a>
-            <a class="nav-link${fn:startsWith(_sp, '/admin/brands') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/brands') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/brands"><i class="bi bi-award" aria-hidden="true"></i> Brands</a>
-            <a class="nav-link${fn:startsWith(_sp, '/admin/inventory') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/inventory') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/inventory"><i class="bi bi-boxes" aria-hidden="true"></i> Inventory</a>
-            <a class="nav-link${fn:startsWith(_sp, '/admin/orders') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/orders') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/orders"><i class="bi bi-receipt" aria-hidden="true"></i> Orders</a>
-            <a class="nav-link position-relative${fn:startsWith(_sp, '/admin/reviews') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/reviews') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/reviews"><i class="bi bi-star-half" aria-hidden="true"></i> Reviews
-                <span class="badge bg-warning text-dark rounded-pill<c:if test="${empty pendingReviewCount || pendingReviewCount == 0}"> d-none</c:if>" data-live-review-count>${pendingReviewCount}</span>
-            </a>
-            <a class="nav-link${fn:startsWith(_sp, '/admin/users') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/users') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/users"><i class="bi bi-people" aria-hidden="true"></i> Users</a>
-            <a class="nav-link${fn:startsWith(_sp, '/admin/history') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/history') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/history"><i class="bi bi-clock-history" aria-hidden="true"></i> History</a>
-            <a class="nav-link${fn:startsWith(_sp, '/admin/reports') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/reports') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/reports"><i class="bi bi-graph-up" aria-hidden="true"></i> Reports</a>
-            <a class="nav-link${fn:startsWith(_sp, '/admin/payments') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/payments') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/payments"><i class="bi bi-credit-card-2-front" aria-hidden="true"></i> Payments</a>
-            <a class="nav-link${fn:startsWith(_sp, '/admin/transactions') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/transactions') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/transactions"><i class="bi bi-currency-dollar" aria-hidden="true"></i> Transactions</a>
-            <a class="nav-link${fn:startsWith(_sp, '/admin/support') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/support') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/support"><i class="bi bi-headset" aria-hidden="true"></i> Support</a>
-            <a class="nav-link${fn:startsWith(_sp, '/admin/performance') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/performance') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/admin/performance"><i class="bi bi-activity" aria-hidden="true"></i> Performance</a>
+        <%-- A wrapping row, deliberately NOT a scroller. A scroller needs
+             `overflow-y: hidden` (any non-visible overflow-y computes overflow-x
+             to auto), and that clips the dropdown menus to the row's box -- the
+             menu would render and immediately vanish. Wrapping overflows the
+             other way: the bar grows a line instead, and the menus escape.
+             Five items also fit the port outright at >=992px, so on a laptop
+             this is a single line and the wrap is only insurance for phones
+             and long translations. --%>
+        <div class="navbar-nav flex-row gap-1 ms-1 admin-nav-items">
+            <a class="nav-link${_sp == '/admin' or _sp == '/admin/' ? ' active' : ''}"${_sp == '/admin' or _sp == '/admin/' ? ' aria-current="page"' : ''} href="${_ctx}/admin"><i class="bi bi-speedometer2" aria-hidden="true"></i> Dashboard</a>
+
+            <div class="nav-item dropdown dropdown-hover">
+                <a class="nav-link dropdown-toggle${_inCatalog ? ' active' : ''}"${_inCatalog ? ' aria-current="true"' : ''} href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="adminNavCatalog"><i class="bi bi-boxes" aria-hidden="true"></i> Catalog</a>
+                <ul class="dropdown-menu admin-nav-menu dropdown-hover-menu" aria-labelledby="adminNavCatalog">
+                    <li><a class="dropdown-item${fn:startsWith(_sp, '/admin/products') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/products') ? ' aria-current="page"' : ''} href="${_ctx}/admin/products"><i class="bi bi-box" aria-hidden="true"></i> Products</a></li>
+                    <li><a class="dropdown-item${fn:startsWith(_sp, '/admin/categories') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/categories') ? ' aria-current="page"' : ''} href="${_ctx}/admin/categories"><i class="bi bi-tags" aria-hidden="true"></i> Categories</a></li>
+                    <li><a class="dropdown-item${fn:startsWith(_sp, '/admin/brands') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/brands') ? ' aria-current="page"' : ''} href="${_ctx}/admin/brands"><i class="bi bi-award" aria-hidden="true"></i> Brands</a></li>
+                    <li><a class="dropdown-item${fn:startsWith(_sp, '/admin/inventory') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/inventory') ? ' aria-current="page"' : ''} href="${_ctx}/admin/inventory"><i class="bi bi-archive" aria-hidden="true"></i> Inventory</a></li>
+                </ul>
+            </div>
+
+            <div class="nav-item dropdown dropdown-hover">
+                <a class="nav-link dropdown-toggle${_inSales ? ' active' : ''}"${_inSales ? ' aria-current="true"' : ''} href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="adminNavSales"><i class="bi bi-receipt" aria-hidden="true"></i> Sales</a>
+                <ul class="dropdown-menu admin-nav-menu dropdown-hover-menu" aria-labelledby="adminNavSales">
+                    <li><a class="dropdown-item${fn:startsWith(_sp, '/admin/orders') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/orders') ? ' aria-current="page"' : ''} href="${_ctx}/admin/orders"><i class="bi bi-bag-check" aria-hidden="true"></i> Orders</a></li>
+                    <li><a class="dropdown-item${fn:startsWith(_sp, '/admin/transactions') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/transactions') ? ' aria-current="page"' : ''} href="${_ctx}/admin/transactions"><i class="bi bi-currency-dollar" aria-hidden="true"></i> Transactions</a></li>
+                    <li><a class="dropdown-item${fn:startsWith(_sp, '/admin/payments') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/payments') ? ' aria-current="page"' : ''} href="${_ctx}/admin/payments"><i class="bi bi-credit-card-2-front" aria-hidden="true"></i> Payments</a></li>
+                </ul>
+            </div>
+
+            <%-- The moderation count rides the trigger, not the leaf: inside a
+                 closed dropdown a badge on Reviews is never on screen, which is
+                 the whole reason the nav carries it. realtime.js keeps updating
+                 it by [data-live-review-count], and the aria-label survives the
+                 textContent swap a visually hidden span would not. --%>
+            <div class="nav-item dropdown dropdown-hover">
+                <a class="nav-link dropdown-toggle${_inCustomers ? ' active' : ''}"${_inCustomers ? ' aria-current="true"' : ''} href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="adminNavCustomers"><i class="bi bi-people" aria-hidden="true"></i> Customers
+                    <span class="badge bg-warning text-dark rounded-pill<c:if test="${empty pendingReviewCount || pendingReviewCount == 0}"> d-none</c:if>" data-live-review-count aria-label="reviews awaiting moderation">${pendingReviewCount}</span>
+                </a>
+                <ul class="dropdown-menu admin-nav-menu dropdown-hover-menu" aria-labelledby="adminNavCustomers">
+                    <li><a class="dropdown-item${fn:startsWith(_sp, '/admin/users') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/users') ? ' aria-current="page"' : ''} href="${_ctx}/admin/users"><i class="bi bi-person-lines-fill" aria-hidden="true"></i> Users</a></li>
+                    <li><a class="dropdown-item${fn:startsWith(_sp, '/admin/reviews') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/reviews') ? ' aria-current="page"' : ''} href="${_ctx}/admin/reviews"><i class="bi bi-star-half" aria-hidden="true"></i> Reviews
+                        <span class="badge bg-warning text-dark rounded-pill<c:if test="${empty pendingReviewCount || pendingReviewCount == 0}"> d-none</c:if>" data-live-review-count aria-label="reviews awaiting moderation">${pendingReviewCount}</span>
+                    </a></li>
+                    <li><a class="dropdown-item${fn:startsWith(_sp, '/admin/support') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/support') ? ' aria-current="page"' : ''} href="${_ctx}/admin/support"><i class="bi bi-headset" aria-hidden="true"></i> Support</a></li>
+                </ul>
+            </div>
+
+            <div class="nav-item dropdown dropdown-hover">
+                <a class="nav-link dropdown-toggle${_inInsights ? ' active' : ''}"${_inInsights ? ' aria-current="true"' : ''} href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="adminNavInsights"><i class="bi bi-graph-up" aria-hidden="true"></i> Insights</a>
+                <ul class="dropdown-menu admin-nav-menu dropdown-hover-menu" aria-labelledby="adminNavInsights">
+                    <li><a class="dropdown-item${fn:startsWith(_sp, '/admin/reports') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/reports') ? ' aria-current="page"' : ''} href="${_ctx}/admin/reports"><i class="bi bi-bar-chart-line" aria-hidden="true"></i> Reports</a></li>
+                    <li><a class="dropdown-item${fn:startsWith(_sp, '/admin/performance') ? ' active' : ''}"${fn:startsWith(_sp, '/admin/performance') ? ' aria-current="page"' : ''} href="${_ctx}/admin/performance"><i class="bi bi-activity" aria-hidden="true"></i> Performance</a></li>
+                </ul>
+            </div>
         </div>
     </div>
 </nav>
-<%-- The admin row overflows at every width, so the active link has to be
-     scrolled into view or the highlight sits off-screen. Admin pages only:
-     this fragment is included by the 17 admin views and nowhere else. --%>
-<script defer src="${pageContext.request.contextPath}/assets/js/admin-nav.js?v=${assetsVersion}"></script>
+<%-- The hover behaviour itself lives in assets/js/dropdown-hover.js, loaded by
+     header.jspf because the topbar profile menu uses it too and header.jspf is
+     the only fragment present on every page. The .dropdown-hover class above is
+     what opts each of these four in. --%>
+<%-- admin-nav.js is gone. It existed only to scroll a horizontally overflowing
+     row's active link back into view; with the grouped nav the row fits and the
+     active group is always on screen. AdminNavGroupingTest now guards the
+     property that actually broke the nav -- a row that clips its own menus. --%>

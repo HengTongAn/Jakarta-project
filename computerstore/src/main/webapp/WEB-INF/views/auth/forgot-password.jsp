@@ -12,13 +12,27 @@
             <div class="card card-hover">
                 <div class="card-body p-4">
                     <h4 class="card-title mb-1 fw-bold">Forgot your password?</h4>
-                    <p class="text-muted small mb-4">Enter the email you registered with and we'll send you a link to choose a new password.</p>
+                    <p class="text-muted small mb-4">Enter the email you registered with and we'll email you a 6-digit code to verify it's really you.</p>
 
                     <c:if test="${not empty info}">
                         <div class="alert alert-info py-2 small"><c:out value="${info}"/></div>
                     </c:if>
                     <c:if test="${not empty error}">
                         <div class="alert alert-danger py-2 small"><c:out value="${error}"/></div>
+                    </c:if>
+                    <%-- Shown only when SMTP is genuinely unset, which is an operator
+                         problem rather than a customer's. Without it the page promises a
+                         code that can never arrive and the customer waits on an inbox
+                         that will stay empty. Deliberately says nothing about whether
+                         the address is registered: that stays uniform either way, so
+                         this cannot be used to probe for accounts. --%>
+                    <c:if test="${mailConfigured eq false}">
+                        <div class="alert alert-warning py-2 small" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-1" aria-hidden="true"></i>
+                            Email is not configured on this server, so no code or link can be sent
+                            yet. An administrator needs to set MAIL_FROM, MAIL_USERNAME and
+                            MAIL_PASSWORD before password recovery works.
+                        </div>
                     </c:if>
 
                     <c:choose>
@@ -34,9 +48,20 @@
                                 <div class="mb-3">
                                     <label class="form-label">Email</label>
                                     <input type="email" name="email" class="form-control" required autofocus
+                                           autocomplete="email"
                                            value="<c:out value='${email}'/>">
                                 </div>
-                                <button type="submit" class="btn btn-brand w-100">Send reset link</button>
+                                <button type="submit" class="btn btn-brand w-100">Email me a code</button>
+                                <%-- The link flow is a second submit in the same form,
+                                     not a second form: one form means one CSRF token
+                                     and no way for the two paths to disagree about
+                                     which address was typed. The controller reads
+                                     'method', defaulting to the code flow, so a form
+                                     that lost this button still sends a code. --%>
+                                <button type="submit" name="method" value="link"
+                                        class="btn btn-link w-100 mt-2 small">
+                                    Email me a reset link instead
+                                </button>
                             </form>
 
                             <p class="text-center mt-3 mb-0 small">

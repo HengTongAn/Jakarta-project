@@ -6,12 +6,8 @@
     <h4 class="fw-bold mb-3">Security settings</h4>
     <div class="row g-3">
         <div class="col-lg-3">
-            <div class="card card-hover customer-sidebar"><div class="card-body p-0"><div class="list-group list-group-flush">
-                <a class="list-group-item list-group-item-action" href="${pageContext.request.contextPath}/account"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
-                <a class="list-group-item list-group-item-action" href="${pageContext.request.contextPath}/account/orders"><i class="bi bi-box-seam me-2"></i>My Orders</a>
-                <a class="list-group-item list-group-item-action" href="${pageContext.request.contextPath}/account/profile"><i class="bi bi-person-vcard me-2"></i>Profile</a>
-                <a class="list-group-item list-group-item-action active" href="${pageContext.request.contextPath}/account/settings"><i class="bi bi-shield-lock me-2"></i>Security</a>
-            </div></div></div>
+            <c:set var="_accountNavClass" value="customer-sidebar"/>
+            <%@ include file="account-nav.jspf" %>
         </div>
         <div class="col-lg-9">
             <div class="card card-hover security-settings-card"><div class="card-body p-4">

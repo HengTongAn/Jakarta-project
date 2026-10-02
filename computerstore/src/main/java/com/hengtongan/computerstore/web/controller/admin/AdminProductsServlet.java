@@ -20,6 +20,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Part;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -43,6 +46,8 @@ import java.util.List;
     maxRequestSize = 1024 * 1024 * 10
 )
 public class AdminProductsServlet extends BaseServlet {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AdminProductsServlet.class);
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -202,10 +207,21 @@ public class AdminProductsServlet extends BaseServlet {
             request.setAttribute("error", e.getMessage());
             forwardForm(request, response, buildTemporaryProduct(request, productId), specs);
         } catch (IOException | ServletException | IllegalStateException e) {
+            // Any part of this may already have written the uploaded file to
+            // disk before failing, and the product row is not saved, so the file
+            // would be orphaned. Not cleaning it up here leaks a file per failed
+            // upload.
+            cleanupNewImage(imageUrl, productId);
+            LOGGER.error("Image upload failed for product (id={}, sku={})", productId, sku, e);
             request.setAttribute("error", "Image upload failed: " + e.getMessage());
             forwardForm(request, response, buildTemporaryProduct(request, productId), specs);
         } catch (Exception e) {
             cleanupNewImage(imageUrl, productId);
+            // Logged because this catch-all previously discarded the cause
+            // entirely. A product create that failed for an unrelated reason
+            // reported only "An unexpected error occurred" and left nothing in
+            // any log file, which is what made it undiagnosable.
+            LOGGER.error("Failed to save product (id={}, sku={})", productId, sku, e);
             request.setAttribute("error", "An unexpected error occurred: " + e.getMessage());
             forwardForm(request, response, buildTemporaryProduct(request, productId), specs);
         }

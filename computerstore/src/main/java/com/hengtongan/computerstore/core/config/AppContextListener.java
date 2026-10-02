@@ -42,6 +42,12 @@ public class AppContextListener implements ServletContextListener {
         // Validate 2FA configuration if enabled
         validateTwoFactorConfig();
 
+        // JSTL's fmt: tags render raw toString() output unless a locale is set
+        // in the request context. Not a startup action, but it belongs next to
+        // the other "something silently degrades if unconfigured" notes.
+        LOGGER.info("JSTL fmt: locale is pinned by <fmt:setLocale> in header.jspf "
+                + "(a system property is not read by this JSTL build)");
+
         AppContext.init();
         sce.getServletContext().setAttribute(ATTR_NAME, AppContext.get());
 
@@ -74,6 +80,62 @@ public class AppContextListener implements ServletContextListener {
         } else {
             LOGGER.warn("2FA encryption key not configured (COMPUTERSTORE_2FA_ENCRYPTION_KEY). 2FA will not be available.");
         }
+    }
+
+    /**
+     * Documents why {@code header.jspf} must call {@code <fmt:setLocale>}.
+     *
+     * <p>Kept here as the prose home for a defect whose symptom is 40 files away
+     * from its cause. See {@code LocaleFormatTest} for the executable guard.</p>
+     *
+     * <h2>What was wrong</h2>
+     *
+     * <p>Every {@code fmt:formatNumber} in this app rendered raw
+     * {@code Object.toString()} output, so a page weight read
+     * {@code 87.0939453125 KB} rather than {@code 87.1 KB} and every
+     * {@code pattern}/{@code type}/{@code maxFractionDigits} on those tags did
+     * nothing. All 107 such calls across the views were affected. It survived
+     * because most values are integers, and because a {@code null} formatting
+     * locale is not an error -- pages returned 200 throughout.</p>
+     *
+     * <h2>Why the app shipped broken</h2>
+     *
+     * <p>The JSTL implementation this app ships --
+     * {@code org.glassfish.web:jakarta.servlet.jsp.jstl}, which is Apache
+     * Taglibs Standard repackaged under the {@code jakarta.tags.*} URIs -- returns
+     * {@code null} from {@code getFormattingLocale} when nothing has configured a
+     * locale. {@code FormatNumberSupport.doEndTag} branches on exactly that:</p>
+     *
+     * <pre>
+     *   150: invokestatic  getFormattingLocale:(LPageContext;LTag;ZZ)LLocale;
+     *   154: aload_3
+     *   155: ifnull 288        &lt;- 288 is Object.toString()
+     * </pre>
+     *
+     * <p>A system property cannot fix it: {@code SetLocaleSupport} in this build
+     * never calls {@code System.getProperty}, so
+     * {@code -Djakarta.servlet.jsp.jstl.fmt.locale} is read by nothing. Setting
+     * it and logging success is worse than doing nothing, because it looks fixed.
+     * Only {@code <fmt:setLocale>}, which stores a {@code Locale} in the request
+     * context, is honoured.</p>
+     *
+     * <h2>Why this cannot be fixed from here</h2>
+     *
+     * <p>The obvious fix -- a system property, which would belong in a startup
+     * hook like this one -- does not work. It was tried first and the numbers
+     * stayed unformatted while the method logged success, which is worse than
+     * not trying. See {@link #documentFormattingLocaleRequirement()}.</p>
+     *
+     * <p>The redundant {@code fmt} taglib declaration in {@code header.jspf} is
+     * deliberate. 25 views already declare that prefix, and static includes merge
+     * into one translation unit, but redeclaring a prefix to the same URI is
+     * harmless -- verified by loading all 14 admin and 8 customer pages.</p>
+     */
+    private void documentFormattingLocaleRequirement() {
+        // No-op body. The javadoc above is the point: the symptom appears in
+        // every view and the cause is a null check inside a third-party jar, so
+        // nothing else in the codebase hints at the coupling. See
+        // LocaleFormatTest for the guard that fails the build if the line goes.
     }
 
     /**

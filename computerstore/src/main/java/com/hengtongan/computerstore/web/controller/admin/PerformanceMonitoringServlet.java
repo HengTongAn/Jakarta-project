@@ -1,7 +1,12 @@
 package com.hengtongan.computerstore.web.controller.admin;
 
+import com.hengtongan.computerstore.core.config.AppContext;
+import com.hengtongan.computerstore.core.repository.PageExperienceRepository.Bucket;
+import com.hengtongan.computerstore.core.repository.PageExperienceRepository.ExperienceReport;
+import com.hengtongan.computerstore.core.repository.PageExperienceRepository.Percentiles;
 import com.hengtongan.computerstore.infrastructure.cache.CacheManager;
 import com.hengtongan.computerstore.web.controller.base.BaseServlet;
+import com.hengtongan.computerstore.web.controller.monitoring.ExperienceBeaconServlet;
 import com.hengtongan.computerstore.infrastructure.monitoring.QueryMonitor;
 import com.hengtongan.computerstore.infrastructure.persistence.DBConnection;
 import jakarta.servlet.ServletException;
@@ -22,11 +27,22 @@ import java.util.Map;
  * Performance monitoring page at {@code /admin/performance} (admin-only via the
  * AdminAuthorizationFilter url-pattern).
  *
- * <p>Shows what the performance features are doing right now: Caffeine cache
- * hit rates and sizes, the HikariCP connection pool state, and JVM memory,
- * plus a small set of data-driven recommendations. Metrics are read live;
- * there is no sampling or persistence. {@code /admin/performance?json=1}
- * returns the same data as JSON for {@code assets/js/performance-live.js}.</p>
+ * <p>Two kinds of measurement, deliberately kept on one page and labelled
+ * differently, because they answer different questions.</p>
+ *
+ * <p><strong>Server-side</strong> (cache hit rates and sizes, the HikariCP pool
+ * state, JVM memory, top query times, and the Recommendations list) is read live
+ * out of the JVM. There is no sampling or persistence: it resets on redeploy and
+ * describes the server.</p>
+ *
+ * <p><strong>Experienced Page Time</strong> (the EPT sections) is real-user
+ * monitoring: measurements taken in browsers by {@code rum.js} and stored in
+ * {@code page_experience_samples}. It is the only part of this page that describes
+ * what a customer actually felt, and it survives a redeploy. It is sampled, so
+ * the counts are of the sample and the page says so.</p>
+ *
+ * <p>{@code /admin/performance?json=1} returns both for
+ * {@code assets/js/performance-live.js}.</p>
  */
 @WebServlet("/admin/performance")
 public class PerformanceMonitoringServlet extends BaseServlet {
@@ -36,9 +52,10 @@ public class PerformanceMonitoringServlet extends BaseServlet {
             throws ServletException, IOException {
         Map<String, Object> poolStats = DBConnection.getPoolStats();
         Map<String, Map<String, Object>> cacheStats = CacheManager.getCacheStats();
+        ExperienceReport experience = AppContext.get().pageExperienceService().reportOrNull();
 
         if ("1".equals(request.getParameter("json"))) {
-            writePerformanceJson(response, poolStats, cacheStats);
+            writePerformanceJson(response, poolStats, cacheStats, experience);
             return;
         }
 
@@ -50,6 +67,13 @@ public class PerformanceMonitoringServlet extends BaseServlet {
         request.setAttribute("jvm", jvmStats());
         request.setAttribute("queryStats", topQueryStats());
         request.setAttribute("recommendations", recommendations(cacheStats, poolStats));
+
+        // Null means the query failed, which is not the same as "no data yet" and
+        // must not render as an empty table that looks healthy.
+        request.setAttribute("experience", experience);
+        request.setAttribute("experienceFailed", experience == null);
+        request.setAttribute("sampleRate", ExperienceBeaconServlet.sampleRate());
+        request.setAttribute("retentionDays", AppContext.get().pageExperienceService().retentionDays());
 
         request.getRequestDispatcher("/WEB-INF/views/admin/performance.jsp").forward(request, response);
     }
@@ -137,7 +161,8 @@ public class PerformanceMonitoringServlet extends BaseServlet {
      */
     private void writePerformanceJson(HttpServletResponse response,
                                       Map<String, Object> poolStats,
-                                      Map<String, Map<String, Object>> cacheStats) throws IOException {
+                                      Map<String, Map<String, Object>> cacheStats,
+                                      ExperienceReport experience) throws IOException {
         response.setContentType("application/json; charset=UTF-8");
         response.setCharacterEncoding("UTF-8");
         response.setHeader("Cache-Control", "no-store");
@@ -200,7 +225,10 @@ public class PerformanceMonitoringServlet extends BaseServlet {
         }
         out.write("],");
 
-        out.write("\"recommendations\":[");
+        out.write("\"experience\":");
+        writeExperienceJson(out, experience);
+
+        out.write(",\"recommendations\":[");
         List<String> tips = recommendations(cacheStats, poolStats);
         for (int i = 0; i < tips.size(); i++) {
             if (i > 0) {
@@ -210,6 +238,70 @@ public class PerformanceMonitoringServlet extends BaseServlet {
         }
         out.write("]");
         out.write("}");
+    }
+
+    /**
+     * Serialises the Experienced Page Time report.
+     *
+     * <p>Emits {@code null} when the query failed, which is distinct from
+     * {@code {"rowCount":0}}: one means the table is broken or unreachable, the
+     * other means nothing has been sampled yet. The live script renders the first
+     * as an error and the second as an empty state, because a dashboard that shows
+     * "no data" for a failed query hides a real problem.</p>
+     */
+    private static void writeExperienceJson(PrintWriter out, ExperienceReport report) {
+        if (report == null) {
+            out.write("null");
+            return;
+        }
+        out.write("{\"rowCount\":" + report.getRowCount());
+        out.write(",\"clientReported\":" + report.getClientReported());
+        // The provenance of the figures, sent inside the report rather than beside
+        // it. performance-live.js reads them from here, and an admin reading the
+        // page needs them to interpret the counts: without the rate a sample count
+        // looks like a traffic figure.
+        out.write(",\"sampleRate\":" + ExperienceBeaconServlet.sampleRate());
+        out.write(",\"retentionDays\":"
+                + AppContext.get().pageExperienceService().retentionDays());
+        writePercentiles(out, "interactive", report.getInteractive());
+        writePercentiles(out, "domReady", report.getDomReady());
+        writePercentiles(out, "load", report.getLoad());
+        writePercentiles(out, "server", report.getServer());
+        writePercentiles(out, "ttfb", report.getTtfb());
+        writePercentiles(out, "transfer", report.getTransfer());
+        out.write(",\"byBrowser\":");
+        writeBucketsJson(out, report.getByBrowser());
+        out.write(",\"byPageType\":");
+        writeBucketsJson(out, report.getByPageType());
+        out.write("}");
+    }
+
+    private static void writePercentiles(PrintWriter out, String name, Percentiles p) {
+        out.write(",\"" + name + "\":{\"count\":" + p.getCount()
+                + ",\"p50\":" + p.getP50()
+                + ",\"p75\":" + p.getP75()
+                + ",\"p95\":" + p.getP95()
+                + ",\"max\":" + p.getMax()
+                + ",\"avg\":" + p.getAverage() + "}");
+    }
+
+    private static void writeBucketsJson(PrintWriter out, List<Bucket> buckets) {
+        out.write("[");
+        for (int i = 0; i < buckets.size(); i++) {
+            if (i > 0) {
+                out.write(",");
+            }
+            Bucket b = buckets.get(i);
+            out.write("{\"key\":\"" + esc(b.getKey()) + "\"");
+            out.write(",\"sampleCount\":" + b.getSampleCount());
+            out.write(",\"clientCount\":" + b.getClientCount());
+            out.write(",\"avgBytes\":" + b.getAverageBytes());
+            writePercentiles(out, "client", b.getClient());
+            writePercentiles(out, "server", b.getServer());
+            writePercentiles(out, "ttfb", b.getTtfb());
+            out.write("}");
+        }
+        out.write("]");
     }
 
     /** JSON number; {@code null} for absent values, non-finite doubles become 0. */

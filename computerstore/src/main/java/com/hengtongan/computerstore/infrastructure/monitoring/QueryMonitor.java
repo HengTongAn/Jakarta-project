@@ -23,6 +23,14 @@ public final class QueryMonitor {
     
     // Query execution time threshold (in milliseconds) for "slow" queries
     private static final long SLOW_QUERY_THRESHOLD_MS = 1000;
+
+    /**
+     * Longest signature kept in {@code queryStats}, so a query with unbounded
+     * literals (an IN list of every product id) cannot grow the map forever.
+     * The stats key is {@code type + ":" + signature}, so without a cap one
+     * entry per distinct literal list would accumulate for the life of the JVM.
+     */
+    static final int SIGNATURE_MAX = 100;
     
     // Store query statistics
     private static final ConcurrentHashMap<String, QueryStats> queryStats = new ConcurrentHashMap<>();
@@ -166,16 +174,30 @@ public final class QueryMonitor {
     
     /**
      * Extracts a query signature (simplified SQL) for tracking.
+     *
+     * <p>Collapses whitespace and truncates to {@value #SIGNATURE_MAX} characters.</p>
+     *
+     * <p>The bound is taken from the <em>collapsed</em> string, not the original.
+     * It previously used {@code sql.length()}, which is only correct when
+     * collapsing whitespace did not shorten the string. Any multi-line statement
+     * -- a Java text block, or a builder that appends a line per clause -- collapses
+     * to well under its original length, so
+     * {@code substring(0, min(100, sql.length()))} ran past the end of the shorter
+     * string and threw {@code StringIndexOutOfBoundsException}.</p>
+     *
+     * <p>That was not a harmless logging failure. {@code recordQuery} calls this
+     * from a {@code finally} block, so the exception escaped
+     * {@code queryList} and replaced the result of a query that had already
+     * succeeded -- a working product list became a 500.</p>
      */
     public static String extractSignature(String sql) {
         if (sql == null) {
             return "unknown";
         }
-        // Remove parameter values and whitespace for signature
-        return sql.replaceAll("\\?", "?")
-                .replaceAll("\\s+", " ")
-                .trim()
-                .substring(0, Math.min(100, sql.length()));
+        String collapsed = sql.replaceAll("\\s+", " ").trim();
+        return collapsed.length() <= SIGNATURE_MAX
+                ? collapsed
+                : collapsed.substring(0, SIGNATURE_MAX);
     }
     
     /**

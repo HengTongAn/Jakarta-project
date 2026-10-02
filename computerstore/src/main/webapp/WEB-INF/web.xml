@@ -108,6 +108,23 @@
         <async-supported>true</async-supported>
     </filter-mapping>
 
+    <!-- Labels each page request with its page type so header.jspf can hand it to
+         rum.js, which reports Experienced Page Time back to /realtime/ept. Placed
+         right after RequestAuditContextFilter so it times the whole of the rest of
+         the chain and nothing that has already run. It writes nothing to the
+         database: only the beacon writes, so a page view produces one complete
+         sample or none. -->
+    <filter>
+        <filter-name>ExperienceFilter</filter-name>
+        <filter-class>com.hengtongan.computerstore.web.filter.monitoring.ExperienceFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
+    <filter-mapping>
+        <filter-name>ExperienceFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+        <async-supported>true</async-supported>
+    </filter-mapping>
+
     <!-- Marks Set-Cookie headers "Secure" over TLS (or when forced via
          -Dcomputerstore.session.cookie.secure=true). Runs early so the
          session cookie stamped by any downstream code is rewritten. -->
@@ -158,6 +175,15 @@
     <filter-mapping>
         <filter-name>RateLimitingFilter</filter-name>
         <url-pattern>/forgot</url-pattern>
+        <url-pattern>/verify-code</url-pattern>
+        <url-pattern>/new-password</url-pattern>
+        <url-pattern>/resend-code</url-pattern>
+        <!-- /reset completes the emailed-token reset (an unauthenticated POST),
+             and /account/2fa verifies a 6-digit TOTP code: both are guessable
+             secrets the filter's GUARDED_PATHS list says are guarded. Without
+             the mapping they never reached the limiter. -->
+        <url-pattern>/reset</url-pattern>
+        <url-pattern>/account/2fa</url-pattern>
         <url-pattern>/login</url-pattern>
         <url-pattern>/register</url-pattern>
         <async-supported>true</async-supported>
@@ -194,6 +220,41 @@
         <url-pattern>/checkout</url-pattern>
         <!-- The payment pages expose an order amount, a transaction id and a QR
              code, so they are customer-scoped and must never be anonymous. -->
+        <url-pattern>/payment/aba</url-pattern>
+        <url-pattern>/payment/aba/*</url-pattern>
+        <url-pattern>/payment/card</url-pattern>
+        <url-pattern>/payment/card/*</url-pattern>
+        <url-pattern>/account</url-pattern>
+        <url-pattern>/account/*</url-pattern>
+        <async-supported>true</async-supported>
+    </filter-mapping>
+
+    <!-- Keeps the customer storefront closed to administrators: catalogue,
+         cart, checkout, both payment paths and the purchase-history account
+         pages answer 403 for an admin session. Identity pages under /account
+         (profile, settings, avatar, 2fa) stay open to admins, because the
+         filter decides those by exact path, not by this url-pattern list.
+
+         MUST stay after AuthenticationFilter. Order is mapping order, and the
+         cart/checkout/payment/account paths are already behind it, so putting
+         this first would answer an anonymous visitor with "you are not allowed
+         to be an administrator" instead of redirecting them to login.
+
+         The patterns are deliberately broader than the filter's own rule: they
+         exist to get the request in front of the filter, which then refuses
+         shopping paths and passes everything else through. -->
+    <filter>
+        <filter-name>StorefrontAccessFilter</filter-name>
+        <filter-class>com.hengtongan.computerstore.web.filter.security.StorefrontAccessFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
+    <filter-mapping>
+        <filter-name>StorefrontAccessFilter</filter-name>
+        <url-pattern>/products</url-pattern>
+        <url-pattern>/products/*</url-pattern>
+        <url-pattern>/cart</url-pattern>
+        <url-pattern>/cart/*</url-pattern>
+        <url-pattern>/checkout</url-pattern>
         <url-pattern>/payment/aba</url-pattern>
         <url-pattern>/payment/aba/*</url-pattern>
         <url-pattern>/payment/card</url-pattern>
@@ -254,6 +315,28 @@
         <async-supported>true</async-supported>
     </filter-mapping>
 
+    <!-- Holds back admin sections that are not finished yet: the request is
+         forwarded to admin/coming-soon.jsp instead of reaching the servlet, so
+         a typed URL is gated exactly like a nav click.
+
+         MUST stay after AdminAuthorizationFilter. Authentication and the admin
+         role check run first, so an anonymous or non-admin request is still
+         sent to login rather than being shown a page only an admin should be
+         able to reach.
+
+         ComingSoonGateTest fails if these url-patterns and the GATED map in
+         the filter disagree, so removing a gate means editing both. -->
+    <filter>
+        <filter-name>ComingSoonGateFilter</filter-name>
+        <filter-class>com.hengtongan.computerstore.web.filter.web.ComingSoonGateFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
+    <filter-mapping>
+        <filter-name>ComingSoonGateFilter</filter-name>
+        <url-pattern>/admin/performance</url-pattern>
+        <async-supported>true</async-supported>
+    </filter-mapping>
+
     <filter>
         <filter-name>CSRFProtectionFilter</filter-name>
         <filter-class>com.hengtongan.computerstore.web.filter.security.CSRFProtectionFilter</filter-class>
@@ -265,15 +348,13 @@
         <async-supported>true</async-supported>
     </filter-mapping>
 
-    <!-- Explicit mapping keeps the account-security route available after deployment. -->
-    <servlet>
-        <servlet-name>SecuritySettingsServlet</servlet-name>
-        <servlet-class>com.hengtongan.computerstore.web.controller.customer.SecuritySettingsServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>SecuritySettingsServlet</servlet-name>
-        <url-pattern>/account/settings</url-pattern>
-    </servlet-mapping>
+    <!-- SecuritySettingsServlet is NOT declared here. It already carries
+         @WebServlet("/account/settings"), and web.xml does not set
+         metadata-complete, so annotations are scanned. Declaring it in both
+         places mapped two servlets to one url-pattern, which Jakarta EE
+         forbids: Tomcat refused to start the whole context, so every route in
+         the app 404'd. Every other servlet in this project is annotated only;
+         this one entry was the exception. -->
 
     <mime-mapping>
         <extension>webmanifest</extension>

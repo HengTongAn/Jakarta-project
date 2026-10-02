@@ -1,6 +1,8 @@
 package com.hengtongan.computerstore.core.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -9,7 +11,9 @@ import org.junit.jupiter.api.Test;
  * Unit tests for the configuration precedence
  * (environment variable → system property → bundled file → default) without
  * touching the process environment. The environment arm is exercised through
- * the package-private {@link com.hengtongan.computerstore.core.config.AppConfig#resolve} so no test mutates
+ * the package-private
+ * {@link com.hengtongan.computerstore.core.config.AppConfig#resolve} so no test
+ * mutates
  * {@link System#getenv()}.
  */
 class AppConfigTest {
@@ -23,17 +27,21 @@ class AppConfigTest {
 
     @Test
     void resolvePrecedenceEnvOverSystemPropertyOverFileOverDefault() {
-        assertEquals("env", com.hengtongan.computerstore.core.config.AppConfig.resolve("env", "sys", "file", "default"));
+        assertEquals("env",
+                com.hengtongan.computerstore.core.config.AppConfig.resolve("env", "sys", "file", "default"));
         assertEquals("env", com.hengtongan.computerstore.core.config.AppConfig.resolve("env", "sys", null, "default"));
         assertEquals("sys", com.hengtongan.computerstore.core.config.AppConfig.resolve(null, "sys", "file", "default"));
         assertEquals("file", com.hengtongan.computerstore.core.config.AppConfig.resolve(null, null, "file", "default"));
-        assertEquals("default", com.hengtongan.computerstore.core.config.AppConfig.resolve(null, null, null, "default"));
+        assertEquals("default",
+                com.hengtongan.computerstore.core.config.AppConfig.resolve(null, null, null, "default"));
     }
 
     @Test
     void resolveSkipsBlankValuesAndTrims() {
-        assertEquals("sys", com.hengtongan.computerstore.core.config.AppConfig.resolve("   ", " sys ", "file", "default"));
-        assertEquals("file", com.hengtongan.computerstore.core.config.AppConfig.resolve(null, "", "  file  ", "default"));
+        assertEquals("sys",
+                com.hengtongan.computerstore.core.config.AppConfig.resolve("   ", " sys ", "file", "default"));
+        assertEquals("file",
+                com.hengtongan.computerstore.core.config.AppConfig.resolve(null, "", "  file  ", "default"));
         assertEquals("default", com.hengtongan.computerstore.core.config.AppConfig.resolve(null, null, " ", "default"));
     }
 
@@ -43,6 +51,14 @@ class AppConfigTest {
         assertEquals("default", com.hengtongan.computerstore.core.config.AppConfig.get(null, TEST_KEY, "default"));
 
         System.setProperty(TEST_KEY, "from-system-property");
-        assertEquals("from-system-property", com.hengtongan.computerstore.core.config.AppConfig.get(null, TEST_KEY, "default"));
+        assertEquals("from-system-property",
+                com.hengtongan.computerstore.core.config.AppConfig.get(null, TEST_KEY, "default"));
+    }
+
+    @Test
+    void getReadsDotEnvFileWhenNoEnvironmentVariableIsDefined() {
+        String dbUrl = com.hengtongan.computerstore.core.config.AppConfig.get("DB_URL", null, null);
+        assertNotNull(dbUrl);
+        assertTrue(dbUrl.startsWith("jdbc:mysql://localhost:3306/computer_store"));
     }
 }

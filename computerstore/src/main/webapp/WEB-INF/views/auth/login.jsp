@@ -63,6 +63,13 @@
                         <a href="${pageContext.request.contextPath}/register">Register</a>
                     </p>
 
+                    <%-- Without this the entire recovery flow is unreachable: /forgot
+                         existed and worked, but nothing on the sign-in page pointed
+                         at it, so the only way in was to type the URL. --%>
+                    <p class="text-center mt-2 mb-0 small">
+                        <a href="${pageContext.request.contextPath}/forgot">Forgot your password?</a>
+                    </p>
+
                     <hr>
                 </div>
             </div>

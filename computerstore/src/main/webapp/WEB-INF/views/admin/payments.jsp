@@ -33,7 +33,65 @@
                     <form method="post" action="${pageContext.request.contextPath}/admin/payments">
                         <input type="hidden" name="csrfToken" value="${csrfToken}">
 
-                        <%-- Each switch is paired with an explicit hidden "off".
+                        <%-- Probe result, rendered above the form so it is the first thing read
+         after a test. Kept separate from the flash message because the flash is
+         a one-shot string and this is structured: the status code and the
+         gateway's own words are the entire point of the probe, and a summary
+         line that dropped them would be a worse report than no probe. --%>
+<c:if test="${not empty probe}">
+    <div class="alert ${probeAccepted ? 'alert-success' : (probeReachable ? 'alert-warning' : 'alert-danger')} mb-4" role="alert">
+        <h6 class="fw-bold">
+            <i class="bi ${probeAccepted ? 'bi-check-circle' : (probeReachable ? 'bi-exclamation-triangle' : 'bi-x-octagon')} me-1" aria-hidden="true"></i>
+            <c:choose>
+                <c:when test="${probeAccepted}">The gateway is reachable and answered</c:when>
+                <c:when test="${probeReachable}">The gateway answered, and refused</c:when>
+                <c:otherwise>No response from the gateway</c:otherwise>
+            </c:choose>
+        </h6>
+        <dl class="row mb-0 small">
+            <dt class="col-6 col-sm-3 fw-normal">HTTP status</dt>
+            <dd class="col-6 col-sm-9 mb-1">
+                <c:choose>
+                    <c:when test="${probeStatus > 0}"><code>${probeStatus}</code></c:when>
+                    <c:otherwise><span class="text-muted">No response</span></c:otherwise>
+                </c:choose>
+            </dd>
+            <dt class="col-6 col-sm-3 fw-normal">Round trip</dt>
+            <dd class="col-6 col-sm-9 mb-1"><c:out value="${probeLatency}"/> ms</dd>
+            <dt class="col-6 col-sm-3 fw-normal">Detail</dt>
+            <dd class="col-6 col-sm-9 mb-0"><c:out value="${probeMessage}"/></dd>
+        </dl>
+        <p class="small mb-0 mt-2">
+            The probe called the transaction-status endpoint with a transaction id that cannot
+            exist, so it created nothing and no payment or QR code was minted. Reaching a
+            rejection from the gateway means the host, the endpoint path and the credential
+            headers all worked.
+        </p>
+    </div>
+</c:if>
+
+<%-- Separate form from the settings form rather than another submit button
+         inside it. Two submits in one form would make "test" ambiguous, and the
+         probe must never carry the settings form's fields -- it has to report on
+         what is stored, not on what was just typed. --%>
+<form method="post" action="${pageContext.request.contextPath}/admin/payments" class="mb-4">
+    <input type="hidden" name="csrfToken" value="${csrfToken}">
+    <input type="hidden" name="action" value="test">
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <button type="submit" class="btn btn-outline-secondary">
+            <i class="bi bi-plug me-1" aria-hidden="true"></i>Test the connection
+        </button>
+        <span class="text-muted small">
+            <c:choose>
+                <c:when test="${simulate}">Nothing is sent while simulation is on &mdash; switch it off and save first.</c:when>
+                <c:when test="${empty merchantId or empty username or not secretSet}">The merchant ID, username or secret is missing, so the probe will report that instead of calling out.</c:when>
+                <c:otherwise>Sends one request to the status endpoint. Creates nothing.</c:otherwise>
+            </c:choose>
+        </span>
+    </div>
+</form>
+
+<%-- Each switch is paired with an explicit hidden "off".
                              An unchecked checkbox submits nothing at all, which the
                              server cannot tell apart from a field that never
                              arrived: unchecking "simulate" would silently leave it

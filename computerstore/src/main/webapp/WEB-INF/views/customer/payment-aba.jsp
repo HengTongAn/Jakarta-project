@@ -17,8 +17,12 @@
                         <h4 class="fw-bold mb-2">Payment confirmed</h4>
                         <p class="text-muted mb-4">Order #${order.orderId} has been paid in full. Thank you!</p>
                         <div class="aba-amount money">$<fmt:formatNumber value="${order.totalAmount}" pattern="#,##0.00"/></div>
+                        <%-- receiptPath is pre-resolved by the servlet: it is the receipt
+                             when a completed transaction row exists for this order, and the
+                             order page when it does not. The view never guesses an id. --%>
                         <div class="d-grid gap-2 mt-4">
-                            <a class="btn btn-brand" href="${pageContext.request.contextPath}/account/orders?id=${order.orderId}"><i class="bi bi-receipt me-2"></i>View my order</a>
+                            <a class="btn btn-brand" href="${pageContext.request.contextPath}${receiptPath}"><i class="bi bi-receipt me-2"></i>View receipt</a>
+                            <a class="btn btn-outline-secondary" href="${pageContext.request.contextPath}/account/orders?id=${order.orderId}">View my order</a>
                             <a class="btn btn-outline-secondary" href="${pageContext.request.contextPath}/products">Continue shopping</a>
                         </div>
                     </div>

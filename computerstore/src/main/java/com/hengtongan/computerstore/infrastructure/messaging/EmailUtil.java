@@ -20,8 +20,20 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Best-effort SMTP email sender for mail-message notifications.
- * Settings are resolved via {@link AppConfig} from system properties
- * (Gmail SMTP by default).
+ * Settings are resolved via {@link AppConfig}, so each one can come from an
+ * environment variable, a system property, or the bundled properties file
+ * (Gmail SMTP by default):
+ *
+ * <pre>
+ *   MAIL_SMTP_HOST      / mail.smtp.host              default smtp.gmail.com
+ *   MAIL_SMTP_PORT      / mail.smtp.port              default 587
+ *   MAIL_SMTP_AUTH      / mail.smtp.auth              default true
+ *   MAIL_SMTP_STARTTLS  / mail.smtp.starttls.enable   default true
+ *   MAIL_FROM           / mail.from                   no default - required
+ *   MAIL_USERNAME       / mail.username               no default - required
+ *   MAIL_PASSWORD       / mail.password               no default
+ * </pre>
+ *
  * Never throws: when no credentials are configured, sending is skipped.
  *
  * <p>{@link #send} queues work on a background thread so checkout / status
@@ -46,13 +58,19 @@ public final class EmailUtil {
     });
 
     static {
-        HOST = AppConfig.get(null, "mail.smtp.host", "smtp.gmail.com");
-        PORT = AppConfig.get(null, "mail.smtp.port", "587");
-        AUTH = Boolean.parseBoolean(AppConfig.get(null, "mail.smtp.auth", "true"));
-        STARTTLS = Boolean.parseBoolean(AppConfig.get(null, "mail.smtp.starttls.enable", "true"));
-        FROM = AppConfig.get(null, "mail.from", "");
-        USERNAME = AppConfig.get(null, "mail.username", "");
-        PASSWORD = AppConfig.get(null, "mail.password", "");
+        HOST = AppConfig.get("MAIL_SMTP_HOST", "mail.smtp.host", "smtp.gmail.com");
+        PORT = AppConfig.get("MAIL_SMTP_PORT", "mail.smtp.port", "587");
+        AUTH = Boolean.parseBoolean(AppConfig.get("MAIL_SMTP_AUTH", "mail.smtp.auth", "true"));
+        STARTTLS = Boolean.parseBoolean(
+                AppConfig.get("MAIL_SMTP_STARTTLS", "mail.smtp.starttls.enable", "true"));
+        FROM = AppConfig.get("MAIL_FROM", "mail.from", "");
+        USERNAME = AppConfig.get("MAIL_USERNAME", "mail.username", "");
+        PASSWORD = AppConfig.get("MAIL_PASSWORD", "mail.password", "");
+        if (!isConfigured()) {
+            LOGGER.info("SMTP is not configured: MAIL_FROM and MAIL_USERNAME must be set for email to be sent.");
+        } else {
+            LOGGER.info("SMTP configured: {}:{} as {}", HOST, PORT, USERNAME);
+        }
     }
 
     private EmailUtil() {

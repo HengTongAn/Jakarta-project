@@ -719,13 +719,80 @@
             if (!input) {
                 return;
             }
-            input.addEventListener("change", function () {
-                methods.forEach(function (item) {
-                    item.classList.toggle("is-selected", item.querySelector("input") === input);
-                });
-                showPanelFor(input.value);
+            method.addEventListener("click", function (event) {
+                // Check if this is a "coming soon" payment method
+                if (method.dataset.comingSoon === "true") {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    showComingSoonModal();
+                    return;
+                }
+                // Normal payment method selection
+                if (!input.disabled) {
+                    input.checked = true;
+                    methods.forEach(function (item) {
+                        item.classList.toggle("is-selected", item.querySelector("input") === input);
+                    });
+                    showPanelFor(input.value);
+                }
             });
         });
+    }
+
+    /**
+     * Shows a "coming soon" modal with blurred background for checkout payment methods.
+     * Note: This is for the checkout page only. The admin gate has its own separate
+     * "coming soon" modal implementation using Bootstrap's native modal in
+     * admin/coming-soon.jsp with CSS classes (.coming-soon-*) in components.css.
+     */
+    function showComingSoonModal() {
+        // Create modal overlay
+        var overlay = document.createElement("div");
+        overlay.className = "checkout-coming-soon-overlay";
+        overlay.setAttribute("role", "dialog");
+        overlay.setAttribute("aria-modal", "true");
+        overlay.setAttribute("aria-labelledby", "coming-soon-title");
+
+        overlay.innerHTML = '<div class="checkout-coming-soon-modal">' +
+            '<div class="checkout-coming-soon-content">' +
+                '<div class="checkout-coming-soon-icon"><i class="bi bi-clock-history"></i></div>' +
+                '<h3 id="coming-soon-title">Coming Soon</h3>' +
+                '<p>This payment method will be available soon. For now, please use <strong>Cash on delivery</strong>.</p>' +
+                '<button type="button" class="btn btn-brand" data-close-modal>Got it</button>' +
+            '</div>' +
+        '</div>';
+
+        document.body.appendChild(overlay);
+        document.body.style.overflow = "hidden";
+
+        // Close button handler
+        var closeBtn = overlay.querySelector("[data-close-modal]");
+        if (closeBtn) {
+            closeBtn.addEventListener("click", function () {
+                closeModal();
+            });
+        }
+
+        // Close on backdrop click
+        overlay.addEventListener("click", function (event) {
+            if (event.target === overlay) {
+                closeModal();
+            }
+        });
+
+        // Close on Escape key
+        var escapeHandler = function (event) {
+            if (event.key === "Escape") {
+                closeModal();
+                document.removeEventListener("keydown", escapeHandler);
+            }
+        };
+        document.addEventListener("keydown", escapeHandler);
+
+        function closeModal() {
+            overlay.remove();
+            document.body.style.overflow = "";
+        }
     }
 
     /**

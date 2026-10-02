@@ -134,7 +134,10 @@ public final class DatabaseMigrationRunner implements ServletContextListener {
                 "migration_add_payments.sql",
                 "migration_add_card_payments.sql",
                 "migration_add_password_reset_tokens.sql",
-                "migration_add_transactions.sql"
+                "migration_add_password_reset_codes.sql",
+                "migration_add_transactions.sql",
+                "migration_add_reset_code_attempts.sql",
+                "migration_add_page_experience.sql"
         );
     }
 

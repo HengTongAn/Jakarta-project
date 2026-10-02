@@ -74,24 +74,29 @@ public class InventoryService {
         if (product.isDeleted()) {
             throw new ValidationException("Cannot adjust stock for a deleted product.");
         }
-        int newQuantity = product.getStockQuantity() + delta;
-        if (newQuantity < 0) {
-            throw new ValidationException("Stock cannot go below zero.");
-        }
-        // Keep DISCONTINUED products discontinued; only update quantity.
-        Product.Status nextStatus = product.getStatus() == Product.Status.DISCONTINUED
-                ? Product.Status.DISCONTINUED
-                : Product.computeStatus(newQuantity);
 
         Connection conn = null;
+        int newQuantity;
         try {
             conn = DBConnection.getConnection();
             conn.setAutoCommit(false);
-            productDAO.setStock(conn, productId, newQuantity, nextStatus);
+
+            // The delta is applied by the UPDATE, not written as an absolute
+            // value computed from the read above: that read came from a separate
+            // connection, so two concurrent adjustments both saw the same starting
+            // quantity and the second write silently discarded the first. The
+            // audit log recorded a stale old_quantity that matched neither the
+            // row before nor the row after.
+            newQuantity = productDAO.applyStockDelta(conn, productId, delta);
+            if (newQuantity < 0) {
+                rollbackQuietly(conn);
+                throw new ValidationException("Stock cannot go below zero.");
+            }
+            int oldQuantity = newQuantity - delta;
 
             InventoryLog log = new InventoryLog();
             log.setProductId(productId);
-            log.setOldQuantity(product.getStockQuantity());
+            log.setOldQuantity(oldQuantity);
             log.setNewQuantity(newQuantity);
             log.setAction("MANUAL_ADJUST_" + reason);
             log.setUserId(userId);
@@ -104,7 +109,13 @@ public class InventoryService {
             closeQuietly(conn);
         }
 
-        // Live update after the change is committed (best-effort).
+        // Live update after the change is committed (best-effort). The status is
+        // recomputed from the committed quantity rather than reused from the
+        // stale read; DISCONTINUED is preserved by the UPDATE's CASE.
+        Product.Status nextStatus = product.getStatus() == Product.Status.DISCONTINUED
+                ? Product.Status.DISCONTINUED
+                : Product.computeStatus(newQuantity);
+
         ProductRepository.invalidateProductCache(productId);
         CacheManager.invalidateAllCatalog();
         CacheManager.invalidateProductList();

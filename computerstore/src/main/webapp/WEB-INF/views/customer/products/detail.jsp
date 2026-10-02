@@ -33,9 +33,9 @@
                         <div>
                             <h3 class="fw-bold mb-1"><c:out value="${product.name}"/></h3>
                             <p class="text-muted small mb-2">
-                                SKU: <c:out value="${product.sku}"/>
-                                &middot; <c:out value="${product.categoryName}"/>
-                                &middot; <c:out value="${product.brandName}"/>
+                                <a href="${pageContext.request.contextPath}/products?brand=${product.brandId}" class="text-decoration-none fw-semibold"><c:out value="${product.brandName}"/></a>
+                                &middot; <a href="${pageContext.request.contextPath}/products?category=${product.categoryId}" class="text-decoration-none"><c:out value="${product.categoryName}"/></a>
+                                &middot; SKU: <c:out value="${product.sku}"/>
                             </p>
                         </div>
                         <c:choose>
@@ -44,6 +44,9 @@
                             </c:when>
                             <c:when test="${product.status.name() == 'LOW_STOCK'}">
                                 <span class="badge bg-warning text-dark badge-status" data-stock-badge-for="${product.productId}">Low stock</span>
+                            </c:when>
+                            <c:when test="${product.status.name() == 'DISCONTINUED'}">
+                                <span class="badge bg-dark badge-status" data-stock-badge-for="${product.productId}">Discontinued</span>
                             </c:when>
                             <c:otherwise>
                                 <span class="badge bg-success badge-status" data-stock-badge-for="${product.productId}">In stock</span>
@@ -62,6 +65,12 @@
                             <span>Availability</span>
                             <span class="fw-semibold" data-avail-for="${product.productId}">${product.stockQuantity > 0 ? product.stockQuantity : '0'} unit(s)</span>
                         </div>
+                        <c:if test="${not empty product.warrantyInfo}">
+                        <div class="d-flex justify-content-between small mt-2">
+                            <span>Warranty</span>
+                            <span class="fw-semibold"><c:out value="${product.warrantyInfo}"/></span>
+                        </div>
+                        </c:if>
                     </div>
 
                     <c:choose>
@@ -72,16 +81,19 @@
                                         <input type="hidden" name="csrfToken" value="${csrfToken}">
                                         <input type="hidden" name="productId" value="${product.productId}">
                                         <div class="input-group input-group-lg qty-stepper" style="width:140px">
-                                            <button type="button" class="btn btn-outline-secondary" data-step="-1" data-target="qtyInput" aria-label="Decrease quantity">
+                                            <button type="button" class="btn btn-outline-secondary" data-step="-1" data-target="qtyInput-${product.productId}" aria-label="Decrease quantity">
                                                 <i class="bi bi-dash-lg" aria-hidden="true"></i>
                                             </button>
-                                            <input type="number" id="qtyInput" name="quantity" value="1" min="1" max="${product.stockQuantity}"
+                                            <input type="number" id="qtyInput-${product.productId}" name="quantity" value="1" min="1" max="${product.stockQuantity}"
                                                        data-qtymax="${product.productId}" class="form-control text-center" aria-label="Quantity">
-                                            <button type="button" class="btn btn-outline-secondary" data-step="1" data-target="qtyInput" aria-label="Increase quantity">
+                                            <button type="button" class="btn btn-outline-secondary" data-step="1" data-target="qtyInput-${product.productId}" aria-label="Increase quantity">
                                                 <i class="bi bi-plus-lg" aria-hidden="true"></i>
                                             </button>
                                         </div>
                                         <button type="submit" class="btn btn-brand btn-lg flex-grow-1" data-loading="Adding…">Add to cart</button>
+                                        <a href="${pageContext.request.contextPath}/products" class="btn btn-outline-secondary btn-lg">
+                                            <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to products
+                                        </a>
                                     </form>
                                     <c:if test="${product.stockQuantity <= 10}">
                                         <p class="small text-danger fw-semibold mt-2 mb-0" data-plow-for="${product.productId}">
@@ -110,16 +122,16 @@
                 <h5 class="fw-bold mb-3"><i class="bi bi-info-circle me-1" aria-hidden="true"></i> Product details</h5>
 
                 <c:if test="${not empty product.highlights}">
-                    <h6 class="fw-semibold mb-2">Key features</h6>
+                    <h6 class="fw-semibold mb-2"><i class="bi bi-star-fill me-1 text-warning" aria-hidden="true"></i>Key features</h6>
                     <ul class="product-highlights mb-4">
                         <c:forEach var="hl" items="${product.highlights}">
-                            <li><c:out value="${hl}"/></li>
+                            <li><i class="bi bi-check-circle-fill text-success me-2" aria-hidden="true"></i><c:out value="${hl}"/></li>
                         </c:forEach>
                     </ul>
                 </c:if>
 
                 <c:if test="${not empty product.specs}">
-                    <h6 class="fw-semibold mb-2">Specifications</h6>
+                    <h6 class="fw-semibold mb-2"><i class="bi bi-list-ul me-1" aria-hidden="true"></i>Specifications</h6>
                     <div class="table-responsive mb-4">
                         <table class="table table-striped product-specs-table">
                             <tbody>
@@ -135,12 +147,12 @@
                 </c:if>
 
                 <c:if test="${not empty product.boxContents}">
-                    <h6 class="fw-semibold mb-1">What's in the box</h6>
+                    <h6 class="fw-semibold mb-1"><i class="bi bi-box-seam me-1" aria-hidden="true"></i>What's in the box</h6>
                     <p class="text-muted"><c:out value="${product.boxContents}"/></p>
                 </c:if>
 
                 <c:if test="${not empty product.warrantyInfo}">
-                    <h6 class="fw-semibold mb-1">Warranty</h6>
+                    <h6 class="fw-semibold mb-1"><i class="bi bi-shield-check me-1" aria-hidden="true"></i>Warranty</h6>
                     <p class="text-muted"><c:out value="${product.warrantyInfo}"/></p>
                 </c:if>
 
@@ -161,7 +173,7 @@
         <div class="card-body p-4">
             <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
                 <div>
-                    <h5 class="fw-bold mb-1"><i class="bi bi-star me-1" aria-hidden="true"></i> Customer reviews</h5>
+                    <h5 class="fw-bold mb-1"><i class="bi bi-star-fill me-1 text-warning" aria-hidden="true"></i> Customer reviews</h5>
                     <c:choose>
                         <c:when test="${ratingSummary.hasReviews()}">
                             <div class="d-flex align-items-center gap-2 mt-1">
@@ -250,5 +262,39 @@
             </c:if>
         </div>
     </div>
+
+    <c:if test="${not empty relatedProducts}">
+    <div class="card card-hover mt-4">
+        <div class="card-body p-4">
+            <h5 class="fw-bold mb-3"><i class="bi bi-grid me-1" aria-hidden="true"></i> Related products</h5>
+            <div class="row g-3">
+                <c:forEach var="rp" items="${relatedProducts}">
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <div class="card h-100 product-card">
+                            <div class="card-body p-3">
+                                <c:choose>
+                                    <c:when test="${rp.hasImage()}">
+                                        <img src="${pageContext.request.contextPath}/${rp.imageUrl}" alt="<c:out value='${rp.name}'/>" class="img-fluid mb-2" style="max-height:120px;object-fit:contain;">
+                                    </c:when>
+                                    <c:otherwise>
+                                        <div class="bg-secondary d-flex align-items-center justify-content-center mb-2" style="height:120px;border-radius:4px;">
+                                            <span class="text-white small">No image</span>
+                                        </div>
+                                    </c:otherwise>
+                                </c:choose>
+                                <h6 class="fw-bold mb-1 text-truncate"><a href="${pageContext.request.contextPath}/products?id=${rp.productId}" class="text-decoration-none"><c:out value="${rp.name}"/></a></h6>
+                                <p class="small text-muted mb-2"><c:out value="${rp.categoryName}"/></p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold money">$<fmt:formatNumber value="${rp.price}" pattern="#,##0.00"/></span>
+                                    <span class="badge ${rp.status.name() == 'IN_STOCK' ? 'bg-success' : rp.status.name() == 'LOW_STOCK' ? 'bg-warning text-dark' : 'bg-danger'}">${rp.status.name()}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </c:forEach>
+            </div>
+        </div>
+    </div>
+    </c:if>
 </div>
 <%@ include file="../../layouts/footer.jspf" %>

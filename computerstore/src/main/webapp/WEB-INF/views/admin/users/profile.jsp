@@ -45,10 +45,6 @@
                             <i class="bi bi-pencil-square me-1"></i>Edit profile
                         </a>
                         <a class="btn btn-outline-secondary btn-sm"
-                           href="${pageContext.request.contextPath}/admin/users?action=reset&id=${profileUser.userId}">
-                            <i class="bi bi-key me-1"></i>Reset password
-                        </a>
-                        <a class="btn btn-outline-secondary btn-sm"
                            href="${pageContext.request.contextPath}/admin/users">
                             <i class="bi bi-arrow-left me-1"></i>Back to users
                         </a>

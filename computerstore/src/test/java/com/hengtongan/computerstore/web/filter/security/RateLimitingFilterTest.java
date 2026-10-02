@@ -47,6 +47,10 @@ class RateLimitingFilterTest {
         when(request.getMethod()).thenReturn("POST");
         when(request.getRemoteAddr()).thenReturn("192.168.1.100");
         when(response.getWriter()).thenReturn(new PrintWriter(responseWriter));
+        // The quota only applies to the credential-accepting endpoints, so every
+        // test below has to say WHICH endpoint it is posting to. Defaults to the
+        // login POST; tests that care about a different path restub it.
+        when(request.getServletPath()).thenReturn("/login");
 
         // Clear the rate limit map via reflection
         Field rateLimitsField = RateLimitingFilter.class.getDeclaredField("rateLimits");
@@ -144,9 +148,92 @@ class RateLimitingFilterTest {
         verify(chain).doFilter(request, response);
     }
 
+    // ---------------------------------------------------------------- scope
+
+    /**
+     * The bug this pins: the quota was charged to every POST in the app because
+     * only the method was checked, so an ordinary customer clicking through the
+     * shop -- add to cart, change quantity, review, profile -- could be answered
+     * 429 after ten POSTs in a minute. None of those requests carry a guessable
+     * secret; they are session-authenticated and CSRF-protected.
+     */
+    @Test
+    void shoppingPostsDoNotConsumeTheAuthQuota() throws IOException, ServletException {
+        when(request.getServletPath()).thenReturn("/cart/add");
+
+        // Far more POSTs in a minute than the 5/min ceiling set above.
+        for (int i = 0; i < 25; i++) {
+            filter.doFilter(request, response, chain);
+        }
+
+        verify(chain, times(25)).doFilter(request, response);
+        verify(response, never()).sendError(eq(429), anyString());
+    }
+
+    @Test
+    void checkoutPostsAreNotRateLimited() throws IOException, ServletException {
+        when(request.getServletPath()).thenReturn("/checkout");
+        for (int i = 0; i < 25; i++) {
+            filter.doFilter(request, response, chain);
+        }
+        verify(chain, times(25)).doFilter(request, response);
+        verify(response, never()).sendError(eq(429), anyString());
+    }
+
+    /** Every credential-bearing POST must still be guarded. */
+    @Test
+    void everyGuessableSecretEndpointIsGuarded() throws Exception {
+        String[] guarded = {"/login", "/register", "/forgot", "/reset",
+                "/verify-code", "/new-password", "/resend-code", "/account/2fa"};
+        for (String path : guarded) {
+            Field f = RateLimitingFilter.class.getDeclaredField("rateLimits");
+            f.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, ?> map = (java.util.Map<String, ?>) f.get(null);
+            map.clear();
+
+            when(request.getServletPath()).thenReturn(path);
+            // 5 allowed at the pinned limit, 6th must be refused.
+            for (int i = 0; i < 6; i++) {
+                filter.doFilter(request, response, chain);
+            }
+            verify(chain, times(5)).doFilter(request, response);
+            verify(response, atLeastOnce()).sendError(eq(429), anyString());
+            reset(response);
+            reset(chain);
+        }
+    }
+
+    /** A trailing slash must not be a way around the match. */
+    @Test
+    void trailingSlashDoesNotEvadeTheQuota() throws IOException, ServletException {
+        when(request.getServletPath()).thenReturn("/login/");
+        for (int i = 0; i < 6; i++) {
+            filter.doFilter(request, response, chain);
+        }
+        verify(chain, times(5)).doFilter(request, response);
+        verify(response, atLeastOnce()).sendError(eq(429), anyString());
+    }
+
+    /**
+     * The match must not be built on a hard-coded context path. Deployment under
+     * a different context must not silently disable rate limiting.
+     */
+    @Test
+    void contextPathIsNotHardCodedIntoTheMatch() throws IOException, ServletException {
+        when(request.getServletPath()).thenReturn(null);
+        when(request.getContextPath()).thenReturn("/shop");
+        when(request.getRequestURI()).thenReturn("/shop/login");
+
+        for (int i = 0; i < 6; i++) {
+            filter.doFilter(request, response, chain);
+        }
+        verify(chain, times(5)).doFilter(request, response);
+        verify(response, atLeastOnce()).sendError(eq(429), anyString());
+    }
+
     @Test
     void testRateLimitInfoWindowReset() throws Exception {
-        // Test the internal RateLimitInfo class behavior
         var infoClass = RateLimitingFilter.class.getDeclaredClasses()[0]; // RateLimitInfo
         var constructor = infoClass.getDeclaredConstructor();
         constructor.setAccessible(true);

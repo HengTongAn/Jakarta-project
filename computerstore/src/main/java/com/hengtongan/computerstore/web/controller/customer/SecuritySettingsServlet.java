@@ -7,6 +7,7 @@ import com.hengtongan.computerstore.util.web.AuditLogger;
 import com.hengtongan.computerstore.util.security.CSRFUtil;
 import com.hengtongan.computerstore.util.web.Flash;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -14,6 +15,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 
 /** Password and account-security settings for the signed-in customer. */
+@WebServlet("/account/settings")
 public class SecuritySettingsServlet extends BaseServlet {
 
     @Override

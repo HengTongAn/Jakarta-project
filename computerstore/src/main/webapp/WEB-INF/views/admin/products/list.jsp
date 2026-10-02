@@ -46,8 +46,11 @@
                                 </c:otherwise>
                             </c:choose>
                         </td>
+                        <%-- Plain text, not a link to /products?id=... : StorefrontAccessFilter
+                             refuses the public product page for an admin, so this used to be a
+                             link that 403s. The edit form below is the admin's route to a product. --%>
                         <td class="fw-semibold">
-                            <a href="${pageContext.request.contextPath}/products?id=${p.productId}" class="text-decoration-none"><c:out value="${p.name}"/></a>
+                            <c:out value="${p.name}"/>
                         </td>
                         <td><c:out value="${p.categoryName}"/></td>
                         <td><c:out value="${p.brandName}"/></td>

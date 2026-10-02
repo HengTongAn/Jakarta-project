@@ -1,0 +1,35 @@
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+<%--
+    The account-area sidebar, shared by every page under customer/account/.
+
+    It used to be copied into each page by hand, with "active" hard-coded per copy.
+    That is what let Transactions go missing from four of the five pages when it was
+    added: the link exists in exactly the copies somebody remembered to edit, and a
+    link that is absent from the current page's own sidebar is indistinguishable from a
+    feature that does not exist. Deriving the highlight from _sp instead means a page
+    cannot forget to mark itself, and adding an entry is a one-line change here.
+
+    _sp is set by layouts/header.jspf, which every account page includes first. It
+    reads the forward's servlet path, so it stays correct for the servlet-mapped
+    routes rather than tracking the dispatcher path.
+
+    A caller may set _accountNav to override which entry is highlighted, for a page
+    that is a detail of another entry's section (an order detail under My Orders).
+
+    A caller may set _accountNavClass to add its own class to the card. profile.jsp and
+    security-settings.jsp set "customer-sidebar", which turns this into a horizontal
+    tab strip on narrow screens; the pages that do not set it keep the stacked list.
+--%>
+<c:set var="_nav" value="${empty _accountNav ? _sp : _accountNav}"/>
+<div class="card card-hover${empty _accountNavClass ? '' : ' '}${_accountNavClass}">
+    <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+            <a class="list-group-item list-group-item-action${_nav == '/account' ? ' active' : ''}"${_nav == '/account' ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/account"><i class="bi bi-speedometer2 me-2" aria-hidden="true"></i>Dashboard</a>
+            <a class="list-group-item list-group-item-action${fn:startsWith(_nav, '/account/orders') ? ' active' : ''}"${fn:startsWith(_nav, '/account/orders') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/account/orders"><i class="bi bi-box-seam me-2" aria-hidden="true"></i>My Orders</a>
+            <a class="list-group-item list-group-item-action${fn:startsWith(_nav, '/account/transactions') ? ' active' : ''}"${fn:startsWith(_nav, '/account/transactions') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/account/transactions"><i class="bi bi-currency-dollar me-2" aria-hidden="true"></i>Transactions</a>
+            <a class="list-group-item list-group-item-action${fn:startsWith(_nav, '/account/profile') ? ' active' : ''}"${fn:startsWith(_nav, '/account/profile') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/account/profile"><i class="bi bi-person-vcard me-2" aria-hidden="true"></i>Profile</a>
+            <a class="list-group-item list-group-item-action${fn:startsWith(_nav, '/account/settings') ? ' active' : ''}"${fn:startsWith(_nav, '/account/settings') ? ' aria-current="page"' : ''} href="${pageContext.request.contextPath}/account/settings"><i class="bi bi-shield-lock me-2" aria-hidden="true"></i>Security</a>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,27 @@
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%--
+    Status badge for a Transaction. The caller sets the enum first:
+
+        <c:set var="_txStatus" value="${tx.status}"/>
+        <%@ include file="../../components/transaction-status-badge.jspf" %>
+
+    Transaction statuses are not order statuses, so this deliberately does not reuse
+    status-badge.jspf. That fragment maps a missing status onto an uncoloured badge,
+    which is right for an order (its enum is closed) but wrong here: FAILED,
+    PARTIALLY_REFUNDED and CHARGEBACK are ordinary transaction states and the two an
+    admin most wants to spot, so each gets its own colour rather than falling through.
+
+    Kept in one place because four views render it -- the admin list and detail, and
+    the customer's list and detail -- and a customer must not see a settled payment
+    styled differently from the admin ledger describing the same row.
+--%>
+<c:choose>
+    <c:when test="${_txStatus.name() == 'COMPLETED'}"><span class="badge bg-success badge-status"><i class="bi bi-check-lg me-1" aria-hidden="true"></i>Completed</span></c:when>
+    <c:when test="${_txStatus.name() == 'PENDING'}"><span class="badge bg-warning text-dark badge-status"><i class="bi bi-hourglass-split me-1" aria-hidden="true"></i>Pending</span></c:when>
+    <c:when test="${_txStatus.name() == 'PROCESSING'}"><span class="badge bg-info text-dark badge-status"><i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>Processing</span></c:when>
+    <c:when test="${_txStatus.name() == 'FAILED'}"><span class="badge bg-danger badge-status"><i class="bi bi-x-lg me-1" aria-hidden="true"></i>Failed</span></c:when>
+    <c:when test="${_txStatus.name() == 'REFUNDED'}"><span class="badge bg-secondary badge-status"><i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>Refunded</span></c:when>
+    <c:when test="${_txStatus.name() == 'PARTIALLY_REFUNDED'}"><span class="badge bg-secondary text-dark badge-status"><i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>Partially Refunded</span></c:when>
+    <c:when test="${_txStatus.name() == 'CHARGEBACK'}"><span class="badge bg-danger badge-status"><i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>Chargeback</span></c:when>
+    <c:otherwise><span class="badge bg-light text-muted badge-status"><c:out value="${_txStatus}"/></span></c:otherwise>
+</c:choose>

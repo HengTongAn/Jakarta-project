@@ -24,6 +24,9 @@ class RateLimitingFilterTest {
             HttpServletResponse response = mock(HttpServletResponse.class);
             FilterChain chain = mock(FilterChain.class);
             when(request.getMethod()).thenReturn("POST");
+            // The quota is scoped to credential-accepting POSTs, so the test has
+            // to name the endpoint it is posting to.
+            when(request.getServletPath()).thenReturn("/login");
             when(request.getRemoteAddr()).thenReturn("rate-test-" + System.nanoTime());
 
             for (int attempt = 0; attempt < 6; attempt++) {
@@ -50,6 +53,7 @@ class RateLimitingFilterTest {
             HttpServletResponse response = mock(HttpServletResponse.class);
             FilterChain chain = mock(FilterChain.class);
             when(request.getMethod()).thenReturn("POST");
+            when(request.getServletPath()).thenReturn("/login");
             when(request.getRemoteAddr()).thenReturn("global-budget-test");
 
             for (int attempt = 0; attempt < 4; attempt++) {

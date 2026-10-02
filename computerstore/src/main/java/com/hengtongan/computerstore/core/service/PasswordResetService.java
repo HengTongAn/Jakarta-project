@@ -1,9 +1,11 @@
 package com.hengtongan.computerstore.core.service;
 
 import com.hengtongan.computerstore.core.repository.PasswordResetTokenRepository;
+import com.hengtongan.computerstore.core.repository.PasswordResetCodeRepository;
 import com.hengtongan.computerstore.core.repository.UserRepository;
 import com.hengtongan.computerstore.core.exception.ValidationException;
 import com.hengtongan.computerstore.core.domain.entity.PasswordResetToken;
+import com.hengtongan.computerstore.core.domain.entity.PasswordResetCode;
 import com.hengtongan.computerstore.core.domain.entity.User;
 import com.hengtongan.computerstore.infrastructure.messaging.EmailUtil;
 import com.hengtongan.computerstore.util.security.PasswordUtil;
@@ -25,6 +27,11 @@ import java.util.Base64;
  * The customer asks to reset by email; we mint a random token, store only its
  * SHA-256 hash, and email a link containing the raw token. The link is valid
  * for 30 minutes, works exactly once, and never leaks the account's password.
+ *
+ * <p>A second, code-based flow runs alongside it: a 6-digit code mailed to the
+ * address, then verified, then a new password. See
+ * {@link #requestResetWithCode}, {@link #verifyCode} and
+ * {@link #completeResetWithCode}.</p>
  */
 public class PasswordResetService {
 
@@ -32,8 +39,17 @@ public class PasswordResetService {
 
     private final UserRepository userDAO = new UserRepository();
     private final PasswordResetTokenRepository tokenDAO = new PasswordResetTokenRepository();
+    private final PasswordResetCodeRepository codeDAO = new PasswordResetCodeRepository();
 
     private static final SecureRandom RANDOM = new SecureRandom();
+
+    /**
+     * Wrong codes tolerated against one issued code before it is burned and the
+     * customer must request a new one. A 6-digit code has a million possible
+     * values, so without a ceiling the space is grindable; five guesses turns a
+     * brute force into a non-attack.
+     */
+    public static final int MAX_CODE_ATTEMPTS = 5;
 
     /**
      * Starts the reset flow for the address posted by the form.
@@ -125,6 +141,9 @@ public class PasswordResetService {
                 }
                 userDAO.updatePassword(c, token.getUserId(), PasswordUtil.hash(newPassword));
                 c.commit();
+                // Login reads the user from cache; without this the previous
+                // password keeps working and the new one is rejected.
+                userDAO.invalidateCachedUsers();
             } catch (Exception e) {
                 c.rollback();
                 throw e;
@@ -154,5 +173,142 @@ public class PasswordResetService {
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 not available", e);
         }
+    }
+
+    /**
+     * Step 1 of the 6-digit code flow: generates and emails a 6-digit code.
+     * Only the SHA-256 hash is stored; the raw code leaves this method by email.
+     */
+    public void requestResetWithCode(String email, String baseUrl) {
+        if (!ValidationUtil.isValidEmail(email)) {
+            throw new ValidationException("Please enter a valid email address.");
+        }
+        User user = userDAO.findByEmail(email.trim());
+        if (user == null) {
+            return;
+        }
+
+        codeDAO.invalidateForEmail(email.trim());
+
+        String rawCode = generateSixDigitCode();
+        PasswordResetCode code = new PasswordResetCode();
+        code.setUserId(user.getUserId());
+        code.setEmail(email.trim());
+        code.setCodeHash(hash(rawCode));
+        code.setExpiresAt(new Timestamp(System.currentTimeMillis()
+                + PasswordResetCode.EXPIRY_MINUTES * 60_000));
+        codeDAO.create(code);
+
+        String body = "Hello " + user.getFullName() + ",\n\n"
+                + "We received a request to reset your password. Your verification code is:\n\n"
+                + rawCode + "\n\n"
+                + "This code expires in " + PasswordResetCode.EXPIRY_MINUTES
+                + " minutes and can be used only once. If you didn't ask for this, ignore this email.\n\n"
+                + "Apach_PC/STORE";
+
+        boolean sent = EmailUtil.send(user.getEmail(), "Password Reset Code - Apach_PC/STORE", body);
+        if (!sent) {
+            if (Boolean.parseBoolean(System.getProperty("computerstore.password.reset.devCodes", "false"))) {
+                LOGGER.info("[password-reset-code] DEMO code for {}: {}", user.getEmail(), rawCode);
+            }
+        }
+    }
+
+    /**
+     * Step 2 of the 6-digit code flow: verifies the user-provided code.
+     * Returns the codeId for use in the final step.
+     *
+     * <p>Every wrong guess is charged against the code that was actually issued
+     * for this email. Once {@link #MAX_CODE_ATTEMPTS} is reached the code is
+     * burned, so the flow cannot be used to grind the 6-digit key space.</p>
+     */
+    public int verifyCode(String email, String code) {
+        if (ValidationUtil.isBlank(email) || ValidationUtil.isBlank(code)) {
+            throw new ValidationException("Email and code are required.");
+        }
+        if (!code.matches("\\d{6}")) {
+            throw new ValidationException("Please enter a valid 6-digit code.");
+        }
+
+        PasswordResetCode resetCode = codeDAO.findByEmailAndCodeHash(email.trim(), hash(code.trim()));
+        if (resetCode == null || !resetCode.isUsable() || resetCode.isExhausted(MAX_CODE_ATTEMPTS)) {
+            chargeFailedAttempt(email.trim());
+            throw new ValidationException("Invalid or expired code. Please request a new one.");
+        }
+        return resetCode.getCodeId();
+    }
+
+    /**
+     * Records a wrong guess and burns the code once the budget is spent.
+     * Failures here must never mask the caller's "invalid code" error, so a
+     * database problem is logged and swallowed.
+     */
+    private void chargeFailedAttempt(String email) {
+        try {
+            int attempts = codeDAO.recordFailedAttempt(email);
+            if (attempts >= MAX_CODE_ATTEMPTS) {
+                codeDAO.invalidateForEmail(email);
+                LOGGER.info("[password-reset-code] burned code for {} after {} failed attempts",
+                        email, attempts);
+            }
+        } catch (RuntimeException e) {
+            LOGGER.warn("Could not record failed reset attempt for {}: {}", email, e.getMessage());
+        }
+    }
+
+    /**
+     * Step 3 of the 6-digit code flow: sets the new password after code verification.
+     *
+     * <p>{@code codeId} comes from the session (set during verifyCode) and
+     * {@code verifiedEmail} is the address whose code was actually verified.
+     * The account that gets rewritten is read from the code row, never from a
+     * request parameter: an attacker can verify a code for their own address,
+     * but supplying a victim's email here must not be able to redirect the
+     * password change at them.</p>
+     */
+    public void completeResetWithCode(int codeId, String verifiedEmail,
+                                     String newPassword, String confirmPassword) {
+        if (ValidationUtil.isBlank(newPassword)) {
+            throw new ValidationException("New password is required.");
+        }
+        if (!newPassword.equals(confirmPassword)) {
+            throw new ValidationException("Passwords do not match.");
+        }
+        UserService.validatePasswordStrength(newPassword);
+
+        PasswordResetCode resetCode = codeDAO.findByCodeId(codeId);
+        if (resetCode == null || !resetCode.isUsable()) {
+            throw new ValidationException("Invalid or expired code. Please request a new one.");
+        }
+        if (ValidationUtil.isBlank(verifiedEmail)
+                || !resetCode.getEmail().equalsIgnoreCase(verifiedEmail.trim())) {
+            throw new ValidationException("This code was not issued for this account. Please start over.");
+        }
+
+        try (java.sql.Connection c = com.hengtongan.computerstore.infrastructure.persistence.DBConnection.getConnection()) {
+            c.setAutoCommit(false);
+            try {
+                if (!codeDAO.claimForUse(c, codeId)) {
+                    throw new ValidationException("Invalid or expired code. Please request a new one.");
+                }
+                userDAO.updatePassword(c, resetCode.getUserId(), PasswordUtil.hash(newPassword));
+                c.commit();
+                // Login reads the user from cache; without this the previous
+                // password keeps working and the new one is rejected.
+                userDAO.invalidateCachedUsers();
+            } catch (Exception e) {
+                c.rollback();
+                throw e;
+            }
+        } catch (ValidationException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("Could not reset password. Please try again.", e);
+        }
+    }
+
+    private static String generateSixDigitCode() {
+        int code = 100000 + RANDOM.nextInt(900000);
+        return String.valueOf(code);
     }
 }

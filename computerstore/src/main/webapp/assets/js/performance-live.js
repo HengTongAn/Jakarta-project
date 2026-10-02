@@ -10,7 +10,15 @@
    one specific domain event, so a short silent poll is the honest mechanism.
    realtime.js already avoids hard-reloading this page (it only reloads the
    dashboard/reports markers), so nothing interrupts the cadence.
-   */
+
+   The Experienced Page Time tables are patched too, for a different reason.
+   Those figures come from sampled browser reports accumulated over the
+   retention window, so they move by a sample or two per poll rather than by
+   the second. Refreshing them is not about freshness: a report whose numbers
+   silently froze while every other panel ticked would read as "nothing has
+   been sampled", which is a claim the page cannot actually make. And if the
+   query starts failing, the tables are replaced with the failure notice
+   rather than left showing the last good figures as if they were current. */
 (function () {
     'use strict';
 
@@ -161,6 +169,184 @@
         });
     }
 
+    /* ------------------------------------------------------------------
+       Experienced Page Time.
+       ------------------------------------------------------------------ */
+
+    /* The three tables share a shape: key, sample count, client p50, client
+     * p95, server p95, average weight. Only the first cell differs -- a browser
+     * name in one, a route template in the other -- so they render through one
+     * function rather than three near-identical ones. */
+    function patchEptTable(selector, buckets, emptyMessage, renderKey) {
+        var tbody = document.querySelector(selector);
+        if (!tbody) {
+            return;
+        }
+        tbody.textContent = '';
+        if (!buckets || !buckets.length) {
+            tbody.appendChild(emptyRow(emptyMessage, 6));
+            return;
+        }
+        buckets.forEach(function (b) {
+            var tr = document.createElement('tr');
+            tr.appendChild(renderKey(b.key));
+            tr.appendChild(td(grouped(b.clientCount), 'text-end'));
+
+            /* clientCount, not sampleCount, is the column's real denominator. A
+             * bucket can hold rows where the browser reported no timing at all,
+             * and showing the wider count beside a percentile computed from the
+             * narrower one would overstate the evidence behind that number. */
+            tr.appendChild(td(ms(b.client && b.client.p50), 'text-end'));
+            tr.appendChild(td(ms(b.client && b.client.p95), 'text-end'
+                + ((Number(b.client && b.client.p95) || 0) > 2000 ? ' text-danger fw-bold' : '')));
+            tr.appendChild(td(ms(b.server && b.server.p95), 'text-end text-muted'));
+            tr.appendChild(td(kb(b.averageBytes), 'text-end text-muted'));
+            tbody.appendChild(tr);
+        });
+    }
+
+    function ms(v) {
+        var n = numberOrDash(v);
+        return n === '\u2014' ? n : n + ' ms';
+    }
+
+    function kb(v) {
+        var n = Number(v);
+        return (isFinite(n) ? (n / 1024).toFixed(1) : '\u2014') + ' KB';
+    }
+
+    function plainKey(text) {
+        var cell = document.createElement('td');
+        cell.textContent = text;
+        return cell;
+    }
+
+    function routeKey(text) {
+        var cell = document.createElement('td');
+        var code = document.createElement('code');
+        code.className = 'text-muted';
+        code.textContent = text;
+        cell.appendChild(code);
+        return cell;
+    }
+
+    function percentileRow(label, suffix, p, emphasise) {
+        var tr = document.createElement('tr');
+        var name = document.createElement('td');
+        if (emphasise) {
+            var strong = document.createElement('strong');
+            strong.textContent = label;
+            name.appendChild(strong);
+        } else {
+            name.textContent = label;
+        }
+        var note = document.createElement('span');
+        note.className = 'text-muted small';
+        note.textContent = ' \u2014 ' + suffix;
+        name.appendChild(note);
+        tr.appendChild(name);
+        tr.appendChild(td(ms(p.p50), 'text-end' + (emphasise ? ' fw-bold' : '')));
+        tr.appendChild(td(ms(p.p75), 'text-end'));
+        tr.appendChild(td(ms(p.p95), 'text-end'));
+        tr.appendChild(td(avg(p.avg), 'text-end text-muted'));
+        tr.appendChild(td(ms(p.max), 'text-end text-muted'));
+        return tr;
+    }
+
+    function avg(v) {
+        var n = Number(v);
+        return (isFinite(n) ? n.toFixed(1) : '\u2014') + ' ms';
+    }
+
+    function patchEpt(report) {
+        /* A null report means the query failed. Leaving the previous contents in
+         * place would show stale figures as though they were current, and clearing
+         * them to the ordinary "nothing sampled yet" copy would read as a site
+         * nobody visits rather than an instrumentation that has stopped working.
+         * Only one of those two is true, so every table says which. */
+        if (!report) {
+            ['[data-live-ept-overall]', '[data-live-ept-browser]', '[data-live-ept-pages]']
+                .forEach(function (selector) {
+                    var tbody = document.querySelector(selector);
+                    if (tbody) {
+                        tbody.textContent = '';
+                        tbody.appendChild(emptyRow(
+                            'Could not read page timing data \u2014 this is not an empty result.', 6));
+                    }
+                });
+            var basis = document.querySelector('[data-live-ept-basis]');
+            if (basis) {
+                basis.textContent = 'The page timing query is failing, so the figures below are '
+                    + 'stale. Reload once the database is reachable.';
+            }
+            return;
+        }
+
+        var tbody = document.querySelector('[data-live-ept-overall]');
+        if (tbody) {
+            tbody.textContent = '';
+            if (!report.rowCount) {
+                tbody.appendChild(emptyRow('Nothing sampled yet.', 6));
+            } else {
+                tbody.appendChild(percentileRow('Interactive', 'clickable',
+                    report.interactive, true));
+                tbody.appendChild(percentileRow('DOM ready', 'content ready', report.domReady, false));
+                tbody.appendChild(percentileRow('Fully loaded', 'images, fonts', report.load, false));
+                tbody.appendChild(percentileRow('First byte', 'includes connection setup',
+                    report.ttfb, false));
+                tbody.appendChild(percentileRow('Server think time', 'your app\'s share',
+                    report.server, true));
+                tbody.appendChild(weightRow(report.transfer));
+            }
+        }
+
+        patchEptTable('[data-live-ept-browser]', report.byBrowser,
+            'No browser samples yet.', plainKey);
+        patchEptTable('[data-live-ept-pages]', report.byPageType,
+            'No page samples yet.', routeKey);
+
+        /* Both basis paragraphs are always in the DOM; exactly one is shown. A card can
+         * go from unvisited to sampled while it is open, and "nothing sampled
+         * yet" is the first wording that has to change when it does. */
+        show('[data-live-ept-basis]', !!report.rowCount);
+        show('[data-live-ept-empty]', !report.rowCount);
+        setText('[data-live-ept-count]', grouped(report.rowCount));
+        setText('[data-live-ept-days]', report.retentionDays);
+        setText('[data-live-ept-rate]', report.sampleRate);
+    }
+
+    function weightRow(transfer) {
+        var tr = document.createElement('tr');
+        var label = document.createElement('td');
+        label.textContent = 'Page weight';
+        var note = document.createElement('span');
+        note.className = 'text-muted small';
+        note.textContent = ' \u2014 transferred';
+        label.appendChild(note);
+        tr.appendChild(label);
+
+        var value = document.createElement('td');
+        value.className = 'text-end';
+        var avgBytes = Number(transfer && transfer.avg);
+        var maxBytes = Number(transfer && transfer.max);
+        value.textContent = (isFinite(avgBytes) ? (avgBytes / 1024).toFixed(1) : '\u2014')
+            + ' KB average, '
+            + (isFinite(maxBytes) ? Math.round(maxBytes / 1024) : '\u2014') + ' KB worst';
+        tr.appendChild(value);
+
+        var filler = document.createElement('td');
+        filler.colSpan = 5;
+        tr.appendChild(filler);
+        return tr;
+    }
+
+    function show(selector, visible) {
+        var el = document.querySelector(selector);
+        if (el) {
+            el.classList.toggle('d-none', !visible);
+        }
+    }
+
     function patchRecommendations(list) {
         var ul = document.querySelector('[data-live-recommendations]');
         if (!ul) {
@@ -193,6 +379,7 @@
             patchState(data.cacheEnabled, data.compressionEnabled);
             patchCacheTable(data.cacheStats);
             patchQueries(data.queryStats);
+            patchEpt(data.experience);
             patchRecommendations(data.recommendations);
             if (UPDATED) {
                 UPDATED.textContent = new Date().toLocaleTimeString();

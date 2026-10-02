@@ -45,8 +45,14 @@
                             <p class="text-muted">
                                 <c:out value="${payment.cardBrand}"/> ending <strong><c:out value="${payment.cardLast4}"/></strong>
                             </p>
-                            <a class="btn btn-brand" href="${pageContext.request.contextPath}/account/orders?id=${order.orderId}">
-                                <i class="bi bi-receipt me-2"></i>View my order
+                            <%-- receiptPath is pre-resolved by the servlet rather than built
+                                 here: the receipt belongs to a transaction, not to the order,
+                                 and the view has no way to know which transaction settled it. --%>
+                            <a class="btn btn-brand" href="${pageContext.request.contextPath}${receiptPath}">
+                                <i class="bi bi-receipt me-2"></i>View receipt
+                            </a>
+                            <a class="btn btn-outline-secondary" href="${pageContext.request.contextPath}/account/orders?id=${order.orderId}">
+                                View my order
                             </a>
                         </div>
                     </c:when>

@@ -51,6 +51,281 @@
         </ul>
     </div>
 
+    <%-- ==================================================================
+         EXPERIENCED PAGE TIME (real-user monitoring)
+         Placed above the infrastructure numbers on purpose. Everything below
+         this point describes the server; this section describes what a customer
+         felt, which is the thing worth acting on. The other cards are here to
+         explain *why* a number in this section is what it is.
+         ================================================================== --%>
+    <h5 class="fw-bold mb-2 mt-4 d-flex align-items-center gap-2">
+        <i class="bi bi-speedometer2" aria-hidden="true"></i> Experienced Page Time
+        <button type="button" class="admin-help-toggle" data-help-toggle aria-label="What is Experienced Page Time?"><i class="bi bi-question-lg" aria-hidden="true"></i></button>
+    </h5>
+    <p class="text-muted small mb-3">
+        The only figures on this page measured in <strong>real customer browsers</strong>
+        rather than read off the server. Every other card describes the app;
+        these describe the wait a person actually had. Kept above the rest for
+        that reason.
+    </p>
+
+    <c:choose>
+        <c:when test="${experienceFailed}">
+            <%-- A failed query must not look like "no data yet". Those are
+                 different situations and only one of them is healthy, so this
+                 says so explicitly rather than rendering an empty table. --%>
+            <div class="card mb-3 border-danger">
+                <div class="card-body d-flex align-items-start gap-3">
+                    <div class="icon bg-danger bg-opacity-10 text-danger"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i></div>
+                    <div>
+                        <h6 class="mb-1">Could not read page timing data</h6>
+                        <p class="text-muted small mb-0">
+                            The query failed &mdash; this is not an empty result. The usual
+                            cause is the <code>page_experience_samples</code> table not
+                            existing yet, if the migration has not been run on this
+                            database. Everything else on this page still works.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </c:when>
+        <c:otherwise>
+            <c:set var="ept" value="${experience}"/>
+            <div class="card mb-3"
+                 data-help="How long until a page could be clicked, measured in real customer browsers over the last few days. p50 is the typical customer; p95 is the slow tail that generates complaints."
+                 data-help-title="Experienced Page Time (EPT)"
+                 data-help-why="EPT is the wait a person actually had, which is not the same as how long the server took. If Server is small but Interactive is large, the server is not your problem - it is the connection or the page weight. p95 matters more than the average: most complaints come from the slowest 5%.">
+                <div class="card-header bg-body fw-semibold d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-stopwatch me-1" aria-hidden="true"></i> EPT overall
+                        <span class="badge bg-secondary align-middle">measured in browsers</span></span>
+                    <button type="button" class="admin-help-toggle" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></button>
+                </div>
+                <div class="card-body">
+                    <%-- Both basis paragraphs and the table are rendered in BOTH the
+                         empty and populated states, with the same element
+                         identities, and one of the paragraphs is hidden rather than
+                         omitted. performance-live.js can only patch elements that
+                         already exist, so a c:choose that emitted one set in the
+                         empty case and another in the populated case would leave the
+                         15s refresh unable to move this card from empty to
+                         populated: the report would sit on "nothing sampled yet"
+                         until a manual reload, which is exactly the transition an
+                         operator would most want to watch happen. --%>
+                    <p class="text-muted small mb-0 ${ept.rowCount == 0 ? '' : 'd-none'}"
+                       data-live-ept-empty>
+                        Nothing sampled yet. Measurements are collected from customer
+                        browsers, so this fills in as people use the shop &mdash; it is not
+                        a sign the shop is fast.
+                    </p>
+                    <p class="text-muted small ${ept.rowCount == 0 ? 'd-none' : ''}"
+                       data-live-ept-basis>
+                        Based on <strong data-live-ept-count><fmt:formatNumber value="${ept.rowCount}"/></strong>
+                        sampled page loads over the last
+                        <strong><span data-live-ept-days><c:out value="${retentionDays}"/></span> days</strong>,
+                        keeping roughly 1 in <span data-live-ept-rate><c:out value="${sampleRate}"/></span>.
+                        Counts describe the <em>sample</em>, not total traffic;
+                        the timings are representative but the totals are not.
+                    </p>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Measure</th>
+                                    <th class="text-end">p50</th>
+                                    <th class="text-end">p75</th>
+                                    <th class="text-end">p95</th>
+                                    <th class="text-end">Avg</th>
+                                    <th class="text-end">Worst</th>
+                                </tr>
+                            </thead>
+                            <tbody data-live-ept-overall>
+                                <c:if test="${ept.rowCount == 0}">
+                                    <%-- Explains the absence rather than showing
+                                         zeroes, which would read as an
+                                         implausibly fast site. --%>
+                                    <tr>
+                                        <td colspan="6" class="text-muted small">Nothing sampled yet. Measurements are collected from customer browsers.</td>
+                                    </tr>
+                                </c:if>
+                                <c:if test="${ept.rowCount != 0}">
+                                <tr>
+                                    <td><strong>Interactive</strong> <span class="text-muted small">&mdash; clickable</span></td>
+                                    <td class="text-end fw-bold"><fmt:formatNumber value="${ept.interactive.p50}"/> ms</td>
+                                    <td class="text-end"><fmt:formatNumber value="${ept.interactive.p75}"/> ms</td>
+                                    <td class="text-end"><fmt:formatNumber value="${ept.interactive.p95}"/> ms</td>
+                                    <td class="text-end text-muted"><fmt:formatNumber value="${ept.interactive.average}" pattern="#0.0"/> ms</td>
+                                    <td class="text-end text-muted"><fmt:formatNumber value="${ept.interactive.max}"/> ms</td>
+                                </tr>
+                                <tr>
+                                    <td>DOM ready <span class="text-muted small">&mdash; content ready</span></td>
+                                    <td class="text-end"><fmt:formatNumber value="${ept.domReady.p50}"/> ms</td>
+                                    <td class="text-end"><fmt:formatNumber value="${ept.domReady.p75}"/> ms</td>
+                                    <td class="text-end"><fmt:formatNumber value="${ept.domReady.p95}"/> ms</td>
+                                    <td class="text-end text-muted"><fmt:formatNumber value="${ept.domReady.average}" pattern="#0.0"/> ms</td>
+                                    <td class="text-end text-muted"><fmt:formatNumber value="${ept.domReady.max}"/> ms</td>
+                                </tr>
+                                <tr>
+                                    <td>Fully loaded <span class="text-muted small">&mdash; images, fonts</span></td>
+                                    <td class="text-end"><fmt:formatNumber value="${ept.load.p50}"/> ms</td>
+                                    <td class="text-end"><fmt:formatNumber value="${ept.load.p75}"/> ms</td>
+                                    <td class="text-end"><fmt:formatNumber value="${ept.load.p95}"/> ms</td>
+                                    <td class="text-end text-muted"><fmt:formatNumber value="${ept.load.average}" pattern="#0.0"/> ms</td>
+                                    <td class="text-end text-muted"><fmt:formatNumber value="${ept.load.max}"/> ms</td>
+                                </tr>
+                                <tr>
+                                    <td>First byte <span class="text-muted small">&mdash; includes connection setup</span></td>
+                                    <td class="text-end"><fmt:formatNumber value="${ept.ttfb.p50}"/> ms</td>
+                                    <td class="text-end"><fmt:formatNumber value="${ept.ttfb.p75}"/> ms</td>
+                                    <td class="text-end"><fmt:formatNumber value="${ept.ttfb.p95}"/> ms</td>
+                                    <td class="text-end text-muted"><fmt:formatNumber value="${ept.ttfb.average}" pattern="#0.0"/> ms</td>
+                                    <td class="text-end text-muted"><fmt:formatNumber value="${ept.ttfb.max}"/> ms</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Server think time</strong> <span class="text-muted small">&mdash; your app's share</span></td>
+                                    <td class="text-end fw-bold"><fmt:formatNumber value="${ept.server.p50}"/> ms</td>
+                                    <td class="text-end"><fmt:formatNumber value="${ept.server.p75}"/> ms</td>
+                                    <td class="text-end"><fmt:formatNumber value="${ept.server.p95}"/> ms</td>
+                                    <td class="text-end text-muted"><fmt:formatNumber value="${ept.server.average}" pattern="#0.0"/> ms</td>
+                                    <td class="text-end text-muted"><fmt:formatNumber value="${ept.server.max}"/> ms</td>
+                                </tr>
+                                <tr>
+                                    <td>Page weight <span class="text-muted small">&mdash; transferred</span></td>
+                                    <%-- Both figures are divided here because the
+                                         repository stores and returns raw bytes.
+                                         Formatting a byte count and labelling it
+                                         KB would report a page as ~1000x its
+                                         real weight. --%>
+                                    <td class="text-end">
+                                        <fmt:formatNumber value="${ept.transfer.average / 1024}" pattern="#0.0"/> KB average,
+                                        <fmt:formatNumber value="${ept.transfer.max / 1024}" pattern="#0.0"/> KB worst
+                                    </td>
+                                    <td colspan="5"></td>
+                                </tr>
+                                    </c:if>
+                                </tbody>
+                            </table>
+                    </div>
+                    <p class="text-muted small mt-3 mb-0">
+                        <strong>How to read this:</strong> compare
+                        <em>Server think time</em> with <em>Interactive</em>. A small
+                        server time against a large interactive time means the app
+                        answered promptly and the rest was the customer's connection
+                        or the page's own weight &mdash; look at page weight and the
+                        slowest tables below. A large server time means the app
+                        itself is the delay, and the query table further down is where
+                        to look next.
+                    </p>
+                </div>
+            </div>
+
+            <%-- Performance by browser: is the slowness specific to one browser?
+                 That is the question this table exists to answer, and it is the
+                 one a server-side number can never answer. --%>
+            <div class="card mb-3"
+                 data-help="The same EPT figures grouped by browser. Use this to tell a general slowdown (every browser slow) from a specific one (only Safari, or only mobile) that points at a rendering or compatibility problem."
+                 data-help-title="Performance by browser"
+                 data-help-why="If one browser is far slower than the rest, the cause is probably specific to it - a rendering path, an unsupported feature, or an extension - rather than your server. If they are all similar, the problem is general.">
+                <div class="card-header bg-body fw-semibold d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-window me-1" aria-hidden="true"></i> Performance by browser</span>
+                    <button type="button" class="admin-help-toggle" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></button>
+                </div>
+                <div class="card-body table-responsive p-0">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Browser</th>
+                                <th class="text-end">Samples</th>
+                                <th class="text-end">p50</th>
+                                <th class="text-end">p95</th>
+                                <th class="text-end">Server p95</th>
+                                <th class="text-end">Avg weight</th>
+                            </tr>
+                        </thead>
+                        <tbody data-live-ept-browser>
+                            <c:choose>
+                                <c:when test="${empty ept.byBrowser}">
+                                    <tr><td colspan="6" class="text-muted small">No browser samples yet.</td></tr>
+                                </c:when>
+                                <c:otherwise>
+                                    <c:forEach items="${ept.byBrowser}" var="b">
+                                        <tr>
+                                            <td><c:out value="${b.key}"/></td>
+                                            <td class="text-end"><fmt:formatNumber value="${b.clientCount}"/></td>
+                                            <td class="text-end"><fmt:formatNumber value="${b.client.p50}"/> ms</td>
+                                            <td class="text-end ${b.client.p95 > 2000 ? 'text-danger fw-bold' : ''}"><fmt:formatNumber value="${b.client.p95}"/> ms</td>
+                                            <td class="text-end text-muted"><fmt:formatNumber value="${b.server.p95}"/> ms</td>
+                                            <td class="text-end text-muted"><fmt:formatNumber value="${b.averageBytes / 1024}" pattern="#0.0"/> KB</td>
+                                        </tr>
+                                    </c:forEach>
+                                </c:otherwise>
+                            </c:choose>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer bg-body text-muted small">Sorted slowest first. Browser families are grouped coarsely and no identifying information about a visitor is stored.</div>
+            </div>
+
+            <%-- Performance by page type / object: which records are the slow
+                 ones. The ":detail" suffix marks a single record rather than a
+                 list, which is the distinction that matters -- 24 cards render
+                 very differently from one product and its reviews. --%>
+            <div class="card mb-3"
+                 data-help="The same EPT figures grouped by kind of page. Use this to find exactly which pages are the slow ones - a specific record type being slow points at that page's own work, not at the site as a whole."
+                 data-help-title="Performance by page type"
+                 data-help-why="Grouped by kind of page, not by individual URL, so that 200 different product pages appear as one entry instead of 200 single visits. ':detail' means one record (a single product or order); without it, a list of many.">
+                <div class="card-header bg-body fw-semibold d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-files me-1" aria-hidden="true"></i> Performance by page type</span>
+                    <button type="button" class="admin-help-toggle" data-help-toggle aria-label="What is this card?"><i class="bi bi-question-lg" aria-hidden="true"></i></button>
+                </div>
+                <div class="card-body table-responsive p-0">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Page</th>
+                                <th class="text-end">Samples</th>
+                                <th class="text-end">p50</th>
+                                <th class="text-end">p95</th>
+                                <th class="text-end">Server p95</th>
+                                <th class="text-end">Avg weight</th>
+                            </tr>
+                        </thead>
+                        <tbody data-live-ept-pages>
+                            <c:choose>
+                                <c:when test="${empty ept.byPageType}">
+                                    <tr><td colspan="6" class="text-muted small">No page samples yet.</td></tr>
+                                </c:when>
+                                <c:otherwise>
+                                    <c:forEach items="${ept.byPageType}" var="b">
+                                        <tr>
+                                            <td><code class="text-muted"><c:out value="${b.key}"/></code></td>
+                                            <td class="text-end"><fmt:formatNumber value="${b.clientCount}"/></td>
+                                            <td class="text-end"><fmt:formatNumber value="${b.client.p50}"/> ms</td>
+                                            <td class="text-end ${b.client.p95 > 2000 ? 'text-danger fw-bold' : ''}"><fmt:formatNumber value="${b.client.p95}"/> ms</td>
+                                            <td class="text-end text-muted"><fmt:formatNumber value="${b.server.p95}"/> ms</td>
+                                            <td class="text-end text-muted"><fmt:formatNumber value="${b.averageBytes / 1024}" pattern="#0.0"/> KB</td>
+                                        </tr>
+                                    </c:forEach>
+                                </c:otherwise>
+                            </c:choose>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer bg-body text-muted small">
+                    Grouped by route, so a list page and a single record
+                    (<code>:detail</code>) are counted separately. Sorted slowest first.
+                </div>
+            </div>
+        </c:otherwise>
+    </c:choose>
+
+    <h5 class="fw-bold mb-2 mt-4">Server internals</h5>
+    <p class="text-muted small mb-3">
+        Everything from here down is read live from the running application. It
+        explains <em>why</em> the figures above came out as they did, but unlike
+        them it describes the server and never the customer &mdash; and it all
+        resets when the app is redeployed.
+    </p>
+
     <div class="row g-3 mb-3">
         <div class="col-6 col-md-3">
             <div class="card stats-card"

@@ -25,6 +25,14 @@
 .payment-method-copy small { color: var(--muted); font-size: .75rem; }
 .payment-method-check { margin-left: auto; color: var(--brand); opacity: 0; }
 .payment-method.is-selected .payment-method-check { opacity: 1; }
+/* Coming soon badge */
+.coming-soon-badge { position: absolute; top: .5rem; right: .5rem; padding: .25rem .6rem; font-size: .7rem; font-weight: 600; color: #fff; background: var(--muted); border-radius: 6px; }
+/* Disabled payment method styling */
+.payment-method[data-coming-soon="true"] { cursor: not-allowed; opacity: .6; pointer-events: none; }
+.payment-method[data-coming-soon="true"]:hover { border-color: var(--line); background: transparent; }
+.payment-method[data-coming-soon="true"] .payment-method-icon { opacity: .5; }
+.payment-method[data-coming-soon="true"] .payment-method-copy strong,
+.payment-method[data-coming-soon="true"] .payment-method-copy small { color: var(--muted); }
 /* ABA Payway panel: instructions only, no fields. */
 .aba-payment-panel { padding: 1rem; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-muted); }
 /* Card panel. The warning is deliberately louder than the rest of the form: the
@@ -42,6 +50,20 @@
 .cash-payment-panel { padding: 1rem; border: 1px solid var(--accent-soft-border); border-radius: 12px; background: var(--soft-accent); }
 .cash-payment-copy { display: flex; align-items: center; gap: .75rem; }
 .cash-payment-copy > i { color: var(--brand); font-size: 1.5rem; }
+/* Checkout payment coming soon modal with blurred background
+   Note: This is for the checkout page only. The admin gate has its own separate
+   "coming soon" modal implementation using Bootstrap's native modal with classes
+   (.coming-soon-*, .coming-soon-dialog) in components.css. The two implementations
+   are intentionally separate:
+   - Admin: Bootstrap's native modal (bootstrap.Modal.getOrCreateInstance)
+   - Checkout: Custom JavaScript-generated overlay with flexbox centering */
+.checkout-coming-soon-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, .5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.checkout-coming-soon-modal { position: relative; max-width: 400px; width: 90%; animation: checkoutModalSlideIn .3s ease-out; }
+@keyframes checkoutModalSlideIn { from { opacity: 0; transform: translateY(-20px) scale(.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.checkout-coming-soon-content { background: var(--surface); padding: 2rem; border-radius: 16px; text-align: center; box-shadow: 0 10px 40px rgba(0, 0, 0, .2); }
+.checkout-coming-soon-icon { display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; margin: 0 auto 1rem; border-radius: 50%; background: var(--soft-accent); color: var(--brand); font-size: 2rem; }
+.checkout-coming-soon-content h3 { margin-bottom: .75rem; font-weight: 700; }
+.checkout-coming-soon-content p { margin-bottom: 1.5rem; color: var(--muted); line-height: 1.6; }
 .payment-trust-row { display: flex; flex-wrap: wrap; gap: .8rem 1.2rem; margin-top: 1rem; color: var(--muted); font-size: .73rem; }
 .payment-trust-row i { color: #16a34a; margin-right: .2rem; }
 .checkout-submit { box-shadow: 0 8px 18px rgba(37,99,235,.2); }
@@ -743,9 +765,14 @@
     .cart-qty { width: 122px; max-width: 122px; }
     .cart-qty .btn { width: 31px; min-width: 31px; }
     .cart-remove-form .btn { min-width: 68px; padding: .35rem .5rem; font-size: .74rem; }
-    .customer-sidebar .list-group { display: grid; grid-template-columns: repeat(3, 1fr); }
-    .customer-sidebar .list-group-item { display: flex; align-items: center; justify-content: center; padding: .7rem .35rem; border: 0; border-right: 1px solid var(--line); font-size: .78rem; text-align: center; }
-    .customer-sidebar .list-group-item:last-child { border-right: 0; }
+    /* The account strip wraps rather than sitting in a fixed column count, so adding
+       an entry reflows instead of leaving a stray vertical rule at a row edge. The
+       per-item right border that made this a grid is gone with it: with a wrapping
+       row there is no way to know from CSS which item ends a line, and an nth-child
+       rule would only be right until someone added a sixth entry. */
+    .customer-sidebar .list-group { display: flex; flex-wrap: wrap; }
+    .customer-sidebar .list-group-item { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; padding: .7rem .5rem; border: 0; font-size: .78rem; text-align: center; }
+    .customer-sidebar .list-group-item + .list-group-item { border-left: 1px solid var(--line); }
     .profile-avatar-row { align-items: center !important; flex-direction: column; gap: 1rem !important; text-align: center; }
     .profile-upload-form { width: 100%; }
     .profile-upload-form .form-control { width: 100%; text-align: left; }
@@ -1109,13 +1136,11 @@ th.sortable[aria-sort="descending"] {
     .admin-filter-toolbar form { flex: 1 1 100%; }
     .admin-filter-toolbar form .form-select { width: 100%; }
 
-    /* Customer account nav: 4 links become an awkward 3+1 grid below sm.
-       Use a clean 2x2 grid with matching separators instead. */
-    .customer-sidebar .list-group { grid-template-columns: repeat(2, 1fr); }
-    .customer-sidebar .list-group-item { border-right: 1px solid var(--line); }
-    .customer-sidebar .list-group-item:nth-child(even) { border-right: 0; }
-    .customer-sidebar .list-group-item:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
-    .customer-sidebar .list-group-item:last-child { border-right: 0; }
+    /* Customer account nav on the narrowest screens: give each entry a full line
+       so the labels stay readable. The strip already wraps, so this only changes
+       the wrap width -- no column count or separator bookkeeping to get wrong. */
+    .customer-sidebar .list-group-item { flex: 1 1 100%; }
+    .customer-sidebar .list-group-item + .list-group-item { border-left: 0; border-top: 1px solid var(--line); }
 }
 
 /* Chat header identity block can carry long usernames/subjects - let it
@@ -1126,3 +1151,140 @@ th.sortable[aria-sort="descending"] {
 
 /* Product detail image panel - themed placeholder surface */
 .product-image-panel { background: var(--surface-muted); }
+
+/* ---- Payment receipt (customer/account/receipt.jsp) ----
+   A receipt is a document, not a page of the site, so it is styled towards
+   paper: fixed-width sheet, hairline rules instead of card shadows, and a
+   print block that drops the site chrome. Lives here rather than in
+   components.css because it is a one-off page layout. */
+
+.receipt-page { background: var(--surface-muted); }
+
+.receipt-sheet {
+    max-width: 42rem;
+    margin-inline: auto;
+    border: 1px solid var(--line);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .06);
+}
+
+/* The merchant wordmark on a light sheet. Deliberately not .footer-brand:
+   that is #fff for the dark footer and would print invisible here. */
+.receipt-brand {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    margin: 0;
+    color: var(--ink);
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+.receipt-brand > span { white-space: nowrap; }
+.receipt-brand img { height: 40px !important; width: auto; }
+
+/* Hairline divider. A shadow reads as a smudge once printed. */
+.receipt-rule { border-top: 1px solid var(--line); }
+
+.receipt-meta { row-gap: .15rem; }
+.receipt-meta > dt { font-size: .8rem; }
+.receipt-meta > dd { font-size: .9rem; }
+
+/* Confirmation strip: icon beside a short sentence, the first thing read. */
+.receipt-paid {
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+    padding: .9rem 1.1rem;
+    border: 1px solid #bbf7d0;
+    border-radius: 12px;
+    background: #f0fdf4;
+}
+.receipt-paid-icon {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #dcfce7;
+    color: #15803d;
+    font-size: 1.2rem;
+}
+
+/* Line items. Thead is muted rather than raised so the totals row reads as the
+   answer to the numbers above it. */
+.receipt-lines thead th {
+    padding: .5rem .75rem;
+    border-bottom: 1px solid var(--line);
+    color: var(--muted);
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.receipt-lines tbody td { padding: .6rem .75rem; border-bottom: 1px solid var(--line); }
+.receipt-lines tfoot td { padding: .75rem; border-top: 2px solid var(--ink); }
+
+/* Provider reference: kept as selectable text so a customer can copy it, and
+   allowed to break anywhere because gateways emit long unbroken strings. */
+.receipt-ref { overflow-wrap: anywhere; word-break: break-word; }
+
+/* ---- Receipt printing ----
+   window.print() on the receipt must produce the receipt, not the site with a
+   receipt in it. The chrome is hidden by class rather than by rebuilding the
+   page, so what prints is exactly what is on screen minus the furniture.
+
+   Forced colours on white: a dark-theme session would otherwise print white
+   text on white paper. --print-color-adjust keeps the two fills that carry
+   meaning (the paid strip, the totals rule) from being dropped by a browser
+   that omits backgrounds, and the border stays as the backup signal. */
+@media print {
+    @page { margin: 14mm; }
+
+    body.receipt-page {
+        background: #fff !important;
+        color: #000 !important;
+    }
+
+    /* Site chrome. .no-print also marks the page's own Print/Close buttons,
+       since a printed receipt that offers to print itself is nonsense. */
+    body.receipt-page header,
+    body.receipt-page footer,
+    body.receipt-page .site-footer,
+    body.receipt-page .no-print,
+    body.receipt-page .mobile-bottom-nav,
+    body.receipt-page #toast-container,
+    body.receipt-page .modal-backdrop { display: none !important; }
+
+    .receipt-sheet {
+        max-width: none;
+        margin: 0;
+        border: 0;
+        box-shadow: none;
+    }
+    .receipt-sheet .card-body { padding: 0 !important; }
+
+    .receipt-paid {
+        border-color: #999;
+        background: #fff;
+    }
+    .receipt-paid-icon { background: #fff; border: 1px solid #999; color: #000; }
+
+    .receipt-brand { color: #000; }
+    .receipt-rule { border-color: #999; }
+    .receipt-lines tfoot td { border-top-color: #000; }
+    .receipt-lines thead th,
+    .receipt-lines tbody td { border-color: #ccc; }
+
+    /* The receipt is the point of the page, so let it break across sheets
+       rather than pushing a mostly-blank second page. */
+    .receipt-sheet,
+    .receipt-paid,
+    .receipt-lines tr { break-inside: avoid; }
+    .receipt-lines thead { display: table-header-group; }
+
+    .receipt-paid,
+    .receipt-brand,
+    .receipt-lines,
+    .receipt-meta { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

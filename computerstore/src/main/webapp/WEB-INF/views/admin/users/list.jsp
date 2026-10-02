@@ -53,8 +53,6 @@
                                href="${pageContext.request.contextPath}/admin/users?action=profile&id=${u.userId}">Profile</a>
                             <a class="btn btn-sm btn-outline-secondary"
                                href="${pageContext.request.contextPath}/admin/users?action=edit&id=${u.userId}">Edit</a>
-                            <a class="btn btn-sm btn-outline-secondary"
-                               href="${pageContext.request.contextPath}/admin/users?action=reset&id=${u.userId}">Reset Password</a>
                         </td>
                     </tr>
                 </c:forEach>

@@ -9,9 +9,11 @@ import com.hengtongan.computerstore.core.service.DashboardService;
 import com.hengtongan.computerstore.core.service.InventoryService;
 import com.hengtongan.computerstore.core.service.OrderService;
 import com.hengtongan.computerstore.core.service.PasswordResetService;
+import com.hengtongan.computerstore.core.service.NotificationService;
 import com.hengtongan.computerstore.core.service.ProductService;
 import com.hengtongan.computerstore.core.service.ReportService;
 import com.hengtongan.computerstore.core.service.ReviewService;
+import com.hengtongan.computerstore.core.service.PageExperienceService;
 import com.hengtongan.computerstore.core.service.PaymentService;
 import com.hengtongan.computerstore.core.service.SupportChannelService;
 import com.hengtongan.computerstore.core.service.TransactionService;
@@ -38,10 +40,12 @@ public final class AppContext {
     private final AuditLogService auditLogService;
     private final ReportService reportService;
     private final ReviewService reviewService;
+    private final PageExperienceService pageExperienceService;
     private final SupportChannelService supportChannelService;
     private final PaymentService paymentService;
     private final TransactionService transactionService;
     private final PasswordResetService passwordResetService;
+    private final NotificationService notificationService;
 
     private AppContext() {
         this.productService = new ProductService();
@@ -56,10 +60,15 @@ public final class AppContext {
         this.auditLogService = new AuditLogService();
         this.reportService = new ReportService();
         this.reviewService = new ReviewService();
+        this.pageExperienceService = new PageExperienceService();
         this.supportChannelService = new SupportChannelService();
         this.paymentService = new PaymentService();
         this.transactionService = new TransactionService();
         this.passwordResetService = new PasswordResetService();
+        // Shares the UserService instance above: sendToCustomer looks the
+        // recipient up per order, and a second UserService would mean a second
+        // cache and a second pool's worth of lookups for the same rows.
+        this.notificationService = new NotificationService(userService);
     }
 
     public static synchronized void init() {
@@ -129,6 +138,10 @@ public final class AppContext {
         return reviewService;
     }
 
+    public PageExperienceService pageExperienceService() {
+        return pageExperienceService;
+    }
+
     public SupportChannelService supportChannelService() {
         return supportChannelService;
     }
@@ -143,5 +156,16 @@ public final class AppContext {
 
     public PasswordResetService passwordResetService() {
         return passwordResetService;
+    }
+
+    /**
+     * Order-lifecycle email. This was written but never wired to anything: no
+     * code constructed the class, so the "order placed" and "status changed"
+     * mails it describes were never sent. Callers invoke it only after the
+     * transaction has committed, and it never throws, so a mail problem cannot
+     * undo an order.
+     */
+    public NotificationService notificationService() {
+        return notificationService;
     }
 }

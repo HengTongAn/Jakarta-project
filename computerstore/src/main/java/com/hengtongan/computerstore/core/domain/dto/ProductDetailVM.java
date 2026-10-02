@@ -17,6 +17,13 @@ public class ProductDetailVM {
     private final String sku;
     private final String description;
     private final String brandName;
+    /**
+     * Kept alongside {@link #brandName} because the detail page links the brand
+     * to {@code /products?brand=<id>}: EL resolves {@code product.brandId} off
+     * this view model, and a missing property is a runtime
+     * {@code PropertyNotFoundException}, not a compile error.
+     */
+    private final int brandId;
     private final String categoryName;
     private final BigDecimal price;
     private final int stockQuantity;
@@ -29,14 +36,14 @@ public class ProductDetailVM {
     private final String sourceUrl;
 
     public ProductDetailVM(int productId, int categoryId, String name, String sku, String description,
-                           String brandName, String categoryName, BigDecimal price, int stockQuantity,
+                           int brandId, String brandName, String categoryName, BigDecimal price, int stockQuantity,
                            Product.Status status, String imageUrl) {
-        this(productId, categoryId, name, sku, description, brandName, categoryName, price,
+        this(productId, categoryId, name, sku, description, brandId, brandName, categoryName, price,
                 stockQuantity, status, imageUrl, List.of(), List.of(), null, null, null);
     }
 
     public ProductDetailVM(int productId, int categoryId, String name, String sku, String description,
-                           String brandName, String categoryName, BigDecimal price, int stockQuantity,
+                           int brandId, String brandName, String categoryName, BigDecimal price, int stockQuantity,
                            Product.Status status, String imageUrl, List<String> highlights,
                            List<ProductSpec> specs, String boxContents, String warrantyInfo, String sourceUrl) {
         this.productId = productId;
@@ -44,6 +51,7 @@ public class ProductDetailVM {
         this.name = name;
         this.sku = sku;
         this.description = description;
+        this.brandId = brandId;
         this.brandName = brandName;
         this.categoryName = categoryName;
         this.price = price;
@@ -79,6 +87,10 @@ public class ProductDetailVM {
 
     public String getBrandName() {
         return brandName;
+    }
+
+    public int getBrandId() {
+        return brandId;
     }
 
     public String getCategoryName() {

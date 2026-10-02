@@ -1,0 +1,23 @@
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%--
+    Transaction type badge -- which way the money moved. The caller sets the enum first:
+
+        <c:set var="_txType" value="${tx.transactionType}"/>
+        <%@ include file="../../components/transaction-type-badge.jspf" %>
+
+    Type and status are separate columns and answer separate questions: type says
+    inflow or outflow, status says whether it settled. A row is only money that moved
+    if both agree -- type PAYMENT with status FAILED is a failed attempt worth showing
+    in the ledger but not counted as revenue.
+
+    An unknown value renders as text rather than being hidden, for the same reason as
+    the method badge: the column is an ENUM today, and silently dropping a row the
+    ledger holds would be the worse failure if that ever changes.
+--%>
+<c:choose>
+    <c:when test="${_txType.name() == 'PAYMENT'}"><span class="badge bg-primary"><i class="bi bi-arrow-down-left me-1" aria-hidden="true"></i>Payment</span></c:when>
+    <c:when test="${_txType.name() == 'REFUND'}"><span class="badge bg-info text-dark"><i class="bi bi-arrow-up-right me-1" aria-hidden="true"></i>Refund</span></c:when>
+    <c:when test="${_txType.name() == 'PARTIAL_REFUND'}"><span class="badge bg-info text-dark"><i class="bi bi-arrow-up-right me-1" aria-hidden="true"></i>Partial Refund</span></c:when>
+    <c:when test="${_txType.name() == 'CHARGEBACK'}"><span class="badge bg-danger"><i class="bi bi-arrow-up-right me-1" aria-hidden="true"></i>Chargeback</span></c:when>
+    <c:otherwise><span class="badge bg-secondary"><c:out value="${_txType}"/></span></c:otherwise>
+</c:choose>

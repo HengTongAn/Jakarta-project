@@ -4,6 +4,7 @@ import com.hengtongan.computerstore.core.exception.ValidationException;
 import com.hengtongan.computerstore.core.domain.entity.User;
 import com.hengtongan.computerstore.util.web.AuditLogger;
 import com.hengtongan.computerstore.util.web.Flash;
+import com.hengtongan.computerstore.util.security.CSRFUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import com.hengtongan.computerstore.web.controller.base.BaseServlet;
@@ -25,6 +26,10 @@ public class ProfileServlet extends BaseServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        if (!CSRFUtil.validateToken(request)) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Invalid CSRF token");
+            return;
+        }
         User user = sessionUser(request);
         String fullName = request.getParameter("fullName");
         String email = request.getParameter("email");

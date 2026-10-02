@@ -1,26 +1,5 @@
 package com.hengtongan.computerstore.web.controller.customer;
 
-import com.hengtongan.computerstore.infrastructure.cache.CacheManager;
-import com.hengtongan.computerstore.web.controller.base.BaseServlet;
-import com.hengtongan.computerstore.core.exception.NotFoundException;
-import com.hengtongan.computerstore.core.domain.entity.Brand;
-import com.hengtongan.computerstore.core.domain.entity.Category;
-import com.hengtongan.computerstore.core.domain.entity.Product;
-import com.hengtongan.computerstore.core.domain.entity.RatingSummary;
-import com.hengtongan.computerstore.core.domain.entity.Review;
-import com.hengtongan.computerstore.core.domain.entity.User;
-import com.hengtongan.computerstore.core.service.BrandService;
-import com.hengtongan.computerstore.core.service.CategoryService;
-import com.hengtongan.computerstore.core.service.ProductService;
-import com.hengtongan.computerstore.core.service.ReviewService;
-import com.hengtongan.computerstore.util.validation.ValidationUtil;
-import com.hengtongan.computerstore.core.domain.dto.ActiveFilterVM;
-import com.hengtongan.computerstore.core.domain.dto.ProductViewMapper;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
@@ -33,10 +12,32 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.hengtongan.computerstore.core.domain.dto.ActiveFilterVM;
+import com.hengtongan.computerstore.core.domain.dto.ProductViewMapper;
+import com.hengtongan.computerstore.core.domain.entity.Brand;
+import com.hengtongan.computerstore.core.domain.entity.Category;
+import com.hengtongan.computerstore.core.domain.entity.Product;
+import com.hengtongan.computerstore.core.domain.entity.RatingSummary;
+import com.hengtongan.computerstore.core.domain.entity.Review;
+import com.hengtongan.computerstore.core.domain.entity.User;
+import com.hengtongan.computerstore.core.exception.NotFoundException;
+import com.hengtongan.computerstore.core.service.BrandService;
+import com.hengtongan.computerstore.core.service.CategoryService;
+import com.hengtongan.computerstore.core.service.ProductService;
+import com.hengtongan.computerstore.core.service.ReviewService;
+import com.hengtongan.computerstore.infrastructure.cache.CacheManager;
+import com.hengtongan.computerstore.util.validation.ValidationUtil;
+import com.hengtongan.computerstore.web.controller.base.BaseServlet;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 /**
  * The catalogue page for customers.
- * GET /products               -> product list with search / filters
- * GET /products?id=5          -> one product detail page
+ * GET /products -> product list with search / filters
+ * GET /products?id=5 -> one product detail page
  */
 @SuppressWarnings("unchecked")
 @WebServlet("/products")
@@ -165,9 +166,8 @@ public class ProductServlet extends BaseServlet {
         request.setAttribute("page", page);
         request.setAttribute("totalPages", totalPages);
         request.setAttribute("totalMatches", totalMatches);
-        List<ActiveFilterVM> activeFilters =
-                buildActiveFilters(search, categoryIds, brandIds, minPrice, maxPrice, sort,
-                        categories, brands);
+        List<ActiveFilterVM> activeFilters = buildActiveFilters(search, categoryIds, brandIds, minPrice, maxPrice, sort,
+                categories, brands);
         request.setAttribute("activeFilters", activeFilters);
         // Storefront home (no active filters) shows the latest approved reviews;
         // the JSP keeps the static testimonials as its empty-state fallback.
@@ -185,8 +185,8 @@ public class ProductServlet extends BaseServlet {
      * ({@link CacheManager#invalidateAllCatalog()}).
      */
     private Map<String, Object> loadCatalog(String search, List<Integer> categoryIds, List<Integer> brandIds,
-                                            BigDecimal minPrice, BigDecimal maxPrice, String sort,
-                                            int page, int pageSize) {
+            BigDecimal minPrice, BigDecimal maxPrice, String sort,
+            int page, int pageSize) {
         final String key = "catalog:" + catalogKey(search, categoryIds, brandIds,
                 minPrice, maxPrice, sort, page);
         if (CacheManager.isCacheEnabled()) {
@@ -199,8 +199,8 @@ public class ProductServlet extends BaseServlet {
 
     /** The database-heavy half of a catalogue page (runs once per fingerprint). */
     private Map<String, Object> buildCatalog(String search, List<Integer> categoryIds, List<Integer> brandIds,
-                                             BigDecimal minPrice, BigDecimal maxPrice, String sort,
-                                             int page, int pageSize) {
+            BigDecimal minPrice, BigDecimal maxPrice, String sort,
+            int page, int pageSize) {
         ProductService productService = app().productService();
         int offset = (page - 1) * pageSize;
         List<Product> products = productService.search(
@@ -219,12 +219,11 @@ public class ProductServlet extends BaseServlet {
         List<Product> trending = productService.findTrending(8);
         // One aggregate query for every card on the page (no per-product query).
         Map<Integer, RatingSummary> summaries = ratingSummaries(products, trending, newArrivals);
-        Map<Integer, Long> categoryCounts =
-                productService.countByCategory(search, brandIds, minPrice, maxPrice);
-        Map<Integer, Long> brandCounts =
-                productService.countByBrand(search, categoryIds, minPrice, maxPrice);
+        Map<Integer, Long> categoryCounts = productService.countByCategory(search, brandIds, minPrice, maxPrice);
+        Map<Integer, Long> brandCounts = productService.countByBrand(search, categoryIds, minPrice, maxPrice);
         List<Review> recentReviews = hasActiveFilters(search, categoryIds, brandIds, minPrice, maxPrice)
-                ? List.of() : app().reviewService().recentApproved(3);
+                ? List.of()
+                : app().reviewService().recentApproved(3);
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("products", products);
@@ -247,7 +246,7 @@ public class ProductServlet extends BaseServlet {
      * entry; search is case-insensitive to match the DB's collation.
      */
     private static String catalogKey(String search, List<Integer> categoryIds, List<Integer> brandIds,
-                                     BigDecimal minPrice, BigDecimal maxPrice, String sort, int page) {
+            BigDecimal minPrice, BigDecimal maxPrice, String sort, int page) {
         StringBuilder sb = new StringBuilder();
         sb.append(page).append('|');
         if (search != null && !search.trim().isEmpty()) {
@@ -284,9 +283,12 @@ public class ProductServlet extends BaseServlet {
         return sb.toString();
     }
 
-    /** Mirrors {@link #buildActiveFilters}: a page is "filtered" when any of these are set. */
+    /**
+     * Mirrors {@link #buildActiveFilters}: a page is "filtered" when any of these
+     * are set.
+     */
     private static boolean hasActiveFilters(String search, List<Integer> categoryIds, List<Integer> brandIds,
-                                            BigDecimal minPrice, BigDecimal maxPrice) {
+            BigDecimal minPrice, BigDecimal maxPrice) {
         return (search != null && !search.trim().isEmpty())
                 || (categoryIds != null && !categoryIds.isEmpty())
                 || (brandIds != null && !brandIds.isEmpty())
@@ -311,9 +313,9 @@ public class ProductServlet extends BaseServlet {
     }
 
     private List<ActiveFilterVM> buildActiveFilters(String search, List<Integer> categoryIds,
-                                                    List<Integer> brandIds, BigDecimal minPrice,
-                                                    BigDecimal maxPrice, String sort,
-                                                    List<Category> categories, List<Brand> brands) {
+            List<Integer> brandIds, BigDecimal minPrice,
+            BigDecimal maxPrice, String sort,
+            List<Category> categories, List<Brand> brands) {
         List<ActiveFilterVM> filters = new ArrayList<>();
 
         if (search != null && !search.trim().isEmpty()) {
@@ -358,8 +360,8 @@ public class ProductServlet extends BaseServlet {
     }
 
     private String buildUrl(String search, List<Integer> categoryIds, List<Integer> brandIds,
-                            BigDecimal minPrice, BigDecimal maxPrice, String sort,
-                            Integer excludeCategory, Integer excludeBrand) {
+            BigDecimal minPrice, BigDecimal maxPrice, String sort,
+            Integer excludeCategory, Integer excludeBrand) {
         StringBuilder q = new StringBuilder();
         appendParam(q, "search", search);
 

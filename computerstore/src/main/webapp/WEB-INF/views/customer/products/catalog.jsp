@@ -56,20 +56,56 @@
                     <i class="bi bi-shield-check"></i> Buy with confidence
                 </p>
             </div>
-            <div class="hero-showcase" aria-label="Featured performance setup">
-                <div class="hero-showcase-glow"></div>
-                <div class="hero-window">
-                    <div class="hero-window-bar"><span></span><span></span><span></span><b>APACH_PC/STORE / BUILD LAB</b></div>
-                    <div class="hero-screen">
-                        <div class="hero-screen-grid"></div>
-                        <div class="hero-chip-float"><i class="bi bi-lightning-charge-fill"></i> Performance pick</div>
-                        <div class="hero-screen-copy"><small>BUILD BETTER</small><strong>Power<br><em>without limits.</em></strong></div>
-                        <div class="hero-screen-stat"><b>98%</b><span>customer rating</span></div>
+            <div class="hero-showcase">
+                <div class="hero-showcase-glow" aria-hidden="true"></div>
+                <div class="hero-pc-carousel" data-hero-pc-carousel role="region" aria-roledescription="carousel" aria-label="Computer products and accessories">
+                    <div class="hero-pc-slides">
+                        <figure class="hero-pc-slide is-active" data-hero-pc-slide aria-label="Desktop tower, black mesh case">
+                            <img src="${pageContext.request.contextPath}/assets/images/hero-pcs/desktop-tower-black.jpeg" alt="Black mesh desktop PC tower" width="520" height="380" fetchpriority="high" decoding="async">
+                            <figcaption>Desktop tower</figcaption>
+                        </figure>
+                        <figure class="hero-pc-slide" data-hero-pc-slide aria-label="Laptop computer" aria-hidden="true" tabindex="-1">
+                            <img src="${pageContext.request.contextPath}/assets/images/hero-pcs/laptop.jpeg" alt="Open laptop computer" width="520" height="380" loading="lazy" decoding="async">
+                            <figcaption>Everyday laptops</figcaption>
+                        </figure>
+                        <figure class="hero-pc-slide" data-hero-pc-slide aria-label="Webcam" aria-hidden="true" tabindex="-1">
+                            <img src="${pageContext.request.contextPath}/assets/images/hero-pcs/webcam.jpeg" alt="Desktop webcam" width="520" height="380" loading="lazy" decoding="async">
+                            <figcaption>Work-from-home essentials</figcaption>
+                        </figure>
+                        <figure class="hero-pc-slide" data-hero-pc-slide aria-label="RGB gaming desktop tower" aria-hidden="true" tabindex="-1">
+                            <img src="${pageContext.request.contextPath}/assets/images/hero-pcs/desktop-tower-rgb.jpeg" alt="Black gaming desktop tower with green RGB fans" width="520" height="380" loading="lazy" decoding="async">
+                            <figcaption>Gaming desktops</figcaption>
+                        </figure>
+                        <figure class="hero-pc-slide" data-hero-pc-slide aria-label="Graphics card" aria-hidden="true" tabindex="-1">
+                            <img src="${pageContext.request.contextPath}/assets/images/hero-pcs/graphics-card.jpeg" alt="Triple-fan graphics card with retail box" width="520" height="380" loading="lazy" decoding="async">
+                            <figcaption>Graphics upgrades</figcaption>
+                        </figure>
+                        <figure class="hero-pc-slide" data-hero-pc-slide aria-label="RGB gaming keyboard" aria-hidden="true" tabindex="-1">
+                            <img src="${pageContext.request.contextPath}/assets/images/hero-pcs/gaming-keyboard.jpeg" alt="Compact RGB gaming keyboard" width="520" height="380" loading="lazy" decoding="async">
+                            <figcaption>Gaming keyboards</figcaption>
+                        </figure>
+                        <figure class="hero-pc-slide" data-hero-pc-slide aria-label="Gaming monitor" aria-hidden="true" tabindex="-1">
+                            <img src="${pageContext.request.contextPath}/assets/images/hero-pcs/gaming-monitor.jpeg" alt="ASUS TUF Gaming monitor" width="520" height="380" loading="lazy" decoding="async">
+                            <figcaption>Gaming displays</figcaption>
+                        </figure>
                     </div>
-                    <div class="hero-window-base"></div>
+                    <button class="hero-pc-control hero-pc-prev" type="button" data-hero-pc-prev aria-label="Previous picture">
+                        <i class="bi bi-chevron-left" aria-hidden="true"></i>
+                    </button>
+                    <button class="hero-pc-control hero-pc-next" type="button" data-hero-pc-next aria-label="Next picture">
+                        <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                    </button>
+                    <div class="hero-pc-dots" role="group" aria-label="Choose a picture">
+                        <button class="hero-pc-dot is-active" type="button" data-hero-pc-to="0" aria-label="Show desktop tower" aria-current="true"></button>
+                        <button class="hero-pc-dot" type="button" data-hero-pc-to="1" aria-label="Show laptop"></button>
+                        <button class="hero-pc-dot" type="button" data-hero-pc-to="2" aria-label="Show webcam"></button>
+                        <button class="hero-pc-dot" type="button" data-hero-pc-to="3" aria-label="Show gaming tower"></button>
+                        <button class="hero-pc-dot" type="button" data-hero-pc-to="4" aria-label="Show graphics card"></button>
+                        <button class="hero-pc-dot" type="button" data-hero-pc-to="5" aria-label="Show keyboard"></button>
+                        <button class="hero-pc-dot" type="button" data-hero-pc-to="6" aria-label="Show monitor"></button>
+                    </div>
+                    <span class="hero-pc-count" data-hero-pc-count aria-hidden="true">1 / 7</span>
                 </div>
-                <div class="hero-float-card hero-float-card-top"><i class="bi bi-cpu"></i><span>Next-gen components</span><b>2025</b></div>
-                <div class="hero-float-card hero-float-card-bottom"><i class="bi bi-shield-check"></i><span>Warranty included</span></div>
             </div>
         </div>
     </div>
@@ -110,7 +146,7 @@
     </section>
 </c:if>
 
-<div id="catalog" class="container py-4">
+<div id="catalog" class="container py-4 catalog-anchor">
     <c:url var="allUrl" value="/products">
         <c:if test="${not empty param.search}"><c:param name="search" value="${param.search}"/></c:if>
         <c:if test="${not empty sort}"><c:param name="sort" value="${sort}"/></c:if>
@@ -216,7 +252,7 @@
                             <c:if test="${not empty sort}"><c:param name="sort" value="${sort}"/></c:if>
                             <c:param name="page" value="1"/>
                         </c:url>
-                        <a class="page-link" href="<c:out value='${firstUrl}'/>" aria-label="First page">&laquo;&laquo;</a>
+                        <a class="page-link" href="<c:out value='${firstUrl}'/>#catalog" aria-label="First page">&laquo;&laquo;</a>
                     </li>
                 </c:if>
                 <li class="page-item ${page <= 1 ? 'disabled' : ''}">
@@ -229,7 +265,7 @@
                         <c:if test="${not empty sort}"><c:param name="sort" value="${sort}"/></c:if>
                         <c:param name="page" value="${page - 1}"/>
                     </c:url>
-                    <a class="page-link" href="<c:out value='${prevUrl}'/>" aria-label="Previous page" ${page <= 1 ? 'tabindex="-1" aria-disabled="true"' : ''}>&laquo;</a>
+                    <a class="page-link" href="<c:out value='${prevUrl}'/>#catalog" aria-label="Previous page" ${page <= 1 ? 'tabindex="-1" aria-disabled="true"' : ''}>&laquo;</a>
                 </li>
                 <c:forEach var="i" begin="1" end="${totalPages}">
                     <c:if test="${i >= page - 2 && i <= page + 2}">
@@ -243,7 +279,7 @@
                                 <c:if test="${not empty sort}"><c:param name="sort" value="${sort}"/></c:if>
                                 <c:param name="page" value="${i}"/>
                             </c:url>
-                            <a class="page-link" href="<c:out value='${pageUrl}'/>">${i}</a>
+                            <a class="page-link" href="<c:out value='${pageUrl}'/>#catalog">${i}</a>
                         </li>
                     </c:if>
                 </c:forEach>
@@ -258,7 +294,7 @@
                             <c:if test="${not empty sort}"><c:param name="sort" value="${sort}"/></c:if>
                             <c:param name="page" value="${totalPages}"/>
                         </c:url>
-                        <a class="page-link" href="<c:out value='${lastUrl}'/>" aria-label="Last page">&raquo;&raquo;</a>
+                        <a class="page-link" href="<c:out value='${lastUrl}'/>#catalog" aria-label="Last page">&raquo;&raquo;</a>
                     </li>
                 </c:if>
                 <li class="page-item ${page >= totalPages ? 'disabled' : ''}">
@@ -271,7 +307,7 @@
                         <c:if test="${not empty sort}"><c:param name="sort" value="${sort}"/></c:if>
                         <c:param name="page" value="${page + 1}"/>
                     </c:url>
-                    <a class="page-link" href="<c:out value='${nextUrl}'/>" aria-label="Next page" ${page >= totalPages ? 'tabindex="-1" aria-disabled="true"' : ''}>&raquo;</a>
+                    <a class="page-link" href="<c:out value='${nextUrl}'/>#catalog" aria-label="Next page" ${page >= totalPages ? 'tabindex="-1" aria-disabled="true"' : ''}>&raquo;</a>
                 </li>
             </ul>
         </nav>
@@ -390,4 +426,5 @@
         }
     })();
 </script>
+<script src="${pageContext.request.contextPath}/assets/js/hero-pc-carousel.js?v=${assetsVersion}" defer></script>
 <%@ include file="../../layouts/footer.jspf" %>

@@ -885,6 +885,119 @@
     border-color: var(--brand);
     color: var(--brand);
 }
+
+/* ===== Grouped admin nav (Catalog / Sales / Customers / Insights) =====
+ * Five top-level triggers instead of fourteen flat links, each opening a menu
+ * for the sections it owns. The menu needs its own geometry because it renders
+ * inside the wrapping row: it has to clear the bar by a few pixels, and it has
+ * to size to its widest label rather than to the trigger that opens it.
+ *
+ * Background and border come from the app's own tokens rather than Bootstrap's
+ * --bs-dropdown-*. The nav carries data-bs-theme="auto", which follows the OS
+ * colour scheme, while theme.js follows the scheme the admin actually picked in
+ * the topbar. Taking the surface from Bootstrap would let a menu render light
+ * inside a dark panel. --surface/--line/--ink/--muted all flip together, so one
+ * rule covers both schemes and no dark-mode block is needed.
+ */
+.admin-nav .admin-nav-menu {
+    min-width: 12.5rem;
+    margin-top: .4rem;
+    padding: .35rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 16px 35px rgba(15,23,42,.18);
+}
+/* The fade, shared by every menu that dropdown-hover.js opens on hover: the
+ * admin sub-nav and the topbar profile menu alike. Bootstrap hides the menu with
+ * `display: none` and reveals it with `display: block`, and a transition cannot
+ * run between those two states -- the element is not rendered in the first one.
+ * The result is a menu that snaps in with no animation at all, which is very
+ * noticeable now that the menu opens on hover rather than on a deliberate click.
+ * So above the collapse the menu is laid out always and hidden with visibility
+ * instead: being absolutely positioned it costs no space in the bar, and it is
+ * popped out of hit-testing while hidden, so it cannot be clicked or focused.
+ * Keeping it displayed also means Popper measures a real box rather than a
+ * display:none one, which is what it wants. The delayed `visibility` on the way
+ * out is the other half: without it the element would stop being visible the
+ * instant the transition started and the fade would never be seen.
+ *
+ * The min-width is load-bearing, and it is about layout, not about taste. Below
+ * 992px both bars are collapsed navbars, and Bootstrap's own rule
+ * (.navbar-expand-lg .navbar-nav .dropdown-menu, specificity 0,3,0) makes the
+ * menu `position: static`, which puts it in the normal flow. Laying it out
+ * always would then leave a full-height menu sitting under every trigger on
+ * every phone and tablet page -- and the 0,2,0 rule here would lose to that 0,3,0
+ * rule on `position` regardless. It is also pointless there: a collapsed navbar
+ * has no fine pointer to hover with, so dropdown-hover.js never attaches. Below
+ * this width the menu keeps Bootstrap's display toggle and simply does not fade. */
+@media (min-width: 992px) {
+    .dropdown-hover-menu {
+        display: block;
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .16s ease, visibility 0s linear .16s;
+    }
+    .dropdown-hover-menu.show {
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+        transition: opacity .16s ease, visibility 0s;
+    }
+}
+/* flex so the icon, the label and the review count line up on one row without
+ * a vertical-align guess. The trigger above it is inline content and does not
+ * get this, which is why the two need separate rules for the badge. */
+.admin-nav .admin-nav-menu .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    border-radius: 8px;
+    padding: .5rem .6rem;
+    color: var(--ink);
+    white-space: nowrap;
+}
+.admin-nav .admin-nav-menu .dropdown-item i {
+    flex: none;
+    font-size: .95em;
+    color: var(--muted);
+}
+.admin-nav .admin-nav-menu .dropdown-item:hover,
+.admin-nav .admin-nav-menu .dropdown-item:focus {
+    background: #eff6ff;
+    color: var(--brand-dark);
+}
+.admin-nav .admin-nav-menu .dropdown-item:hover i,
+.admin-nav .admin-nav-menu .dropdown-item:focus i {
+    color: currentColor;
+}
+/* An active leaf is a tinted row with a brand rule down its left edge, not the
+ * gradient pill layout.css gives .nav-link.active -- a dropdown-item is not a
+ * .nav-link, so without this rule every page in its own group would render as
+ * plain unhighlighted text. The #eff6ff-on---brand-dark pairing is the one the
+ * storefront profile menu already uses in theme.css, so an active row reads
+ * identically in both menus. */
+.admin-nav .admin-nav-menu .dropdown-item.active {
+    background: #eff6ff;
+    color: var(--brand-dark);
+    font-weight: 600;
+    box-shadow: inset 3px 0 0 var(--brand);
+}
+/* The moderation count sits on the trigger and again on its own leaf, so it is
+ * readable from the top bar and still correct when the menu is open.
+ * realtime.js rewrites textContent on every [data-live-review-count], which is
+ * why the count is an aria-label and not a visually hidden span in the badge:
+ * a live update would wipe the span. */
+.admin-nav .nav-link .badge {
+    margin-left: .45rem;
+    font-size: .68rem;
+    vertical-align: 1px;
+}
+.admin-nav .admin-nav-menu .dropdown-item .badge {
+    margin-left: auto;
+    padding-left: .4rem;
+}
 .card {
     border: 1px solid var(--line);
     box-shadow: 0 1px 2px rgba(15, 23, 42, .05);
@@ -1175,3 +1288,77 @@
     border-width: 0.25em;
 }
 
+
+/* ===== Coming soon gate (admin) =====
+   Backs ComingSoonGateFilter: the page body is rendered as a blurred,
+   inert placeholder and a Bootstrap modal sits on top. Reached only via
+   the filter's forward to admin/coming-soon.jsp, so nothing here is on
+   the critical path of any other page.
+
+   Note: This is for the admin gate modal only. The checkout page has its own
+   separate "coming soon" modal implementation using custom overlay classes
+   (checkout-coming-soon-*) in pages.css. The two implementations are intentionally
+   separate because they serve different contexts and use different approaches:
+   - Admin: Bootstrap's native modal with backdrop blur
+   - Checkout: Custom JavaScript-generated overlay with flexbox centering */
+
+/* The blurred "screen". pointer-events and user-select are off so the
+   placeholder cannot be clicked or selected even where the backdrop does
+   not cover it (small viewports, where the modal is shorter than the
+   page). Blur alone leaves a readable edge, hence the small scale-up and
+   the overflow crop on the wrapper. */
+.coming-soon-ghost {
+    filter: blur(7px);
+    transform: scale(1.02);
+    overflow: hidden;
+    /* Clip the blurred fringe so the ghost fades at the edges rather than
+       ending on a hard line. The mask keeps the fade in both axes. */
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 72%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 72%, transparent 100%);
+    pointer-events: none;
+    user-select: none;
+}
+
+/* The modal. Bootstrap already dims its own backdrop; the blur on top of
+   that is what turns "a popup on a page" into "a popup over a blurred
+   screen". -webkit- is still required for Safari, which shipped
+   backdrop-filter late. */
+.coming-soon-modal .modal-backdrop {
+    -webkit-backdrop-filter: blur(4px) saturate(120%);
+    backdrop-filter: blur(4px) saturate(120%);
+}
+
+.coming-soon-dialog {
+    border: 0;
+    box-shadow: 0 1.5rem 3rem rgba(15, 23, 42, 0.18);
+}
+
+.coming-soon-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    font-size: 1.75rem;
+    color: var(--brand);
+    background: var(--brand-bg-strong);
+}
+
+[data-bs-theme="dark"] .coming-soon-dialog {
+    box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.55);
+}
+
+[data-bs-theme="dark"] .coming-soon-icon {
+    color: var(--accent);
+    background: rgba(14, 165, 233, 0.14);
+}
+
+/* Respect the OS "reduce motion" setting: the ghost is decorative, and a
+   drifting or scaling blur is exactly the kind of effect that setting
+   exists to suppress. */
+@media (prefers-reduced-motion: reduce) {
+    .coming-soon-ghost {
+        transform: none;
+    }
+}

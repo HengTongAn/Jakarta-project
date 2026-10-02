@@ -59,6 +59,7 @@ public final class ProductViewMapper {
                 product.getName(),
                 product.getSku(),
                 product.getDescription(),
+                product.getBrandId(),
                 product.getBrandName(),
                 product.getCategoryName(),
                 product.getPrice(),

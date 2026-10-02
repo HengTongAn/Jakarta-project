@@ -6,6 +6,7 @@ import com.hengtongan.computerstore.core.exception.ValidationException;
 import com.hengtongan.computerstore.core.domain.entity.CartItem;
 import com.hengtongan.computerstore.core.domain.entity.Order;
 import com.hengtongan.computerstore.core.domain.entity.Payment;
+import com.hengtongan.computerstore.core.domain.entity.Transaction;
 import com.hengtongan.computerstore.core.domain.entity.User;
 import com.hengtongan.computerstore.core.service.PaymentService;
 import com.hengtongan.computerstore.util.validation.CardValidator;
@@ -15,6 +16,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.List;
 
 @WebServlet("/checkout")
@@ -104,7 +106,11 @@ public class CheckoutServlet extends BaseServlet {
                 if (payment.getStatus() == Payment.Status.PAID) {
                     flashSuccess(request, "Payment of " + card.masked() + " accepted. Order #"
                             + order.getOrderId() + " is confirmed.");
-                    redirect(request, response, "/account/orders?id=" + order.getOrderId());
+                    // To the receipt, matching the ABA return: the card is authorised
+                    // inline here, so this is the same "the money has moved" moment the
+                    // gateway return endpoint handles. Falls back to the order page if
+                    // no completed transaction row was recorded.
+                    redirect(request, response, receiptPathFor(order, user));
                 } else {
                     // The order stays PENDING so the customer can try another card.
                     flashError(request, payment.getMessage() + " Your order #" + order.getOrderId()
@@ -118,6 +124,36 @@ public class CheckoutServlet extends BaseServlet {
         } catch (InsufficientStockException | ValidationException e) {
             flashError(request, e.getMessage());
             redirect(request, response, "/cart");
+        }
+    }
+
+    /**
+     * Where to send the browser once a card payment has actually settled.
+     * <p>
+     * The receipt when a completed transaction row exists, the order page when it
+     * does not. That second case is reachable: {@code startCardPayment} writes the
+     * transaction and settles the order in separate transactions, so a failure
+     * between them is caught and logged rather than propagated, leaving the order
+     * PAID with nothing to receipt. The order page still reports the paid state
+     * from the order table, so the customer is not left on an error.
+     * <p>
+     * The lookup takes the signed-in user rather than trusting {@code order}, so an
+     * order id in the URL cannot be used to obtain another customer's payment id.
+     */
+    private String receiptPathFor(Order order, User user) {
+        String orderPath = "/account/orders?id=" + order.getOrderId();
+        if (user == null) {
+            return orderPath;
+        }
+        try {
+            Transaction settled = app().transactionService()
+                    .getSettledPaymentForUser(order.getOrderId(), user.getUserId());
+            if (settled == null) {
+                return orderPath;
+            }
+            return "/account/transactions?id=" + settled.getTransactionId() + "&view=receipt";
+        } catch (SQLException e) {
+            return orderPath;
         }
     }
 

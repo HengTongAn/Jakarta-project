@@ -291,8 +291,18 @@ public class ProductRepository {
      */
     private static void recordQuery(String queryType, String sql, long startNanos) {
         long elapsedMs = Math.max(0, (System.nanoTime() - startNanos) / 1_000_000);
-        QueryMonitor.monitorQuery(queryType, QueryMonitor.extractSignature(sql), elapsedMs);
         MetricsCollector.recordDatabaseQuery(elapsedMs);
+        // Every caller invokes this from a finally block, so anything thrown
+        // here escapes the method and discards the query result that had
+        // already been assembled. Instrumentation must never be able to turn a
+        // successful read into a failure -- it did exactly that once, when
+        // extractSignature threw StringIndexOutOfBoundsException on a
+        // multi-line statement and every such catalogue page returned 500.
+        try {
+            QueryMonitor.monitorQuery(queryType, QueryMonitor.extractSignature(sql), elapsedMs);
+        } catch (RuntimeException e) {
+            LOGGER.debug("Query monitoring failed for {}", queryType, e);
+        }
     }
 
     // escapes % and _ so user input is matched literally, not as wildcards
@@ -390,9 +400,23 @@ public class ProductRepository {
         }
     }
 
-    /** Creates the product on the given connection (caller owns the transaction). */
-    public int create(Connection c, Product product) throws SQLException {
-        List<String> present = presentOptional();
+    /**
+     * Builds the product INSERT for the given set of optional columns.
+     *
+     * <p>Package-private and static so a test can assert the placeholder count
+     * against the real statement. An earlier version of this logic lived inline
+     * in {@link #create}, which made it untestable: the test could only rebuild
+     * a copy of the string, so it stayed green while the real statement was
+     * broken.</p>
+     *
+     * <p>There must be exactly one {@code ?} per column, in column order. A
+     * mismatch is not caught by {@code prepareStatement} -- MySQL accepts the
+     * statement and the failure appears later at {@code setString}, as
+     * {@code "Parameter index out of range"}. That is how the product INSERT
+     * shipped with 13 columns and 12 placeholders, so every product create
+     * failed.</p>
+     */
+    static String buildInsertSql(List<String> present) {
         StringBuilder cols = new StringBuilder(
                 "INSERT INTO products (category_id, brand_id, name, sku, description, price, stock_quantity");
         for (String column : present) {
@@ -402,9 +426,17 @@ public class ProductRepository {
         for (int i = 0; i < present.size(); i++) {
             cols.append(", ?");
         }
-        cols.append(")");
+        // status is in the column list above, so it needs its own placeholder.
+        // Omitting it is what made every create fail at setString(13).
+        cols.append(", ?");
+        return cols.append(")").toString();
+    }
 
-        try (PreparedStatement ps = c.prepareStatement(cols.toString(), Statement.RETURN_GENERATED_KEYS)) {
+    /** Creates the product on the given connection (caller owns the transaction). */
+    public int create(Connection c, Product product) throws SQLException {
+        List<String> present = presentOptional();
+
+        try (PreparedStatement ps = c.prepareStatement(buildInsertSql(present), Statement.RETURN_GENERATED_KEYS)) {
             int idx = 1;
             ps.setInt(idx++, product.getCategoryId());
             ps.setInt(idx++, product.getBrandId());
@@ -566,7 +598,26 @@ public class ProductRepository {
         }
     }
 
-    public boolean delete(int productId) { return softDelete(productId, null, null); }
+    public boolean delete(int productId) {
+        // Check if product has order history before allowing deletion
+        if (hasOrderHistory(productId)) {
+            return false; // Cannot delete - has order history
+        }
+        return softDelete(productId, null, null);
+    }
+
+    private boolean hasOrderHistory(int productId) {
+        String sql = "SELECT COUNT(*) FROM order_items WHERE product_id = ?";
+        try (Connection c = conn(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, productId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) { throw ErrorHandler.handleDatabaseError("checking order history", e); }
+        return false;
+    }
 
     public boolean softDelete(int productId, Integer actorId, String reason) {
         String sql = "UPDATE products SET deleted_at = NOW(), deleted_by = ?, delete_reason = ?, status = 'DISCONTINUED' WHERE product_id = ? AND deleted_at IS NULL";
@@ -588,23 +639,32 @@ public class ProductRepository {
     public boolean reduceStock(Connection c, int productId, int quantity) throws SQLException {
         // Decrement stock and recompute status in one statement. Discontinued
         // products keep DISCONTINUED so checkout cannot silently re-list them.
+        //
+        // The CASE reads `stock_quantity` bare, and it has to: MySQL evaluates
+        // single-table SET assignments left to right, so by the time the `status`
+        // expression is evaluated the preceding `stock_quantity = stock_quantity - ?`
+        // has already been applied and `stock_quantity` IS the post-decrement
+        // value ("UPDATE t1 SET col1 = col1 + 1, col2 = col1" sets col2 to the
+        // updated col1, per the MySQL manual). Repeating the `- ?` there applied
+        // the decrement twice, so a 3-unit order out of 10 landed the product on
+        // LOW_STOCK with 7 units left (10 - 3 = 7; 7 - 3 = 4 <= 5), and 6 units
+        // out of 7 landed it on OUT_OF_STOCK with 1 unit left -- which realtime.js
+        // turns into a hidden add-to-cart form on the product page.
         String sql = """
             UPDATE products
             SET stock_quantity = stock_quantity - ?,
                 status = CASE
                     WHEN status = 'DISCONTINUED' THEN 'DISCONTINUED'
-                    WHEN stock_quantity - ? <= 0 THEN 'OUT_OF_STOCK'
-                    WHEN stock_quantity - ? <= 5 THEN 'LOW_STOCK'
+                    WHEN stock_quantity <= 0 THEN 'OUT_OF_STOCK'
+                    WHEN stock_quantity <= 5 THEN 'LOW_STOCK'
                     ELSE 'IN_STOCK'
                 END
             WHERE product_id = ? AND stock_quantity >= ?
             """;
         try (PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, quantity);
-            ps.setInt(2, quantity);
+            ps.setInt(2, productId);
             ps.setInt(3, quantity);
-            ps.setInt(4, productId);
-            ps.setInt(5, quantity);
             boolean reduced = ps.executeUpdate() > 0;
             // No cache invalidation here: this method runs inside the caller's
             // transaction. Invalidating on a connection that may roll back would
@@ -623,6 +683,67 @@ public class ProductRepository {
             ps.setInt(3, productId);
             ps.executeUpdate();
             // Caller invalidates the product cache after its transaction commits.
+        }
+    }
+
+    /**
+     * Applies a signed delta to stock atomically and returns the resulting
+     * quantity, or -1 when the product does not exist, is soft-deleted, or the
+     * delta would take stock below zero.
+     *
+     * <p>{@link #setStock} cannot be used for this. It writes an absolute
+     * quantity that the caller computed from a {@code SELECT} on a
+     * <em>different</em> connection, so two admins adjusting the same product at
+     * once both read the same starting quantity and the second write discards the
+     * first -- a lost update that also wrote a wrong {@code old_quantity} into
+     * the inventory log, so the audit trail could not be reconciled against
+     * stock. Doing the arithmetic in the {@code UPDATE} makes the row lock do
+     * the serialising, and the status is derived from the post-update value in
+     * the same statement.</p>
+     *
+     * <p>Returns -1 rather than throwing so the service can map "rejected" onto
+     * its own exception type without catching {@code SQLException}.</p>
+     */
+    public int applyStockDelta(Connection c, int productId, int delta) throws SQLException {
+        // WHERE is evaluated against the row BEFORE any SET assignment, so the
+        // guard correctly uses the original stock. The CASE, however, is part of
+        // the SET list, which MySQL evaluates left to right: by the time it runs,
+        // the preceding `stock_quantity = stock_quantity + ?` has already been
+        // applied and `stock_quantity` IS the new value. Repeating the `+ ?`
+        // there applied the delta twice -- the same defect reduceStock had --
+        // so an admin adding 2 units to a product at 8 produced 10 units marked
+        // LOW_STOCK (10 + 2 = 12 was the check, 12 > 5, so no; the failing case
+        // was a NEGATIVE delta: 8 - 2 = 6, and 6 + (-2) = 4 <= 5 wrote LOW_STOCK
+        // on a product with 6 units, for which the true status is IN_STOCK).
+        String sql = """
+                UPDATE products
+                SET stock_quantity = stock_quantity + ?,
+                    status = CASE
+                        WHEN status = 'DISCONTINUED' THEN 'DISCONTINUED'
+                        WHEN stock_quantity <= 0 THEN 'OUT_OF_STOCK'
+                        WHEN stock_quantity <= 5 THEN 'LOW_STOCK'
+                        ELSE 'IN_STOCK'
+                    END
+                WHERE product_id = ?
+                  AND deleted_at IS NULL
+                  AND stock_quantity + ? >= 0
+                """;
+        try (PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, delta);
+            ps.setInt(2, productId);
+            ps.setInt(3, delta);
+            if (ps.executeUpdate() == 0) {
+                return -1;
+            }
+        }
+        // Read back inside the caller's transaction so the returned quantity and
+        // the logged quantity are the same row state the UPDATE committed to.
+        try (PreparedStatement ps = c.prepareStatement(
+                "SELECT stock_quantity FROM products WHERE product_id = ?")) {
+            ps.setInt(1, productId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : -1;
+            }
         }
     }
 
@@ -677,15 +798,24 @@ public class ProductRepository {
         if (restored == null) {
             return null;
         }
-        if (restored.status != Product.Status.DISCONTINUED) {
-            try (PreparedStatement ps = c.prepareStatement(
-                    "UPDATE products SET status = ? WHERE product_id = ?")) {
-                ps.setString(1, Product.computeStatus(restored.stockQuantity).name());
-                ps.setInt(2, productId);
-                ps.executeUpdate();
-            }
+        if (restored.status == Product.Status.DISCONTINUED) {
+            return restored;
         }
-        return restored;
+        Product.Status status = Product.computeStatus(restored.stockQuantity);
+        try (PreparedStatement ps = c.prepareStatement(
+                "UPDATE products SET status = ? WHERE product_id = ?")) {
+            ps.setString(1, status.name());
+            ps.setInt(2, productId);
+            ps.executeUpdate();
+        }
+        // Return the status the row now carries, not the one it carried before
+        // this call. OrderService.updateStatus feeds `restored.status` straight
+        // into EventHub.publishStock, so returning the pre-restore value made
+        // every connected browser relabel a product that had just come back into
+        // stock -- a cancel on a 0-stock product re-published OUT_OF_STOCK for a
+        // product the database now has units for, and realtime.js hides the
+        // add-to-cart form when the status it is sent is OUT_OF_STOCK.
+        return new StockSnapshot(restored.stockQuantity, status);
     }
 
     public void markDiscontinued(Connection c, int productId) throws SQLException {

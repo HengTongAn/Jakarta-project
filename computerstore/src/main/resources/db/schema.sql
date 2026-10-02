@@ -1,11 +1,25 @@
 -- ============================================================
 -- Computer Store Management System - Database Schema
 -- MySQL 8.x
--- SAFE TO RE-RUN: this file never drops an existing database.
--- To start completely fresh, drop the database explicitly yourself
--- (e.g. `mysql -e "DROP DATABASE computer_store"`), never inside this
--- file - a stray `DROP DATABASE` here would wipe whichever host the
--- script is run against.
+--
+-- SAFE TO RE-RUN: every statement below is `CREATE ... IF NOT EXISTS`
+-- and this file never drops an existing database, so running it against a
+-- populated server is a no-op. To start completely fresh, drop the
+-- database explicitly yourself (e.g. `mysql -e "DROP DATABASE
+-- computer_store"`), never inside this file - a stray `DROP DATABASE`
+-- here would wipe whichever host the script is run against.
+--
+-- This file is the COMPLETE base schema. It was previously missing six
+-- tables (payments, transactions, app_settings, password_reset_tokens,
+-- password_reset_codes, page_experience_samples) and the payment columns
+-- on orders, because those lived only in src/main/resources/db/migrations/.
+-- A fresh install therefore produced a database the app could not serve
+-- payments, password resets, EPT analytics or runtime settings on until
+-- the migration runner happened to fix it up at startup.
+--
+-- The migrations still exist and still run at startup; they are
+-- idempotent (IF NOT EXISTS / guarded ALTERs) and remain the mechanism for
+-- evolving an EXISTING database. This file is for standing one up.
 -- ============================================================
 
 CREATE DATABASE IF NOT EXISTS computer_store
@@ -17,7 +31,7 @@ USE computer_store;
 -- ------------------------------------------------------------
 -- Users (customers + admin)
 -- ------------------------------------------------------------
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     user_id       INT AUTO_INCREMENT PRIMARY KEY,
     username      VARCHAR(50)  NOT NULL UNIQUE,
     password_hash VARCHAR(100) NOT NULL,
@@ -36,7 +50,7 @@ CREATE TABLE users (
 -- ------------------------------------------------------------
 -- Categories
 -- ------------------------------------------------------------
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS categories (
     category_id INT AUTO_INCREMENT PRIMARY KEY,
     name        VARCHAR(100) NOT NULL UNIQUE,
     description VARCHAR(255),
@@ -50,7 +64,7 @@ CREATE TABLE categories (
 -- ------------------------------------------------------------
 -- Brands
 -- ------------------------------------------------------------
-CREATE TABLE brands (
+CREATE TABLE IF NOT EXISTS brands (
     brand_id    INT AUTO_INCREMENT PRIMARY KEY,
     name        VARCHAR(100) NOT NULL UNIQUE,
     description VARCHAR(255),
@@ -64,7 +78,7 @@ CREATE TABLE brands (
 -- ------------------------------------------------------------
 -- Products
 -- ------------------------------------------------------------
-CREATE TABLE products (
+CREATE TABLE IF NOT EXISTS products (
     product_id     INT AUTO_INCREMENT PRIMARY KEY,
     category_id    INT NOT NULL,
     brand_id       INT NOT NULL,
@@ -97,7 +111,7 @@ CREATE TABLE products (
 -- ------------------------------------------------------------
 -- Product specifications (rich, key/value product details)
 -- ------------------------------------------------------------
-CREATE TABLE product_specs (
+CREATE TABLE IF NOT EXISTS product_specs (
     spec_id     INT AUTO_INCREMENT PRIMARY KEY,
     product_id  INT NOT NULL,
     spec_key    VARCHAR(100) NOT NULL,
@@ -112,13 +126,26 @@ CREATE TABLE product_specs (
 
 -- ------------------------------------------------------------
 -- Orders
+--
+-- payment_method / payment_provider / payment_status /
+-- payment_transaction / paid_at used to be added only by
+-- migration_add_payments.sql, so this table was missing them. They are
+-- VARCHAR rather than ENUM on purpose: payment providers arrive over time
+-- and an ENUM silently rejects an unknown value, while a VARCHAR plus the
+-- validation in PaymentService keeps an unmapped provider visible instead
+-- of fatal.
 -- ------------------------------------------------------------
-CREATE TABLE orders (
+CREATE TABLE IF NOT EXISTS orders (
     order_id     INT AUTO_INCREMENT PRIMARY KEY,
     user_id      INT NOT NULL,
     order_date   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     total_amount DECIMAL(10, 2) NOT NULL DEFAULT 0,
     status       ENUM('PENDING', 'PROCESSING', 'SHIPPED', 'COMPLETED', 'CANCELLED', 'REFUNDED') NOT NULL DEFAULT 'PENDING',
+    payment_method      VARCHAR(20)  NOT NULL DEFAULT 'COD',
+    payment_provider    VARCHAR(20)  NULL,
+    payment_status      VARCHAR(20)  NOT NULL DEFAULT 'UNPAID',
+    payment_transaction VARCHAR(64)  NULL,
+    paid_at             TIMESTAMP    NULL,
     CONSTRAINT fk_order_user FOREIGN KEY (user_id) REFERENCES users (user_id),
     INDEX idx_order_user (user_id),
     INDEX idx_order_status (status)
@@ -127,7 +154,7 @@ CREATE TABLE orders (
 -- ------------------------------------------------------------
 -- Order status events (the order lifecycle timeline)
 -- ------------------------------------------------------------
-CREATE TABLE order_status_events (
+CREATE TABLE IF NOT EXISTS order_status_events (
     event_id    INT AUTO_INCREMENT PRIMARY KEY,
     order_id    INT NOT NULL,
     from_status ENUM('PENDING', 'PROCESSING', 'SHIPPED', 'COMPLETED', 'CANCELLED', 'REFUNDED') NULL,
@@ -142,7 +169,7 @@ CREATE TABLE order_status_events (
 -- ------------------------------------------------------------
 -- Order items (historical prices preserved)
 -- ------------------------------------------------------------
-CREATE TABLE order_items (
+CREATE TABLE IF NOT EXISTS order_items (
     order_item_id INT AUTO_INCREMENT PRIMARY KEY,
     order_id      INT NOT NULL,
     product_id    INT NOT NULL,
@@ -159,7 +186,7 @@ CREATE TABLE order_items (
 -- ------------------------------------------------------------
 -- Cart items (one row per user + product)
 -- ------------------------------------------------------------
-CREATE TABLE cart_items (
+CREATE TABLE IF NOT EXISTS cart_items (
     cart_item_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id      INT NOT NULL,
     product_id   INT NOT NULL,
@@ -173,14 +200,18 @@ CREATE TABLE cart_items (
 
 -- ------------------------------------------------------------
 -- Inventory change logs
+--
+-- old_quantity / new_quantity must describe the row before and after the
+-- change that wrote this row. Deriving old from new (rather than from a
+-- separately-read snapshot) is what keeps that true under concurrency.
 -- ------------------------------------------------------------
-CREATE TABLE inventory_logs (
+CREATE TABLE IF NOT EXISTS inventory_logs (
     log_id         INT AUTO_INCREMENT PRIMARY KEY,
     product_id     INT NOT NULL,
     old_quantity   INT NOT NULL,
     new_quantity   INT NOT NULL,
     action         VARCHAR(50) NOT NULL,
-    user_id       INT,
+    user_id        INT,
     created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_inv_log_product FOREIGN KEY (product_id) REFERENCES products (product_id),
     CONSTRAINT fk_inv_log_user FOREIGN KEY (user_id) REFERENCES users (user_id)
@@ -189,7 +220,7 @@ CREATE TABLE inventory_logs (
 -- ------------------------------------------------------------
 -- In-app mail (Gmail-style) between customers and admin
 -- ------------------------------------------------------------
-CREATE TABLE mail_messages (
+CREATE TABLE IF NOT EXISTS mail_messages (
     message_id   INT AUTO_INCREMENT PRIMARY KEY,
     sender_id    INT NOT NULL,
     recipient_id INT NOT NULL,
@@ -206,7 +237,7 @@ CREATE TABLE mail_messages (
 -- ------------------------------------------------------------
 -- Customer reviews (moderated; one review per user per product)
 -- ------------------------------------------------------------
-CREATE TABLE reviews (
+CREATE TABLE IF NOT EXISTS reviews (
     review_id   INT AUTO_INCREMENT PRIMARY KEY,
     product_id  INT NOT NULL,
     user_id     INT NOT NULL,
@@ -230,7 +261,7 @@ CREATE TABLE reviews (
 -- Two-factor authentication secrets. secret_key is AES-GCM encrypted by
 -- the application; never insert plaintext TOTP secrets into this table.
 -- ------------------------------------------------------------
-CREATE TABLE two_factor_secrets (
+CREATE TABLE IF NOT EXISTS two_factor_secrets (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL UNIQUE,
     secret_key VARCHAR(255) NOT NULL,
@@ -245,7 +276,7 @@ CREATE TABLE two_factor_secrets (
 -- Audit log (record of every important action in the system)
 -- No foreign keys: history must never be blocked by deletions
 -- ------------------------------------------------------------
-CREATE TABLE audit_logs (
+CREATE TABLE IF NOT EXISTS audit_logs (
     audit_id      INT AUTO_INCREMENT PRIMARY KEY,
     action_type   ENUM('AUTH', 'ADMIN', 'DATA', 'SECURITY', 'SYSTEM') NOT NULL,
     action_name   VARCHAR(100) NOT NULL,
@@ -264,7 +295,7 @@ CREATE TABLE audit_logs (
 ) ENGINE = InnoDB;
 
 -- Archived audit records: moved from the active table by the retention workflow.
-CREATE TABLE audit_logs_archive (
+CREATE TABLE IF NOT EXISTS audit_logs_archive (
     archive_id        BIGINT AUTO_INCREMENT PRIMARY KEY,
     original_audit_id INT NOT NULL,
     action_type       ENUM('AUTH', 'ADMIN', 'DATA', 'SECURITY', 'SYSTEM') NOT NULL,
@@ -281,3 +312,168 @@ CREATE TABLE audit_logs_archive (
     UNIQUE KEY uq_audit_archive_original (original_audit_id),
     INDEX idx_audit_archive_created (created_at)
 ) ENGINE = InnoDB;
+
+-- ------------------------------------------------------------
+-- Runtime-editable site settings (payment config, support channels).
+-- Seeded EMPTY on purpose: a support link pointing at an account the store
+-- does not own sends customers to a stranger, and an inactive chip does not.
+-- Admins paste the real destinations at /admin/support.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS app_settings (
+    setting_key   VARCHAR(100) NOT NULL,
+    setting_value VARCHAR(500) NOT NULL,
+    updated_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (setting_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT IGNORE INTO app_settings (setting_key, setting_value) VALUES
+    ('support.facebook.url',  ''),
+    ('support.messenger.url', ''),
+    ('support.telegram.url', ''),
+    ('support.x.url',         '');
+
+-- ------------------------------------------------------------
+-- Password reset, Pattern A: expiring single-use link emailed to the
+-- customer. Only the SHA-256 hash of the token is stored; the raw token
+-- exists only in the email.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    token_id   INT AUTO_INCREMENT PRIMARY KEY,
+    user_id    INT NOT NULL,
+    token_hash CHAR(64) NOT NULL UNIQUE,
+    expires_at TIMESTAMP NOT NULL,
+    used_at    TIMESTAMP NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_reset_token_user FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,
+    INDEX idx_reset_token_user (user_id),
+    INDEX idx_reset_token_expiry (expires_at)
+) ENGINE = InnoDB;
+
+-- ------------------------------------------------------------
+-- Password reset, Pattern B: 6-digit code. failed_attempts caps guessing
+-- on a 10^6 space; it is what makes a short code safe to send by email.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS password_reset_codes (
+    code_id         INT AUTO_INCREMENT PRIMARY KEY,
+    user_id         INT NOT NULL,
+    email           VARCHAR(100) NOT NULL,
+    code_hash       CHAR(64) NOT NULL,
+    expires_at      TIMESTAMP NOT NULL,
+    used_at         TIMESTAMP NULL,
+    failed_attempts INT NOT NULL DEFAULT 0,
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_reset_code_user FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,
+    INDEX idx_reset_code_user (user_id),
+    INDEX idx_reset_code_email (email),
+    INDEX idx_reset_code_expiry (expires_at)
+) ENGINE = InnoDB;
+
+-- ------------------------------------------------------------
+-- Payment attempts: append-only history, one row per attempt. A customer can
+-- retry after a failure, so this must hold more than one row per order.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS payments (
+    payment_id     INT AUTO_INCREMENT PRIMARY KEY,
+    order_id       INT NOT NULL,
+    provider       VARCHAR(20)  NOT NULL,
+    transaction_id VARCHAR(64) NULL,
+    amount         DECIMAL(10,2) NOT NULL,
+    currency       VARCHAR(3)   NOT NULL DEFAULT 'USD',
+    status         VARCHAR(20)  NOT NULL,
+    message        VARCHAR(255) NULL,
+    -- The gateway hands back a base64 PNG and hands it back only once, so it
+    -- has to be stored or a page refresh leaves the customer with nothing to
+    -- scan. MEDIUMTEXT rather than BLOB because it arrives already
+    -- base64-encoded and is dropped straight into an <img src="data:...">.
+    qr_image       MEDIUMTEXT   NULL,
+    aba_phone      VARCHAR(32)  NULL,
+    -- Card details are deliberately only the brand and last four digits.
+    -- Nothing past four characters is ever stored or logged.
+    card_brand     VARCHAR(20)  NULL,
+    card_last4     VARCHAR(4)   NULL,
+    created_at     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_payments_order FOREIGN KEY (order_id) REFERENCES orders (order_id),
+    INDEX idx_payments_order (order_id),
+    -- A duplicated transaction id would mean a gateway callback matched the
+    -- wrong order, so let the database say so. This unique index also serves
+    -- every lookup on transaction_id.
+    UNIQUE KEY uq_payments_transaction (transaction_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------
+-- Ledger of payments and refunds, independent of the payment_attempts above:
+-- a refund is a ledger row, and /admin/transactions reads this table.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS transactions (
+    transaction_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    transaction_type ENUM('PAYMENT', 'REFUND', 'PARTIAL_REFUND', 'CHARGEBACK') NOT NULL,
+    status ENUM('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'REFUNDED', 'PARTIALLY_REFUNDED', 'CHARGEBACK') NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    currency VARCHAR(3) DEFAULT 'USD',
+    payment_method VARCHAR(50) NOT NULL,
+    gateway_transaction_id VARCHAR(255),
+    gateway_response_code VARCHAR(50),
+    gateway_response_message TEXT,
+    user_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_transaction_order FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+    CONSTRAINT fk_transaction_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    INDEX idx_transaction_order (order_id),
+    INDEX idx_transaction_user (user_id),
+    INDEX idx_transaction_status (status),
+    INDEX idx_transaction_type (transaction_type),
+    INDEX idx_transaction_gateway (gateway_transaction_id),
+    INDEX idx_transaction_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------
+-- Experienced Page Time (EPT) samples: real-user monitoring for the
+-- storefront, measured in the browser by rum.js and reported to
+-- /realtime/ept.
+--
+-- Everything /admin/performance showed before this was read out of the JVM:
+-- cache hit rates, pool occupancy, query durations. All of it describes the
+-- server, and none of it answers the question an operator actually has, which
+-- is "why does it feel slow to my customers".
+--
+-- DELIBERATELY ABSENT: no IP address, no user id, no session id, no full URL,
+-- no raw User-Agent. Each is either personal data this feature has no need
+-- for, or an unbounded-cardinality key that would turn "which page type is
+-- slowest" into a list of single visits. `browser` is a coarse family and
+-- `page_type` is a route pattern, both bounded by construction.
+--
+-- server_ms is responseStart - requestStart, so it EXCLUDES connection setup
+-- and TLS; ttfb_ms is responseStart from navigation start, so it includes
+-- them. The gap between the two is what a slow connection looks like. Neither
+-- is the server's own in-container timing, which cannot reach a script at all
+-- because it is not known until the response has been written -- that lives in
+-- MetricsCollector under ExperienceFilter.METRIC_SERVER_MS.
+--
+-- Only a sampled fraction of page views is stored (computerstore.rum.sampleRate),
+-- so the counts describe the sample rather than total traffic. Latency
+-- percentiles stay valid under uniform sampling even though the volume does not.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS page_experience_samples (
+    sample_id      BIGINT       AUTO_INCREMENT PRIMARY KEY,
+    page_type      VARCHAR(64)  NOT NULL,
+    browser        VARCHAR(24)  NOT NULL,
+    device         VARCHAR(16)  NOT NULL DEFAULT 'unknown',
+    server_ms      INT          NOT NULL DEFAULT 0,
+    ttfb_ms        INT          NOT NULL DEFAULT 0,
+    -- Browser-observed, milliseconds from navigation start. NULL when the
+    -- browser did not report that phase.
+    interactive_ms INT          NULL,
+    dom_ready_ms   INT          NULL,
+    load_ms        INT          NULL,
+    transfer_bytes INT          NOT NULL DEFAULT 0,
+    sampled_at     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    -- Every report filters by window first, then groups. These orders let the
+    -- window predicate be an index range scan rather than a full table scan.
+    INDEX idx_page_exp_time (sampled_at),
+    INDEX idx_page_exp_type_time (page_type, sampled_at),
+    INDEX idx_page_exp_browser_time (browser, sampled_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -203,6 +203,24 @@ public class UserRepository {
         }
     }
 
+    /**
+     * Drops the cached user rows after a committed password change.
+     *
+     * <p>{@link #updatePassword(Connection, int, String)} deliberately stays
+     * cache-free because it cannot know when the caller commits, so every
+     * transactional caller must invoke this once its transaction succeeds.
+     * Skipping it is not merely a stale-read nuisance: login reads the user
+     * through {@link #findByUsername}, which is cached, so an un-invalidated
+     * reset leaves the <em>old</em> hash in play for the cache TTL - the
+     * customer cannot log in with the password they just chose, and whoever
+     * knew the old one still can.</p>
+     */
+    public void invalidateCachedUsers() {
+        if (CacheManager.isCacheEnabled()) {
+            CacheManager.invalidateAllUsers();
+        }
+    }
+
     public List<User> findAll() {
         String sql = "SELECT " + SELECT_COLUMNS + " FROM users ORDER BY created_at DESC, user_id DESC";
         List<User> users = new ArrayList<>();

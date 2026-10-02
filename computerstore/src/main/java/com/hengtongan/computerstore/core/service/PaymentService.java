@@ -209,18 +209,44 @@ public class PaymentService {
             // order look paid in history and unpaid in the storefront.
             recordCardAttempt(orderId, reference, Payment.Status.PENDING, card, card.message());
             markOrder(orderId, STATUS_PENDING, reference, PROVIDER_CARD);
-            markPaid(orderId, reference, "card " + card.masked());
-            
-            // Update transaction status to completed
-            if (transactionId > 0) {
-                try {
-                    transactionService.recordSuccessfulPayment(transactionId, reference, "APPROVED", card.message());
-                } catch (SQLException e) {
-                    System.err.println("Failed to update transaction status: " + e.getMessage());
+            // The CAS only succeeds while the order is PENDING and not already
+            // paid. It can fail if the customer cancelled the order between
+            // checkout and entering their card, in which case the authorisation
+            // must not be written up as a completed payment against a cancelled
+            // order. See the same handling in confirm(int, String).
+            boolean settled = markPaid(orderId, reference, "card " + card.masked());
+            Order current = orderRepository.findById(orderId);
+            boolean alreadyPaid = current != null && STATUS_PAID.equals(current.getPaymentStatus());
+
+            if (settled || alreadyPaid) {
+                if (transactionId > 0) {
+                    try {
+                        transactionService.recordSuccessfulPayment(transactionId, reference, "APPROVED", card.message());
+                    } catch (SQLException e) {
+                        System.err.println("Failed to update transaction status: " + e.getMessage());
+                    }
+                }
+                audit("PAYMENT_CONFIRMED", orderId, "Card " + card.masked() + " (demo authorisation)");
+            } else {
+                String actualStatus = current == null ? "missing" : current.getStatus().name();
+                audit("PAYMENT_UNRECONCILED", orderId,
+                        "Card " + card.masked() + " authorised (demo) against a " + actualStatus
+                                + " order; the order was left unchanged and needs manual reconciliation.");
+                updateAttempt(orderId, reference, Payment.Status.PAID,
+                        "Card authorised but the order is " + actualStatus
+                                + "; the order was left unchanged and needs manual reconciliation.");
+                if (transactionId > 0) {
+                    try {
+                        transactionService.updateTransactionStatus(transactionId,
+                                com.hengtongan.computerstore.core.domain.entity.Transaction.TransactionStatus.PENDING,
+                                reference, "APPROVED",
+                                "Card authorised against a " + actualStatus
+                                        + " order - awaiting reconciliation");
+                    } catch (SQLException e) {
+                        System.err.println("Failed to record unreconciled payment: " + e.getMessage());
+                    }
                 }
             }
-            
-            audit("PAYMENT_CONFIRMED", orderId, "Card " + card.masked() + " (demo authorisation)");
             // Re-read rather than returning the pre-settlement object: the caller
             // branches on the status, and the row just promoted to PAID is the
             // newest for this order, so this is the same row.
@@ -311,16 +337,52 @@ public class PaymentService {
         }
         
         if (confirmed == Payment.Status.PAID) {
-            markPaid(orderId, transactionId, "ABA Payway (" + transactionId + ")");
-            audit("PAYMENT_CONFIRMED", orderId, "ABA Payway transaction " + transactionId);
-            
-            // Update transaction status to completed
-            if (transaction != null) {
-                try {
-                    transactionService.recordSuccessfulPayment(transaction.getTransactionId(), 
-                        transactionId, result.status(), result.message());
-                } catch (SQLException e) {
-                    System.err.println("Failed to update transaction status: " + e.getMessage());
+            // markPaid is a compare-and-set on (status = PENDING, payment_status <>
+            // PAID). It can fail for two very different reasons, and this method
+            // used to treat both as success: it ignored the return, then audited
+            // PAYMENT_CONFIRMED and completed the transaction. A replayed
+            // callback really is a success, but an order the customer had already
+            // cancelled is not -- the gateway said the money arrived after
+            // cancellation returned the stock, so the order stayed CANCELLED
+            // while the ledger recorded a completed payment against it and
+            // nothing anywhere flagged that a refund was owed.
+            boolean marked = markPaid(orderId, transactionId, "ABA Payway (" + transactionId + ")");
+            Order current = orderRepository.findById(orderId);
+            boolean alreadyPaid = current != null && STATUS_PAID.equals(current.getPaymentStatus());
+
+            if (marked || alreadyPaid) {
+                audit("PAYMENT_CONFIRMED", orderId, "ABA Payway transaction " + transactionId);
+                if (transaction != null) {
+                    try {
+                        transactionService.recordSuccessfulPayment(transaction.getTransactionId(),
+                            transactionId, result.status(), result.message());
+                    } catch (SQLException e) {
+                        System.err.println("Failed to update transaction status: " + e.getMessage());
+                    }
+                }
+            } else {
+                // Money in, order not PENDING. Record what the gateway said so it
+                // is visible on the order and in the ledger, but do not pretend
+                // the order is paid: it may need a refund or a manual review.
+                String actualStatus = current == null ? "missing" : current.getStatus().name();
+                audit("PAYMENT_UNRECONCILED", orderId,
+                        "gateway reported PAID for transaction " + transactionId
+                                + " but the order is " + actualStatus
+                                + " and was not transitioned to PROCESSING; manual refund or review required");
+                updateAttempt(orderId, transactionId, Payment.Status.PAID,
+                        "Gateway reported PAID but the order is " + actualStatus
+                                + "; the order was left unchanged and needs manual reconciliation.");
+                if (transaction != null) {
+                    try {
+                        transactionService.updateTransactionStatus(
+                                transaction.getTransactionId(),
+                                com.hengtongan.computerstore.core.domain.entity.Transaction.TransactionStatus.PENDING,
+                                transactionId, result.status(),
+                                "Payment received against a " + actualStatus
+                                        + " order - awaiting reconciliation");
+                    } catch (SQLException e) {
+                        System.err.println("Failed to record unreconciled payment: " + e.getMessage());
+                    }
                 }
             }
         } else {
@@ -392,13 +454,13 @@ public class PaymentService {
      *             payment differently, and a card note must never be able to
      *             contain anything but a brand and four digits.
      */
-    private void markPaid(int orderId, String transactionId, String note) {
+    private boolean markPaid(int orderId, String transactionId, String note) {
         try (Connection c = DBConnection.getConnection()) {
             c.setAutoCommit(false);
             try {
                 if (!orderRepository.markPaid(c, orderId, transactionId)) {
                     c.rollback();
-                    return;
+                    return false;
                 }
                 OrderStatusEvent paidEvent = new OrderStatusEvent();
                 paidEvent.setOrderId(orderId);
@@ -409,6 +471,7 @@ public class PaymentService {
                 orderRepository.insertStatusEvent(c, paidEvent);
                 paymentRepository.markAttemptPaid(c, orderId, transactionId, new Timestamp(System.currentTimeMillis()));
                 c.commit();
+                return true;
             } catch (SQLException | RuntimeException e) {
                 c.rollback();
                 throw e;

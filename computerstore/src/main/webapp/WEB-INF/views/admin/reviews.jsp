@@ -46,10 +46,11 @@
                     <tr>
                         <td>${rv.reviewId}</td>
                         <td>
+                            <%-- Plain text, not a link to the public product page: the storefront
+                                 is closed to admins, so this opened a new tab only to 403. The SKU
+                                 underneath is the identifier the admin page already shows. --%>
                             <div class="fw-semibold">
-                                <a class="text-decoration-none" href="${pageContext.request.contextPath}/products?id=${rv.productId}" target="_blank" rel="noopener">
-                                    <c:out value="${rv.productName}"/>
-                                </a>
+                                <c:out value="${rv.productName}"/>
                             </div>
                             <div class="small text-muted"><c:out value="${rv.productSku}"/></div>
                         </td>

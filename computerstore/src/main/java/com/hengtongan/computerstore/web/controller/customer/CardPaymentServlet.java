@@ -2,6 +2,7 @@ package com.hengtongan.computerstore.web.controller.customer;
 
 import com.hengtongan.computerstore.core.domain.entity.Order;
 import com.hengtongan.computerstore.core.domain.entity.Payment;
+import com.hengtongan.computerstore.core.domain.entity.Transaction;
 import com.hengtongan.computerstore.core.domain.entity.User;
 import com.hengtongan.computerstore.core.exception.NotFoundException;
 import com.hengtongan.computerstore.util.validation.ValidationUtil;
@@ -12,6 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.sql.SQLException;
 
 /**
  * The card payment status page: what happened to a card order, and how to try again.
@@ -49,6 +51,11 @@ public class CardPaymentServlet extends BaseServlet {
         request.setAttribute("payment", payment);
         // The demo hint is only meaningful while the method is actually a demo.
         request.setAttribute("simulated", app().paymentService().isCardSimulated());
+        // Pre-resolved so the confirmed panel can offer the receipt without the view
+        // reaching into a service or guessing an id. The receipt for an order is one
+        // query scoped to this customer; see CheckoutServlet.receiptPathFor for why
+        // it can legitimately resolve to the order page instead.
+        request.setAttribute("receiptPath", receiptPathFor(orderId, request));
         forward(request, response, "customer/payment-card.jsp");
     }
 
@@ -59,6 +66,33 @@ public class CardPaymentServlet extends BaseServlet {
         // leave it ambiguous whether a state change was attempted.
         redirect(request, response, "/payment/card?order="
                 + (request.getParameter("order") == null ? "" : request.getParameter("order")));
+    }
+
+    /**
+     * The receipt for this order, or the order page when there is not one to show.
+     * <p>
+     * Scoped to the session user: the order id in the URL is user-supplied, and this
+     * is the lookup that turns it into a payment id, so it must not be answerable for
+     * somebody else's order. Returns the order path on any miss or error, since this
+     * page is only ever shown to a customer who already owns the order and a receipt
+     * is an improvement rather than a precondition.
+     */
+    private String receiptPathFor(int orderId, HttpServletRequest request) {
+        User user = currentUser(request);
+        String orderPath = "/account/orders?id=" + orderId;
+        if (user == null) {
+            return orderPath;
+        }
+        try {
+            Transaction settled = app().transactionService()
+                    .getSettledPaymentForUser(orderId, user.getUserId());
+            if (settled == null) {
+                return orderPath;
+            }
+            return "/account/transactions?id=" + settled.getTransactionId() + "&view=receipt";
+        } catch (SQLException e) {
+            return orderPath;
+        }
     }
 
     /**
